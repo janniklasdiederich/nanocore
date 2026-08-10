@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   useEditor,
   usePeerIds,
@@ -9,6 +10,9 @@ import {
 /**
  * Share / people panel with a read-only display name.
  * Names are owned by Nanocore user management (admin-created accounts).
+ *
+ * Note: tldraw UI chrome uses pointer-events: none on layout zones;
+ * interactive bits must set pointer-events: all (see styles).
  */
 function NanocoreSharePanel() {
   return (
@@ -27,13 +31,44 @@ function NanocorePeopleMenu() {
     [editor],
   );
   const userName = useValue("userName", () => editor.user.getName(), [editor]);
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
+
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const el = rootRef.current;
+      if (el && !el.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   // Match tldraw default: only show when someone else is on the board
   if (!userIds.length) return null;
 
   return (
-    <details className="nc-people-menu">
-      <summary className="nc-people-menu__trigger" title="People on this board">
+    <div className="nc-people-menu" ref={rootRef}>
+      <button
+        type="button"
+        className="nc-people-menu__trigger"
+        title="People on this board"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((v) => !v)}
+      >
         <div className="nc-people-menu__avatars">
           {userIds.slice(-5).map((id) => (
             <PeerAvatar key={id} userId={id} />
@@ -48,34 +83,41 @@ function NanocorePeopleMenu() {
             <div className="nc-people-menu__more">+{userIds.length - 5}</div>
           )}
         </div>
-      </summary>
-      <div className="nc-people-menu__panel">
-        <div className="nc-people-menu__section">
-          <div className="nc-people-menu__self">
-            <div
-              className="nc-people-menu__avatar"
-              style={{ backgroundColor: userColor }}
-              aria-hidden
-            >
-              {(userName?.[0] ?? "?").toUpperCase()}
-            </div>
-            <div className="nc-people-menu__self-text">
-              <div className="nc-people-menu__name">
-                {userName || "You"}
+      </button>
+
+      {open && (
+        <div
+          id={panelId}
+          className="nc-people-menu__panel"
+          role="menu"
+        >
+          <div className="nc-people-menu__section">
+            <div className="nc-people-menu__self">
+              <div
+                className="nc-people-menu__avatar"
+                style={{ backgroundColor: userColor }}
+                aria-hidden
+              >
+                {(userName?.[0] ?? "?").toUpperCase()}
               </div>
-              <div className="nc-people-menu__hint">
-                Name is set by your organization
+              <div className="nc-people-menu__self-text">
+                <div className="nc-people-menu__name">
+                  {userName || "You"}
+                </div>
+                <div className="nc-people-menu__hint">
+                  Name is set by your organization
+                </div>
               </div>
             </div>
           </div>
+          <div className="nc-people-menu__section">
+            {userIds.map((userId) => (
+              <PeerRow key={userId} userId={userId} onActed={close} />
+            ))}
+          </div>
         </div>
-        <div className="nc-people-menu__section">
-          {userIds.map((userId) => (
-            <PeerRow key={userId} userId={userId} />
-          ))}
-        </div>
-      </div>
-    </details>
+      )}
+    </div>
   );
 }
 
@@ -94,40 +136,63 @@ function PeerAvatar({ userId }: { userId: string }) {
   );
 }
 
-function PeerRow({ userId }: { userId: string }) {
+function PeerRow({
+  userId,
+  onActed,
+}: {
+  userId: string;
+  onActed?: () => void;
+}) {
   const editor = useEditor();
   const presence = usePresence(userId);
+  // Re-render when follow target changes
+  const followingUserId = useValue(
+    "following",
+    () => editor.getInstanceState().followingUserId,
+    [editor],
+  );
+
   if (!presence) return null;
 
-  const followingThem =
-    editor.getInstanceState().followingUserId === userId;
+  const followingThem = followingUserId === userId;
 
   return (
-    <button
-      type="button"
-      className="nc-people-menu__peer"
-      title={
-        followingThem
-          ? "Double-click to stop following"
-          : "Click to zoom · double-click to follow"
-      }
-      onClick={() => editor.zoomToUser(userId)}
-      onDoubleClick={() => {
-        if (followingThem) editor.stopFollowingUser();
-        else editor.startFollowingUser(userId);
-      }}
-    >
-      <span
-        className="nc-people-menu__swatch"
-        style={{ background: presence.color }}
-      />
-      <span className="nc-people-menu__name">
-        {presence.userName?.trim() || "Anonymous"}
-      </span>
-      {followingThem && (
-        <span className="nc-people-menu__following">following</span>
-      )}
-    </button>
+    <div className="nc-people-menu__peer-row">
+      <button
+        type="button"
+        className="nc-people-menu__peer"
+        role="menuitem"
+        title="Jump to user"
+        onClick={() => {
+          editor.zoomToUser(userId);
+          onActed?.();
+        }}
+      >
+        <span
+          className="nc-people-menu__swatch"
+          style={{ background: presence.color }}
+        />
+        <span className="nc-people-menu__name">
+          {presence.userName?.trim() || "Anonymous"}
+        </span>
+      </button>
+      <button
+        type="button"
+        className={
+          followingThem
+            ? "nc-people-menu__follow nc-people-menu__follow--active"
+            : "nc-people-menu__follow"
+        }
+        title={followingThem ? "Stop following" : "Follow"}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (followingThem) editor.stopFollowingUser();
+          else editor.startFollowingUser(userId);
+        }}
+      >
+        {followingThem ? "Following" : "Follow"}
+      </button>
+    </div>
   );
 }
 

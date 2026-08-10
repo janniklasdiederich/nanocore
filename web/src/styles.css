@@ -435,14 +435,16 @@ input {
   color: var(--text-muted);
 }
 
-/* People menu (presence) — names are not editable */
+/* People menu (presence) — names are not editable.
+   tldraw layout uses pointer-events: none; interactive UI must opt back in. */
 .nc-people-menu {
   position: relative;
   margin: 4px 8px 0 0;
+  pointer-events: all;
+  z-index: 400;
 }
 
 .nc-people-menu__trigger {
-  list-style: none;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -451,10 +453,13 @@ input {
   border: 1px solid var(--border, #2a3344);
   background: color-mix(in srgb, var(--bg-elevated, #141820) 92%, transparent);
   backdrop-filter: blur(8px);
+  color: inherit;
+  font: inherit;
+  pointer-events: all;
 }
 
-.nc-people-menu__trigger::-webkit-details-marker {
-  display: none;
+.nc-people-menu__trigger:hover {
+  border-color: #3d4a63;
 }
 
 .nc-people-menu__avatars {
@@ -462,6 +467,7 @@ input {
   flex-direction: row-reverse;
   align-items: center;
   padding: 2px 4px;
+  pointer-events: none; /* clicks go to the trigger button */
 }
 
 .nc-people-menu__avatar {
@@ -478,8 +484,7 @@ input {
   user-select: none;
 }
 
-.nc-people-menu__avatar:last-child,
-.nc-people-menu__avatars > :first-child {
+.nc-people-menu__avatars > :last-child {
   margin-left: 0;
 }
 
@@ -494,14 +499,15 @@ input {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  min-width: 220px;
-  max-width: 280px;
+  min-width: 260px;
+  max-width: 320px;
   background: var(--bg-elevated, #141820);
   border: 1px solid var(--border, #2a3344);
   border-radius: 12px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   overflow: hidden;
-  z-index: 300;
+  z-index: 500;
+  pointer-events: all;
 }
 
 .nc-people-menu__section {
@@ -542,11 +548,23 @@ input {
   margin-top: 2px;
 }
 
+.nc-people-menu__peer-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.nc-people-menu__peer-row:hover {
+  background: var(--bg-soft, #1a2030);
+}
+
 .nc-people-menu__peer {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   color: inherit;
@@ -555,10 +573,7 @@ input {
   padding: 8px 6px;
   border-radius: 8px;
   cursor: pointer;
-}
-
-.nc-people-menu__peer:hover {
-  background: var(--bg-soft, #1a2030);
+  pointer-events: all;
 }
 
 .nc-people-menu__swatch {
@@ -568,11 +583,30 @@ input {
   flex-shrink: 0;
 }
 
-.nc-people-menu__following {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: var(--accent, #6c8cff);
+.nc-people-menu__follow {
+  flex-shrink: 0;
+  border: 1px solid var(--border, #2a3344);
+  background: transparent;
+  color: var(--text-muted, #8b95a8);
+  font: inherit;
+  font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 4px;
+  pointer-events: all;
+}
+
+.nc-people-menu__follow:hover {
+  border-color: var(--accent, #6c8cff);
+  color: var(--accent, #6c8cff);
+}
+
+.nc-people-menu__follow--active {
+  border-color: color-mix(in srgb, var(--accent, #6c8cff) 50%, transparent);
+  color: var(--accent, #6c8cff);
+  background: color-mix(in srgb, var(--accent, #6c8cff) 12%, transparent);
 }
