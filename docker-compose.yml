@@ -1,0 +1,17 @@
+services:
+  nanocore:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      DATA_DIR: /data
+      NODE_ENV: production
+      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+    volumes:
+      - nanocore-data:/data
+    restart: unless-stopped
+
+volumes:
+  nanocore-data:

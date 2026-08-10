@@ -1,0 +1,15 @@
+{
+  "name": "nanocore",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Open-source collaborative whiteboard (tldraw) — single-tenant self-host",
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "dev:server": "bun run --filter server dev",
+    "dev:web": "bun run --filter web dev",
+    "build": "bun run --filter web build && bun run --filter server build",
+    "start": "bun run --filter server start",
+    "typecheck": "bun run --filter server typecheck && bun run --filter web typecheck"
+  },
+  "license": "MIT"
+}
