@@ -110,6 +110,12 @@ export const api = {
   getBoard: (id: string) =>
     request<{ board: Board }>(`/api/boards/${id}`),
 
+  getSyncToken: (id: string) =>
+    request<{ token: string; expiresInSec: number }>(
+      `/api/boards/${id}/sync-token`,
+      { method: "POST" },
+    ),
+
   renameBoard: (id: string, name: string) =>
     request<{ board: Board }>(`/api/boards/${id}`, {
       method: "PATCH",

@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import {
+  createSyncToken,
   requireAuth,
   requirePasswordOk,
   type Variables,
@@ -68,6 +69,22 @@ boardRoutes.get("/:id", (c) => {
 
   if (!row) return c.json({ error: "Board not found" }, 404);
   return c.json({ board: mapBoard(row) });
+});
+
+/** Short-lived token for WebSocket upgrade (avoids cookie/proxy issues in dev). */
+boardRoutes.post("/:id/sync-token", (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const id = c.req.param("id");
+  const row = db.query("SELECT id FROM boards WHERE id = ?").get(id) as
+    | { id: string }
+    | null;
+  if (!row) return c.json({ error: "Board not found" }, 404);
+
+  const user = c.get("user");
+  const token = createSyncToken(user.id, row.id);
+  return c.json({ token, expiresInSec: 120 });
 });
 
 boardRoutes.patch("/:id", async (c) => {

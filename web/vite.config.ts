@@ -6,10 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
+      // HTTP only — WebSockets connect directly to :3001 in dev (see BoardPage).
       "/api": {
         target: "http://localhost:3001",
         changeOrigin: true,
-        ws: true,
       },
     },
   },

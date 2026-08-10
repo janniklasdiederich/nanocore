@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Context, Next } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { db, publicUser, type UserRow } from "./db";
@@ -6,6 +6,8 @@ import { env } from "./env";
 
 export const SESSION_COOKIE = "nanocore_session";
 const SESSION_DAYS = 30;
+/** Short-lived token so WebSocket clients can auth without relying on cookies. */
+const SYNC_TOKEN_TTL_MS = 2 * 60 * 1000;
 
 export type AuthUser = ReturnType<typeof publicUser>;
 
@@ -111,4 +113,48 @@ export function requirePasswordOk(c: Context) {
     );
   }
   return null;
+}
+
+/** Signed token for WebSocket connect (board-scoped, short TTL). */
+export function createSyncToken(userId: string, boardId: string): string {
+  const exp = Date.now() + SYNC_TOKEN_TTL_MS;
+  const body = `${userId}.${boardId}.${exp}`;
+  const sig = createHmac("sha256", env.sessionSecret)
+    .update(body)
+    .digest("base64url");
+  return `${body}.${sig}`;
+}
+
+export function verifySyncToken(
+  token: string,
+  boardId: string,
+): { userId: string } | null {
+  const parts = token.split(".");
+  if (parts.length !== 4) return null;
+  const [userId, tokenBoardId, expStr, sig] = parts;
+  if (!userId || !tokenBoardId || !expStr || !sig) return null;
+  if (tokenBoardId !== boardId) return null;
+
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || Date.now() > exp) return null;
+
+  const body = `${userId}.${tokenBoardId}.${expStr}`;
+  const expected = createHmac("sha256", env.sessionSecret)
+    .update(body)
+    .digest("base64url");
+
+  try {
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
+  } catch {
+    return null;
+  }
+
+  const user = db
+    .query("SELECT id, must_change_password FROM users WHERE id = ?")
+    .get(userId) as { id: string; must_change_password: number } | null;
+  if (!user || user.must_change_password) return null;
+
+  return { userId: user.id };
 }

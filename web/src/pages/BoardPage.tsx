@@ -19,7 +19,6 @@ const multiplayerAssets: TLAssetStore = {
       throw new Error("Upload failed");
     }
     const data = (await res.json()) as { src: string };
-    // Absolute URL so other clients resolve assets correctly
     const src = new URL(data.src, window.location.origin).href;
     return { src };
   },
@@ -27,6 +26,19 @@ const multiplayerAssets: TLAssetStore = {
     return asset.props.src;
   },
 };
+
+/** WebSocket base — hit the API directly in dev (Vite's HTTP proxy is flaky for WS). */
+function syncWsBase(): string {
+  const fromEnv = import.meta.env.VITE_WS_URL as string | undefined;
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+
+  if (import.meta.env.DEV) {
+    return "ws://localhost:3001";
+  }
+
+  const proto = window.location.protocol === "https:" ? "wss" : "ws";
+  return `${proto}://${window.location.host}`;
+}
 
 export function BoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,10 +58,7 @@ export function BoardPage() {
     () => ({
       id: user?.id ?? "anonymous",
       name: user?.displayName ?? "Anonymous",
-      color:
-        user?.id
-          ? colorFromId(user.id)
-          : "#888888",
+      color: user?.id ? colorFromId(user.id) : "#888888",
     }),
     [user],
   );
@@ -92,7 +101,12 @@ export function BoardPage() {
         </div>
       </header>
       <div className="canvas">
-        <BoardCanvas boardId={id} userInfo={userInfo} />
+        {/* Only mount sync once we have a logged-in user id */}
+        {user ? (
+          <BoardCanvas boardId={id} userInfo={userInfo} />
+        ) : (
+          <div className="canvas-status">Loading session…</div>
+        )}
       </div>
     </div>
   );
@@ -105,14 +119,19 @@ function BoardCanvas({
   boardId: string;
   userInfo: { id: string; name: string; color: string };
 }) {
+  const uri = useMemo(() => {
+    return async () => {
+      // Mint a short-lived token over HTTP (cookie auth via Vite proxy is fine).
+      // WebSocket then goes straight to the API with ?token=… — no cookie needed.
+      // Do NOT add sessionId; useSync reserves and appends it.
+      const { token } = await api.getSyncToken(boardId);
+      const base = syncWsBase();
+      return `${base}/api/sync/${boardId}?token=${encodeURIComponent(token)}`;
+    };
+  }, [boardId]);
+
   const store = useSync({
-    uri: async () => {
-      // Cookie auth is sent automatically on same-origin upgrade.
-      // sessionId is required by TLSocketRoom.
-      const sessionId = crypto.randomUUID();
-      const proto = window.location.protocol === "https:" ? "wss" : "ws";
-      return `${proto}://${window.location.host}/api/sync/${boardId}?sessionId=${sessionId}`;
-    },
+    uri,
     assets: multiplayerAssets,
     userInfo,
   });
@@ -132,11 +151,13 @@ function BoardCanvas({
     return (
       <div className="canvas-status">
         Connection error: {store.error?.message ?? "unknown"}
+        <div style={{ marginTop: 8, fontSize: 13 }}>
+          Is the API running on port 3001?
+        </div>
       </div>
     );
   }
 
-  // RemoteTLStoreWithStatus is accepted directly by <Tldraw store={...} />
   return (
     <div style={{ position: "absolute", inset: 0 }}>
       <Tldraw store={store} />

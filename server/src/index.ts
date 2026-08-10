@@ -6,6 +6,7 @@ import { join } from "node:path";
 import {
   getUserFromToken,
   SESSION_COOKIE,
+  verifySyncToken,
   type Variables,
 } from "./auth";
 import { env } from "./env";
@@ -94,25 +95,46 @@ const server = Bun.serve<WsData>({
     const url = new URL(req.url);
 
     // WebSocket upgrade for tldraw sync
-    if (
-      url.pathname.startsWith("/api/sync/") &&
-      req.headers.get("upgrade")?.toLowerCase() === "websocket"
-    ) {
-      const boardId = url.pathname.slice("/api/sync/".length).split("/")[0];
+    if (url.pathname.startsWith("/api/sync/")) {
+      const isUpgrade =
+        req.headers.get("upgrade")?.toLowerCase() === "websocket";
+      if (!isUpgrade) {
+        return new Response("Expected WebSocket upgrade", { status: 426 });
+      }
+
+      const boardId = decodeURIComponent(
+        url.pathname.slice("/api/sync/".length).split("/")[0] ?? "",
+      );
+      // tldraw client always appends sessionId — do not invent it on the client
       const sessionId = url.searchParams.get("sessionId");
+      const syncToken = url.searchParams.get("token");
 
       if (!boardId || !sessionId) {
+        console.warn("[sync] missing boardId or sessionId");
         return new Response("Missing boardId or sessionId", { status: 400 });
       }
 
-      const cookies = parseCookies(req.headers.get("cookie"));
-      const token = cookies[SESSION_COOKIE];
-      const user = getUserFromToken(token);
-      if (!user) {
-        return new Response("Unauthorized", { status: 401 });
-      }
-      if (user.must_change_password) {
-        return new Response("Password change required", { status: 403 });
+      let userId: string | null = null;
+
+      if (syncToken) {
+        const verified = verifySyncToken(syncToken, boardId);
+        if (!verified) {
+          console.warn("[sync] invalid or expired sync token");
+          return new Response("Unauthorized", { status: 401 });
+        }
+        userId = verified.userId;
+      } else {
+        const cookies = parseCookies(req.headers.get("cookie"));
+        const cookieToken = cookies[SESSION_COOKIE];
+        const user = getUserFromToken(cookieToken);
+        if (!user) {
+          console.warn("[sync] no cookie session");
+          return new Response("Unauthorized", { status: 401 });
+        }
+        if (user.must_change_password) {
+          return new Response("Password change required", { status: 403 });
+        }
+        userId = user.id;
       }
 
       const board = (
@@ -128,12 +150,14 @@ const server = Bun.serve<WsData>({
         data: {
           sessionId,
           boardId,
-          userId: user.id,
+          userId,
         },
       });
       if (!ok) {
+        console.error("[sync] Bun upgrade failed");
         return new Response("WebSocket upgrade failed", { status: 500 });
       }
+      // Successful upgrade: do not return a Response body
       return undefined as unknown as Response;
     }
 
