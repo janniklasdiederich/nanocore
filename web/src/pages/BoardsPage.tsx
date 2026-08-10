@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError, type Board } from "../api";
 import { AppShell } from "../components/AppShell";
+import { useI18n, useT } from "../i18n";
 
 export function BoardsPage() {
   const navigate = useNavigate();
+  const t = useT();
+  const { locale } = useI18n();
   const [boards, setBoards] = useState<Board[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,11 +19,13 @@ export function BoardsPage() {
       setBoards(res.boards);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load boards");
+      setError(
+        err instanceof ApiError ? err.message : t("boards.loadFailed"),
+      );
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -29,16 +34,18 @@ export function BoardsPage() {
   async function createBoard() {
     setCreating(true);
     try {
-      const res = await api.createBoard("Untitled board");
+      const res = await api.createBoard(t("boards.defaultName"));
       navigate(`/boards/${res.board.id}`);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not create board");
+      setError(
+        err instanceof ApiError ? err.message : t("boards.createFailed"),
+      );
       setCreating(false);
     }
   }
 
   async function renameBoard(board: Board) {
-    const name = window.prompt("Board name", board.name);
+    const name = window.prompt(t("boards.renamePrompt"), board.name);
     if (!name || name.trim() === board.name) return;
     try {
       const res = await api.renameBoard(board.id, name.trim());
@@ -46,19 +53,25 @@ export function BoardsPage() {
         prev.map((b) => (b.id === board.id ? res.board : b)),
       );
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Rename failed");
+      setError(
+        err instanceof ApiError ? err.message : t("boards.renameFailed"),
+      );
     }
   }
 
   async function removeBoard(board: Board) {
-    if (!window.confirm(`Delete “${board.name}”? This cannot be undone.`)) {
+    if (
+      !window.confirm(t("boards.deleteConfirm", { name: board.name }))
+    ) {
       return;
     }
     try {
       await api.deleteBoard(board.id);
       setBoards((prev) => prev.filter((b) => b.id !== board.id));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Delete failed");
+      setError(
+        err instanceof ApiError ? err.message : t("boards.deleteFailed"),
+      );
     }
   }
 
@@ -66,8 +79,8 @@ export function BoardsPage() {
     <AppShell>
       <div className="page-header">
         <div>
-          <h1>Boards</h1>
-          <p>Shared infinite canvases for your team.</p>
+          <h1>{t("boards.title")}</h1>
+          <p>{t("boards.subtitle")}</p>
         </div>
         <button
           type="button"
@@ -76,7 +89,7 @@ export function BoardsPage() {
           disabled={creating}
           onClick={() => void createBoard()}
         >
-          {creating ? "Creating…" : "New board"}
+          {creating ? t("boards.creating") : t("boards.new")}
         </button>
       </div>
 
@@ -88,14 +101,14 @@ export function BoardsPage() {
         </div>
       ) : boards.length === 0 ? (
         <div className="empty-state">
-          <p>No boards yet. Create one to start collaborating.</p>
+          <p>{t("boards.empty")}</p>
           <button
             type="button"
             className="btn btn-primary"
             style={{ width: "auto", marginTop: 12 }}
             onClick={() => void createBoard()}
           >
-            Create your first board
+            {t("boards.createFirst")}
           </button>
         </div>
       ) : (
@@ -105,7 +118,9 @@ export function BoardsPage() {
               <div>
                 <h3>{board.name}</h3>
                 <div className="meta">
-                  Updated {formatRelative(board.updatedAt)}
+                  {t("boards.updated", {
+                    date: formatRelative(board.updatedAt, locale),
+                  })}
                 </div>
               </div>
               <div className="actions">
@@ -114,21 +129,21 @@ export function BoardsPage() {
                   style={{ width: "auto" }}
                   to={`/boards/${board.id}`}
                 >
-                  Open
+                  {t("common.open")}
                 </Link>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
                   onClick={() => void renameBoard(board)}
                 >
-                  Rename
+                  {t("common.rename")}
                 </button>
                 <button
                   type="button"
                   className="btn btn-danger btn-sm"
                   onClick={() => void removeBoard(board)}
                 >
-                  Delete
+                  {t("common.delete")}
                 </button>
               </div>
             </article>
@@ -139,10 +154,10 @@ export function BoardsPage() {
   );
 }
 
-function formatRelative(iso: string): string {
+function formatRelative(iso: string, locale: string): string {
   const date = new Date(iso.includes("T") ? iso : iso.replace(" ", "T") + "Z");
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString(locale === "de" ? "de-DE" : "en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   });

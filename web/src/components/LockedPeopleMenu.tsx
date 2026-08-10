@@ -14,6 +14,7 @@ import {
   useValue,
   type TLComponents,
 } from "tldraw";
+import { useT } from "../i18n";
 
 /**
  * Share / people panel with a read-only display name.
@@ -31,6 +32,7 @@ function NanocoreSharePanel() {
 type PanelPos = { top: number; right: number };
 
 function NanocorePeopleMenu() {
+  const t = useT();
   const editor = useEditor();
   const userIds = usePeerIds();
   const userColor = useValue(
@@ -121,9 +123,11 @@ function NanocorePeopleMenu() {
                 {(userName?.[0] ?? "?").toUpperCase()}
               </div>
               <div className="nc-people-menu__self-text">
-                <div className="nc-people-menu__name">{userName || "You"}</div>
+                <div className="nc-people-menu__name">
+                  {userName || t("people.you")}
+                </div>
                 <div className="nc-people-menu__hint">
-                  Name is set by your organization
+                  {t("people.nameManaged")}
                 </div>
               </div>
             </div>
@@ -144,7 +148,7 @@ function NanocorePeopleMenu() {
         ref={triggerRef}
         type="button"
         className="nc-people-menu__trigger"
-        title="People on this board"
+        title={t("people.title")}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
@@ -170,6 +174,7 @@ function NanocorePeopleMenu() {
 }
 
 function PeerAvatar({ userId }: { userId: string }) {
+  const t = useT();
   const presence = usePresence(userId);
   if (!presence) return null;
   const letter = (presence.userName?.trim()?.[0] ?? "?").toUpperCase();
@@ -177,7 +182,7 @@ function PeerAvatar({ userId }: { userId: string }) {
     <div
       className="nc-people-menu__avatar"
       style={{ backgroundColor: presence.color }}
-      title={presence.userName || "Anonymous"}
+      title={presence.userName || t("board.anonymous")}
     >
       {letter}
     </div>
@@ -191,6 +196,7 @@ function PeerRow({
   userId: string;
   onActed?: () => void;
 }) {
+  const t = useT();
   const editor = useEditor();
   const presence = usePresence(userId);
   const followingUserId = useValue(
@@ -209,7 +215,7 @@ function PeerRow({
         type="button"
         className="nc-people-menu__peer"
         role="menuitem"
-        title="Jump to user"
+        title={t("people.jump")}
         onClick={() => {
           editor.zoomToUser(userId);
           onActed?.();
@@ -220,7 +226,7 @@ function PeerRow({
           style={{ background: presence.color }}
         />
         <span className="nc-people-menu__name">
-          {presence.userName?.trim() || "Anonymous"}
+          {presence.userName?.trim() || t("board.anonymous")}
         </span>
       </button>
       <button
@@ -230,14 +236,16 @@ function PeerRow({
             ? "nc-people-menu__follow nc-people-menu__follow--active"
             : "nc-people-menu__follow"
         }
-        title={followingThem ? "Stop following" : "Follow"}
+        title={
+          followingThem ? t("people.stopFollowing") : t("people.follow")
+        }
         onClick={(e) => {
           e.stopPropagation();
           if (followingThem) editor.stopFollowingUser();
           else editor.startFollowingUser(userId);
         }}
       >
-        {followingThem ? "Following" : "Follow"}
+        {followingThem ? t("people.following") : t("people.follow")}
       </button>
     </div>
   );

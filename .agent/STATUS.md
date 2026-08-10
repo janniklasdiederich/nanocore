@@ -10,11 +10,13 @@ _Last updated: 2026-08-11 after: initial scaffold — setup/auth/boards/sync/doc
 - **Users (admin)**: create with temp password, list, delete (not self / not last admin)
 - **Boards CRUD**: create, rename, delete, list
 - **Collab canvas**: tldraw + `@tldraw/sync` client; `@tldraw/sync-core` `TLSocketRoom` on Bun WebSockets; snapshots in SQLite; image upload
+- **People menu**: locked display names; portaled dropdown; follow/jump
+- **i18n**: English + German (type-safe catalogs); language switcher; tldraw locale synced
 - **Docker**: Dockerfile + docker-compose with volume for `/data`
 
 ## Current Task / Last Completed
 
-Greenfield v0.1 scaffolded and API smoke-tested (setup, boards, invite user, password change). Dev servers verified listening; production web build succeeds.
+Added en/de i18n with `web/src/i18n/en.ts` as source of truth and `de.ts` required to match all keys.
 
 ## Known Issues & TODOs
 

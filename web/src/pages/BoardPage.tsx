@@ -6,6 +6,8 @@ import "tldraw/tldraw.css";
 import { api, type Board } from "../api";
 import { useAuth } from "../auth";
 import { boardUiComponents } from "../components/LockedPeopleMenu";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
+import { useI18n, useT } from "../i18n";
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -44,6 +46,7 @@ function syncWsBase(): string {
 export function BoardPage() {
   const { id } = useParams<{ id: string }>();
   const { user, org } = useAuth();
+  const t = useT();
   const [board, setBoard] = useState<Board | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,24 +61,24 @@ export function BoardPage() {
   const userInfo = useMemo(
     () => ({
       id: user?.id ?? "anonymous",
-      name: user?.displayName ?? "Anonymous",
+      name: user?.displayName ?? t("board.anonymous"),
       color: user?.id ? colorFromId(user.id) : "#888888",
     }),
-    [user],
+    [user, t],
   );
 
   if (!id) {
-    return <div className="center-screen">Missing board id</div>;
+    return <div className="center-screen">{t("board.missingId")}</div>;
   }
 
   if (error) {
     return (
       <div className="center-screen">
         <div className="auth-card">
-          <h1>Could not open board</h1>
+          <h1>{t("board.openFailed")}</h1>
           <p className="subtitle">{error}</p>
           <Link className="btn btn-primary" to="/">
-            Back to boards
+            {t("board.backToBoards")}
           </Link>
         </div>
       </div>
@@ -88,25 +91,27 @@ export function BoardPage() {
         <div className="topbar-left">
           <Link to="/" className="brand" style={{ margin: 0 }}>
             <span className="brand-mark" aria-hidden />
-            <span className="topbar-title">{org?.name || "Nanocore"}</span>
+            <span className="topbar-title">
+              {org?.name || t("app.name")}
+            </span>
           </Link>
           <span className="topbar-meta">
-            / {board?.name ?? "Loading…"}
+            / {board?.name ?? t("board.loadingName")}
           </span>
         </div>
         <div className="topbar-actions">
+          <LanguageSwitcher compact />
           <span className="topbar-meta">{user?.displayName}</span>
           <Link className="btn btn-secondary btn-sm" to="/">
-            All boards
+            {t("nav.allBoards")}
           </Link>
         </div>
       </header>
       <div className="canvas">
-        {/* Only mount sync once we have a logged-in user id */}
         {user ? (
           <BoardCanvas boardId={id} userInfo={userInfo} />
         ) : (
-          <div className="canvas-status">Loading session…</div>
+          <div className="canvas-status">{t("board.loadingSession")}</div>
         )}
       </div>
     </div>
@@ -120,11 +125,11 @@ function BoardCanvas({
   boardId: string;
   userInfo: { id: string; name: string; color: string };
 }) {
+  const t = useT();
+  const { tldrawLocale } = useI18n();
+
   const uri = useMemo(() => {
     return async () => {
-      // Mint a short-lived token over HTTP (cookie auth via Vite proxy is fine).
-      // WebSocket then goes straight to the API with ?token=… — no cookie needed.
-      // Do NOT add sessionId; useSync reserves and appends it.
       const { token } = await api.getSyncToken(boardId);
       const base = syncWsBase();
       return `${base}/api/sync/${boardId}?token=${encodeURIComponent(token)}`;
@@ -139,13 +144,13 @@ function BoardCanvas({
 
   const onMount = useCallback(
     (editor: Editor) => {
-      // Pin identity to Nanocore account (ignore any localStorage name edits)
       editor.user.updateUserPreferences({
         name: userInfo.name,
         color: userInfo.color,
+        locale: tldrawLocale,
       });
     },
-    [userInfo.name, userInfo.color],
+    [userInfo.name, userInfo.color, tldrawLocale],
   );
 
   if (store.status === "loading") {
@@ -153,7 +158,7 @@ function BoardCanvas({
       <div className="canvas-status">
         <div>
           <div className="spinner" style={{ margin: "0 auto 12px" }} />
-          Connecting to board…
+          {t("board.connecting")}
         </div>
       </div>
     );
@@ -162,17 +167,19 @@ function BoardCanvas({
   if (store.status === "error") {
     return (
       <div className="canvas-status">
-        Connection error: {store.error?.message ?? "unknown"}
-        <div style={{ marginTop: 8, fontSize: 13 }}>
-          Is the API running on port 3001?
-        </div>
+        {t("board.connectionError", {
+          message: store.error?.message ?? "unknown",
+        })}
+        <div style={{ marginTop: 8, fontSize: 13 }}>{t("board.apiHint")}</div>
       </div>
     );
   }
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
+      {/* key forces remount so tldraw picks up locale cleanly */}
       <Tldraw
+        key={tldrawLocale}
         store={store}
         components={boardUiComponents}
         onMount={onMount}

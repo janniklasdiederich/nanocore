@@ -1,7 +1,9 @@
+import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
-import type { ReactNode } from "react";
+import { useT } from "../i18n";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export function AppShell({
   title,
@@ -12,6 +14,7 @@ export function AppShell({
 }) {
   const { user, org, clearSession } = useAuth();
   const navigate = useNavigate();
+  const t = useT();
 
   async function logout() {
     await api.logout();
@@ -25,18 +28,21 @@ export function AppShell({
         <div className="topbar-left">
           <Link to="/" className="brand" style={{ margin: 0 }}>
             <span className="brand-mark" aria-hidden />
-            <span className="topbar-title">{org?.name || "Nanocore"}</span>
+            <span className="topbar-title">
+              {org?.name || t("app.name")}
+            </span>
           </Link>
           {title && <span className="topbar-meta">/ {title}</span>}
         </div>
         <div className="topbar-actions">
+          <LanguageSwitcher compact />
           <span className="topbar-meta">
             {user?.displayName}
-            {user?.role === "admin" ? " · admin" : ""}
+            {user?.role === "admin" ? ` · ${t("common.admin")}` : ""}
           </span>
           {user?.role === "admin" && (
             <Link className="btn btn-secondary btn-sm" to="/users">
-              Users
+              {t("nav.users")}
             </Link>
           )}
           <button
@@ -44,7 +50,7 @@ export function AppShell({
             className="btn btn-secondary btn-sm"
             onClick={() => void logout()}
           >
-            Sign out
+            {t("common.signOut")}
           </button>
         </div>
       </header>

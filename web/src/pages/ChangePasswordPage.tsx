@@ -2,10 +2,13 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { useAuth } from "../auth";
+import { useT } from "../i18n";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
 
 export function ChangePasswordPage() {
   const { user, setSession, org, clearSession } = useAuth();
   const navigate = useNavigate();
+  const t = useT();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -16,7 +19,7 @@ export function ChangePasswordPage() {
     e.preventDefault();
     setError(null);
     if (newPassword !== confirm) {
-      setError("New passwords do not match");
+      setError(t("password.mismatch"));
       return;
     }
     setBusy(true);
@@ -25,7 +28,9 @@ export function ChangePasswordPage() {
       setSession(res.user, org);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not change password");
+      setError(
+        err instanceof ApiError ? err.message : t("password.failed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -40,19 +45,22 @@ export function ChangePasswordPage() {
   return (
     <div className="center-screen">
       <form className="auth-card" onSubmit={onSubmit}>
+        <div className="auth-card__lang">
+          <LanguageSwitcher compact />
+        </div>
         <div className="brand">
           <span className="brand-mark" aria-hidden />
-          {org?.name || "Nanocore"}
+          {org?.name || t("app.name")}
         </div>
-        <h1>Choose a new password</h1>
+        <h1>{t("password.title")}</h1>
         <p className="subtitle">
           {user?.mustChangePassword
-            ? "Your admin set a temporary password. Pick a new one to continue."
-            : "Update your password."}
+            ? t("password.subtitleTemp")
+            : t("password.subtitleUpdate")}
         </p>
         {error && <div className="error-banner">{error}</div>}
         <div className="field">
-          <label htmlFor="current">Current password</label>
+          <label htmlFor="current">{t("password.current")}</label>
           <input
             id="current"
             type="password"
@@ -63,7 +71,7 @@ export function ChangePasswordPage() {
           />
         </div>
         <div className="field">
-          <label htmlFor="new">New password (min 8 characters)</label>
+          <label htmlFor="new">{t("password.new")}</label>
           <input
             id="new"
             type="password"
@@ -75,7 +83,7 @@ export function ChangePasswordPage() {
           />
         </div>
         <div className="field">
-          <label htmlFor="confirm">Confirm new password</label>
+          <label htmlFor="confirm">{t("password.confirm")}</label>
           <input
             id="confirm"
             type="password"
@@ -87,7 +95,7 @@ export function ChangePasswordPage() {
           />
         </div>
         <button className="btn btn-primary" type="submit" disabled={busy}>
-          {busy ? "Saving…" : "Save password"}
+          {busy ? t("common.saving") : t("password.save")}
         </button>
         <button
           type="button"
@@ -95,7 +103,7 @@ export function ChangePasswordPage() {
           style={{ width: "100%", marginTop: 10 }}
           onClick={() => void logout()}
         >
-          Sign out
+          {t("common.signOut")}
         </button>
       </form>
     </div>

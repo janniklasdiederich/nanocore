@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { api, ApiError, type User } from "../api";
 import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
+import { useT } from "../i18n";
 
 export function UsersPage() {
   const { user: me } = useAuth();
+  const t = useT();
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -16,32 +18,38 @@ export function UsersPage() {
       setUsers(res.users);
       setError(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load users");
+      setError(
+        err instanceof ApiError ? err.message : t("users.loadFailed"),
+      );
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   async function removeUser(user: User) {
-    if (!window.confirm(`Remove ${user.email}?`)) return;
+    if (!window.confirm(t("users.removeConfirm", { email: user.email }))) {
+      return;
+    }
     try {
       await api.deleteUser(user.id);
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Delete failed");
+      setError(
+        err instanceof ApiError ? err.message : t("users.deleteFailed"),
+      );
     }
   }
 
   return (
-    <AppShell title="Users">
+    <AppShell title={t("users.title")}>
       <div className="page-header">
         <div>
-          <h1>Users</h1>
+          <h1>{t("users.title")}</h1>
           <p>
-            Only admins can create accounts.{" "}
-            <Link to="/">← Back to boards</Link>
+            {t("users.subtitle")}{" "}
+            <Link to="/">{t("users.backToBoards")}</Link>
           </p>
         </div>
         <button
@@ -50,7 +58,7 @@ export function UsersPage() {
           style={{ width: "auto" }}
           onClick={() => setShowCreate(true)}
         >
-          Add user
+          {t("users.add")}
         </button>
       </div>
 
@@ -59,10 +67,10 @@ export function UsersPage() {
       <table className="table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
+            <th>{t("users.colName")}</th>
+            <th>{t("users.colEmail")}</th>
+            <th>{t("users.colRole")}</th>
+            <th>{t("users.colStatus")}</th>
             <th />
           </tr>
         </thead>
@@ -77,14 +85,16 @@ export function UsersPage() {
                     user.role === "admin" ? "badge badge-admin" : "badge"
                   }
                 >
-                  {user.role}
+                  {user.role === "admin"
+                    ? t("role.admin")
+                    : t("role.member")}
                 </span>
               </td>
               <td>
                 {user.mustChangePassword ? (
-                  <span className="badge">temp password</span>
+                  <span className="badge">{t("status.tempPassword")}</span>
                 ) : (
-                  <span className="badge">active</span>
+                  <span className="badge">{t("status.active")}</span>
                 )}
               </td>
               <td>
@@ -94,7 +104,7 @@ export function UsersPage() {
                     className="btn btn-danger btn-sm"
                     onClick={() => void removeUser(user)}
                   >
-                    Remove
+                    {t("common.remove")}
                   </button>
                 )}
               </td>
@@ -123,6 +133,7 @@ function CreateUserModal({
   onClose: () => void;
   onCreated: (user: User) => void;
 }) {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -141,7 +152,9 @@ function CreateUserModal({
       });
       onCreated(res.user);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not create user");
+      setError(
+        err instanceof ApiError ? err.message : t("users.createFailed"),
+      );
     } finally {
       setBusy(false);
     }
@@ -150,23 +163,20 @@ function CreateUserModal({
   return (
     <div className="modal-backdrop" role="dialog" aria-modal="true">
       <form className="modal" onSubmit={onSubmit}>
-        <h2>Add user</h2>
-        <p>
-          They sign in with this email and temporary password, then must choose
-          a new password.
-        </p>
+        <h2>{t("users.createTitle")}</h2>
+        <p>{t("users.createHelp")}</p>
         {error && <div className="error-banner">{error}</div>}
         <div className="field">
-          <label htmlFor="cu-name">Display name</label>
+          <label htmlFor="cu-name">{t("users.displayName")}</label>
           <input
             id="cu-name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Optional"
+            placeholder={t("common.optional")}
           />
         </div>
         <div className="field">
-          <label htmlFor="cu-email">Email</label>
+          <label htmlFor="cu-email">{t("users.email")}</label>
           <input
             id="cu-email"
             type="email"
@@ -176,7 +186,7 @@ function CreateUserModal({
           />
         </div>
         <div className="field">
-          <label htmlFor="cu-pass">Temporary password</label>
+          <label htmlFor="cu-pass">{t("users.tempPassword")}</label>
           <input
             id="cu-pass"
             type="password"
@@ -192,7 +202,7 @@ function CreateUserModal({
             className="btn btn-secondary btn-sm"
             onClick={onClose}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             type="submit"
@@ -200,7 +210,7 @@ function CreateUserModal({
             style={{ width: "auto" }}
             disabled={busy}
           >
-            {busy ? "Creating…" : "Create"}
+            {busy ? t("common.creating") : t("common.create")}
           </button>
         </div>
       </form>
