@@ -495,18 +495,16 @@ input {
   padding: 0 6px;
 }
 
+/* Position is applied inline (fixed + top/right) so the menu escapes
+   tldraw's panel stacking context and paints above the style panel. */
 .nc-people-menu__panel {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
   min-width: 260px;
   max-width: 320px;
   background: var(--bg-elevated, #141820);
   border: 1px solid var(--border, #2a3344);
   border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   overflow: hidden;
-  z-index: 500;
   pointer-events: all;
 }
 

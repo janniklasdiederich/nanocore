@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import {
   useEditor,
   usePeerIds,
@@ -9,10 +17,8 @@ import {
 
 /**
  * Share / people panel with a read-only display name.
- * Names are owned by Nanocore user management (admin-created accounts).
- *
- * Note: tldraw UI chrome uses pointer-events: none on layout zones;
- * interactive bits must set pointer-events: all (see styles).
+ * Dropdown is portaled so it stacks above tldraw's style panel
+ * (share zone lives under --layer-panels; menus need --layer-menus).
  */
 function NanocoreSharePanel() {
   return (
@@ -21,6 +27,8 @@ function NanocoreSharePanel() {
     </div>
   );
 }
+
+type PanelPos = { top: number; right: number };
 
 function NanocorePeopleMenu() {
   const editor = useEditor();
@@ -32,18 +40,47 @@ function NanocorePeopleMenu() {
   );
   const userName = useValue("userName", () => editor.user.getName(), [editor]);
   const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState<PanelPos>({ top: 0, right: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
 
   const close = useCallback(() => setOpen(false), []);
 
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setPos({
+      top: rect.bottom + 6,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updatePosition();
+  }, [open, updatePosition, userIds.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onResize = () => updatePosition();
+    window.addEventListener("resize", onResize);
+    // Capture scroll on any ancestor (tldraw may scroll containers)
+    window.addEventListener("scroll", onResize, true);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onResize, true);
+    };
+  }, [open, updatePosition]);
+
   useEffect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      const el = rootRef.current;
-      if (el && !el.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t)) return;
+      if (panelRef.current?.contains(t)) return;
+      setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -59,9 +96,52 @@ function NanocorePeopleMenu() {
   // Match tldraw default: only show when someone else is on the board
   if (!userIds.length) return null;
 
+  const panel = open
+    ? createPortal(
+        <div
+          ref={panelRef}
+          id={panelId}
+          className="nc-people-menu__panel"
+          role="menu"
+          style={{
+            position: "fixed",
+            top: pos.top,
+            right: pos.right,
+            // Above tldraw panels (300) and menus (400); below following indicator (1000)
+            zIndex: 900,
+          }}
+        >
+          <div className="nc-people-menu__section">
+            <div className="nc-people-menu__self">
+              <div
+                className="nc-people-menu__avatar"
+                style={{ backgroundColor: userColor }}
+                aria-hidden
+              >
+                {(userName?.[0] ?? "?").toUpperCase()}
+              </div>
+              <div className="nc-people-menu__self-text">
+                <div className="nc-people-menu__name">{userName || "You"}</div>
+                <div className="nc-people-menu__hint">
+                  Name is set by your organization
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="nc-people-menu__section">
+            {userIds.map((userId) => (
+              <PeerRow key={userId} userId={userId} onActed={close} />
+            ))}
+          </div>
+        </div>,
+        document.body,
+      )
+    : null;
+
   return (
-    <div className="nc-people-menu" ref={rootRef}>
+    <div className="nc-people-menu">
       <button
+        ref={triggerRef}
         type="button"
         className="nc-people-menu__trigger"
         title="People on this board"
@@ -84,39 +164,7 @@ function NanocorePeopleMenu() {
           )}
         </div>
       </button>
-
-      {open && (
-        <div
-          id={panelId}
-          className="nc-people-menu__panel"
-          role="menu"
-        >
-          <div className="nc-people-menu__section">
-            <div className="nc-people-menu__self">
-              <div
-                className="nc-people-menu__avatar"
-                style={{ backgroundColor: userColor }}
-                aria-hidden
-              >
-                {(userName?.[0] ?? "?").toUpperCase()}
-              </div>
-              <div className="nc-people-menu__self-text">
-                <div className="nc-people-menu__name">
-                  {userName || "You"}
-                </div>
-                <div className="nc-people-menu__hint">
-                  Name is set by your organization
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="nc-people-menu__section">
-            {userIds.map((userId) => (
-              <PeerRow key={userId} userId={userId} onActed={close} />
-            ))}
-          </div>
-        </div>
-      )}
+      {panel}
     </div>
   );
 }
@@ -145,7 +193,6 @@ function PeerRow({
 }) {
   const editor = useEditor();
   const presence = usePresence(userId);
-  // Re-render when follow target changes
   const followingUserId = useValue(
     "following",
     () => editor.getInstanceState().followingUserId,
