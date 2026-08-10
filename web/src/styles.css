@@ -434,3 +434,145 @@ input {
   z-index: 5;
   color: var(--text-muted);
 }
+
+/* People menu (presence) — names are not editable */
+.nc-people-menu {
+  position: relative;
+  margin: 4px 8px 0 0;
+}
+
+.nc-people-menu__trigger {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px;
+  border: 1px solid var(--border, #2a3344);
+  background: color-mix(in srgb, var(--bg-elevated, #141820) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.nc-people-menu__trigger::-webkit-details-marker {
+  display: none;
+}
+
+.nc-people-menu__avatars {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  padding: 2px 4px;
+}
+
+.nc-people-menu__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0b1020;
+  border: 2px solid var(--bg-elevated, #141820);
+  margin-left: -8px;
+  user-select: none;
+}
+
+.nc-people-menu__avatar:last-child,
+.nc-people-menu__avatars > :first-child {
+  margin-left: 0;
+}
+
+.nc-people-menu__more {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #8b95a8);
+  padding: 0 6px;
+}
+
+.nc-people-menu__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--bg-elevated, #141820);
+  border: 1px solid var(--border, #2a3344);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  z-index: 300;
+}
+
+.nc-people-menu__section {
+  padding: 10px;
+  border-bottom: 1px solid var(--border, #2a3344);
+}
+
+.nc-people-menu__section:last-child {
+  border-bottom: none;
+}
+
+.nc-people-menu__self {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nc-people-menu__self .nc-people-menu__avatar {
+  margin: 0;
+  border-width: 0;
+}
+
+.nc-people-menu__self-text {
+  min-width: 0;
+}
+
+.nc-people-menu__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nc-people-menu__hint {
+  font-size: 0.75rem;
+  color: var(--text-muted, #8b95a8);
+  margin-top: 2px;
+}
+
+.nc-people-menu__peer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 8px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.nc-people-menu__peer:hover {
+  background: var(--bg-soft, #1a2030);
+}
+
+.nc-people-menu__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.nc-people-menu__following {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--accent, #6c8cff);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

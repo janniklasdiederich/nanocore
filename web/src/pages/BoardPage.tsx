@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Tldraw, type TLAssetStore } from "tldraw";
+import { Tldraw, type Editor, type TLAssetStore } from "tldraw";
 import { useSync } from "@tldraw/sync";
 import "tldraw/tldraw.css";
 import { api, type Board } from "../api";
 import { useAuth } from "../auth";
+import { boardUiComponents } from "../components/LockedPeopleMenu";
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -136,6 +137,17 @@ function BoardCanvas({
     userInfo,
   });
 
+  const onMount = useCallback(
+    (editor: Editor) => {
+      // Pin identity to Nanocore account (ignore any localStorage name edits)
+      editor.user.updateUserPreferences({
+        name: userInfo.name,
+        color: userInfo.color,
+      });
+    },
+    [userInfo.name, userInfo.color],
+  );
+
   if (store.status === "loading") {
     return (
       <div className="canvas-status">
@@ -160,7 +172,11 @@ function BoardCanvas({
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
-      <Tldraw store={store} />
+      <Tldraw
+        store={store}
+        components={boardUiComponents}
+        onMount={onMount}
+      />
     </div>
   );
 }
