@@ -16,12 +16,12 @@ import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import {
-  registerSoftArrows,
-  SoftArrowShapeUtil,
-} from "../tldraw/softArrows";
+  registerSCurveArrows,
+  SCurveArrowShapeUtil,
+} from "../tldraw/sCurveArrows";
 import { boardTextOptions } from "../tldraw/textOptions";
 
-const boardShapeUtils = [SoftArrowShapeUtil];
+const boardShapeUtils = [SCurveArrowShapeUtil];
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -154,8 +154,8 @@ function BoardCanvas({
       });
       // Convert leftover markdown → rich text when leaving the text editor
       const stopMarkdown = registerMarkdownOnEditEnd(editor);
-      // Soft auto-curve for arc arrows (Miro-like default, not dead-straight)
-      const stopArrows = registerSoftArrows(editor);
+      // Cubic S-curve arcs (Miro-like); middle handle adjusts strength
+      const stopArrows = registerSCurveArrows(editor);
       return () => {
         stopMarkdown();
         stopArrows();
