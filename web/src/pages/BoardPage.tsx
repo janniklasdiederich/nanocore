@@ -7,13 +7,14 @@ import { api, type Board } from "../api";
 import { useAuth } from "../auth";
 import { boardUiComponents } from "../components/LockedPeopleMenu";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
+import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch("/api/assets/upload", {
+    const res = await fetch(apiUrl("/api/assets/upload"), {
       method: "POST",
       body: form,
       credentials: "include",
@@ -22,26 +23,15 @@ const multiplayerAssets: TLAssetStore = {
       throw new Error("Upload failed");
     }
     const data = (await res.json()) as { src: string };
-    const src = new URL(data.src, window.location.origin).href;
+    // Resolve relative asset paths against API origin when split-hosted
+    const base = apiOrigin() || window.location.origin;
+    const src = new URL(data.src, base).href;
     return { src };
   },
   resolve(asset) {
     return asset.props.src;
   },
 };
-
-/** WebSocket base — hit the API directly in dev (Vite's HTTP proxy is flaky for WS). */
-function syncWsBase(): string {
-  const fromEnv = import.meta.env.VITE_WS_URL as string | undefined;
-  if (fromEnv) return fromEnv.replace(/\/$/, "");
-
-  if (import.meta.env.DEV) {
-    return "ws://localhost:3001";
-  }
-
-  const proto = window.location.protocol === "https:" ? "wss" : "ws";
-  return `${proto}://${window.location.host}`;
-}
 
 export function BoardPage() {
   const { id } = useParams<{ id: string }>();

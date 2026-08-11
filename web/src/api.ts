@@ -1,3 +1,5 @@
+import { apiUrl } from "./config";
+
 export type User = {
   id: string;
   email: string;
@@ -57,7 +59,7 @@ async function request<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(apiUrl(path), {
     ...init,
     credentials: "include",
     headers: {
@@ -148,9 +150,12 @@ export const api = {
     request<{ ok: boolean }>(`/api/invites/${id}`, { method: "DELETE" }),
 
   previewInvite: async (token: string) => {
-    const res = await fetch(`/api/invite/${encodeURIComponent(token)}`, {
-      credentials: "include",
-    });
+    const res = await fetch(
+      apiUrl(`/api/invite/${encodeURIComponent(token)}`),
+      {
+        credentials: "include",
+      },
+    );
     const data = (await res.json().catch(() => ({}))) as InvitePreview & {
       error?: string;
       code?: string;

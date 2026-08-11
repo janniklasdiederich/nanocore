@@ -22,6 +22,9 @@ cp .env.example .env   # optional for local defaults
 | `SESSION_SECRET` | Session token hashing salt | Prod yes | `dev-only-change-me` |
 | `WEB_DIST` | Built SPA path (production serve) | No | `../web/dist` relative to server |
 | `NODE_ENV` | Set `production` for secure cookies | No | — |
+| `VITE_API_URL` | API origin baked into web build | No | same-origin `/api` |
+| `VITE_WS_URL` | WebSocket origin override | No | from `VITE_API_URL` / defaults |
+| `WEB_PORT` | `bun run start:web` listen port | No | `4173` |
 
 ## Running the Project
 
@@ -39,6 +42,14 @@ Open http://localhost:5173 — first visit runs setup.
 ```bash
 bun run build        # builds web/
 PORT=3001 DATA_DIR=./data SESSION_SECRET=… bun run start
+```
+
+**Production (UI via Vite preview):**
+
+```bash
+bun run start                          # API :3001
+VITE_API_URL=http://localhost:3001 bun run build:web
+WEB_PORT=4173 bun run start:web        # UI :4173
 ```
 
 **Docker:**
