@@ -41,24 +41,30 @@ PORT=3001 DATA_DIR=./data bun run start
 
 ## Production (split UI + API)
 
-Run the API and a static Vite preview for the client. Set `VITE_API_URL` **when building** the client so API/WebSocket calls hit the server:
+API on one port, Vite preview for the UI on another. **WebSockets must hit the API port** (not the UI port).
 
 ```bash
-# terminal 1 — API
-PORT=3001 DATA_DIR=./data SESSION_SECRET=… bun run start
+# 1) Root .env (example)
+# VITE_API_URL=http://YOUR_IP:3001
+# VITE_WS_URL=ws://YOUR_IP:3001
+# WEB_PORT=4173
 
-# build client with API origin baked in, then serve
-VITE_API_URL=http://localhost:3001 bun run build:web
-WEB_PORT=4173 bun run start:web
+# 2) API
+bun run start
+
+# 3) Build once, then start UI (start:web writes dist/config.js from .env)
+bun run build:web
+bun run start:web
 ```
 
-Open `http://localhost:4173`.  
-`start:web` is `vite preview` and also proxies `/api` to `VITE_API_URL` (or `http://localhost:3001`) if you built **without** `VITE_API_URL` and rely on relative paths.
+Open `http://YOUR_IP:4173`. Boards connect to `ws://YOUR_IP:3001/api/sync/...`.
+
+If the browser still tries `ws://…:4173/api/sync`, restart `start:web` so `config.js` is regenerated, then hard-refresh.
 
 | Variable | Used for |
 |---|---|
-| `VITE_API_URL` | Client → API base URL (build-time) |
-| `VITE_WS_URL` | Optional board WebSocket origin |
+| `VITE_API_URL` | Client → API base (runtime `config.js` + build) |
+| `VITE_WS_URL` | Board WebSocket origin (defaults from API URL) |
 | `WEB_PORT` | Port for `start:web` (default 4173) |
 
 

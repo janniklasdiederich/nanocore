@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "start": "vite preview --host",
+    "write-config": "bun run scripts/write-runtime-config.ts",
+    "start": "bun run write-config && vite preview --host",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
