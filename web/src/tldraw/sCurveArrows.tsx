@@ -1,7 +1,7 @@
 import {
   ArrowShapeUtil,
-  CubicBezier2d,
   Group2d,
+  Polyline2d,
   STROKE_SIZES,
   SVGContainer,
   Vec,
@@ -9,12 +9,12 @@ import {
   getArrowInfo,
   getArrowTerminalsInArrowSpace,
   getDefaultColorTheme,
+  track,
   useDefaultColorTheme,
   useEditor,
   useValue,
   type Editor,
   type TLArrowShape,
-  type TLShapeId,
 } from "tldraw";
 
 type Pt = { x: number; y: number };
@@ -28,9 +28,8 @@ export type SCurveControls = {
 
 /**
  * Miro-like cubic S-curve control points.
- * - CPs sit a fraction along the chord from each end
- * - Lateral offsets go opposite ways → classic S
- * - `bend` (from the middle handle) scales how strong the S is
+ * CPs sit along the chord from each end with opposite lateral offsets → S shape.
+ * `bend` (middle handle) scales S strength.
  */
 export function getSCurveControls(
   start: Pt,
@@ -43,28 +42,20 @@ export function getSCurveControls(
   const len = Math.hypot(dx, dy);
 
   if (len < 1) {
-    return {
-      start,
-      end,
-      cp1: { ...start },
-      cp2: { ...end },
-    };
+    return { start, end, cp1: { ...start }, cp2: { ...end } };
   }
 
   const ux = dx / len;
   const uy = dy / len;
-  // Perpendicular (left of direction)
   const px = -uy;
   const py = ux;
 
-  // How far control points sit along the chord from each tip (Miro-like)
   const along = len * 0.4;
-
-  // Lateral S strength — always at least a bit curved; middle-handle bend scales it
   const minSide = Math.min(len * 0.14, 28 * scale);
   const maxSide = Math.min(len * 0.45, 120 * scale);
   const sign = bend === 0 ? -1 : Math.sign(bend);
-  const side = sign * Math.min(maxSide, Math.max(minSide, Math.abs(bend) || minSide));
+  const side =
+    sign * Math.min(maxSide, Math.max(minSide, Math.abs(bend) || minSide));
 
   return {
     start,
@@ -80,12 +71,19 @@ export function getSCurveControls(
   };
 }
 
-/** Resolve arrow endpoints in shape-local space (respects bindings). */
+/** Binding-aware endpoints in arrow-local space (for free + sticky-bound arrows). */
 export function getArrowEndpoints(
   editor: Editor,
   shape: TLArrowShape,
 ): { start: Pt; end: Pt } | null {
   try {
+    const info = getArrowInfo(editor, shape);
+    if (info?.isValid) {
+      return {
+        start: { x: info.start.point.x, y: info.start.point.y },
+        end: { x: info.end.point.x, y: info.end.point.y },
+      };
+    }
     const bindings = getArrowBindings(editor, shape);
     const terminals = getArrowTerminalsInArrowSpace(editor, shape, bindings);
     return {
@@ -94,8 +92,8 @@ export function getArrowEndpoints(
     };
   } catch {
     return {
-      start: shape.props.start,
-      end: shape.props.end,
+      start: { ...shape.props.start },
+      end: { ...shape.props.end },
     };
   }
 }
@@ -104,12 +102,33 @@ function sCurvePathD(c: SCurveControls): string {
   return `M ${c.start.x} ${c.start.y} C ${c.cp1.x} ${c.cp1.y}, ${c.cp2.x} ${c.cp2.y}, ${c.end.x} ${c.end.y}`;
 }
 
-/** Simple filled arrowhead at a tip, oriented by control-point tangent. */
+function sampleSCurve(c: SCurveControls, n = 28): Vec[] {
+  const pts: Vec[] = [];
+  const { start: a, cp1: b, cp2: c2, end: d } = c;
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const u = 1 - t;
+    pts.push(
+      new Vec(
+        u * u * u * a.x +
+          3 * u * u * t * b.x +
+          3 * u * t * t * c2.x +
+          t * t * t * d.x,
+        u * u * u * a.y +
+          3 * u * u * t * b.y +
+          3 * u * t * t * c2.y +
+          t * t * t * d.y,
+      ),
+    );
+  }
+  return pts;
+}
+
 function arrowheadPath(
   tip: Pt,
   toward: Pt,
   strokeWidth: number,
-  kind: "none" | "arrow" | string,
+  kind: string,
 ): string | null {
   if (kind === "none") return null;
   const dx = tip.x - toward.x;
@@ -120,41 +139,40 @@ function arrowheadPath(
   const size = Math.max(strokeWidth * 2.8, 8);
   const baseX = tip.x - ux * size;
   const baseY = tip.y - uy * size;
-  // Perpendicular for wing tips
   const wx = -uy * size * 0.55;
   const wy = ux * size * 0.55;
 
-  if (kind === "triangle" || kind === "arrow") {
-    // Open V for classic arrow, closed triangle for "triangle"
-    if (kind === "arrow") {
-      return `M ${baseX + wx} ${baseY + wy} L ${tip.x} ${tip.y} L ${baseX - wx} ${baseY - wy}`;
-    }
+  if (kind === "triangle") {
     return `M ${baseX + wx} ${baseY + wy} L ${tip.x} ${tip.y} L ${baseX - wx} ${baseY - wy} Z`;
   }
-
-  // Fallback: same open arrow for other head styles we don't fully reimplement
+  // open arrow and other styles
   return `M ${baseX + wx} ${baseY + wy} L ${tip.x} ${tip.y} L ${baseX - wx} ${baseY - wy}`;
 }
 
-function defaultSoftBend(shape: TLArrowShape): number {
-  const len = Math.hypot(
-    shape.props.end.x - shape.props.start.x,
-    shape.props.end.y - shape.props.start.y,
+function controlsFor(
+  editor: Editor,
+  shape: TLArrowShape,
+): SCurveControls | null {
+  const endpoints = getArrowEndpoints(editor, shape);
+  if (!endpoints) return null;
+  return getSCurveControls(
+    endpoints.start,
+    endpoints.end,
+    shape.props.bend,
+    shape.props.scale,
   );
-  const scale = shape.props.scale || 1;
-  return -Math.min(72 * scale, Math.max(16 * scale, len * 0.18));
 }
 
 /**
- * Arc arrows rendered as cubic S-curves (Miro-style flexible connectors).
- * Elbow arrows still use the stock orthogonal routing.
+ * Arc arrows as real cubic S-curves. Elbow mode stays stock.
+ * Uses reactive `track()` so bindings update when sticky notes move.
  */
 export class SCurveArrowShapeUtil extends ArrowShapeUtil {
   getDefaultProps(): TLArrowShape["props"] {
     return {
       ...super.getDefaultProps(),
       kind: "arc",
-      bend: -28,
+      bend: -32,
     };
   }
 
@@ -163,29 +181,24 @@ export class SCurveArrowShapeUtil extends ArrowShapeUtil {
       return super.getGeometry(shape);
     }
 
-    const endpoints = getArrowEndpoints(this.editor, shape);
-    if (!endpoints) return super.getGeometry(shape);
+    const c = controlsFor(this.editor, shape);
+    if (!c) return super.getGeometry(shape);
 
-    const c = getSCurveControls(
-      endpoints.start,
-      endpoints.end,
-      shape.props.bend,
-      shape.props.scale,
-    );
+    // Sampled polyline hits reliably (same approach as tldraw’s polyline bodies)
+    const points = sampleSCurve(c, 32);
+    if (points.length < 2) return super.getGeometry(shape);
 
-    // Group2d to match ArrowShapeUtil's return type (body ± optional label)
     return new Group2d({
       children: [
-        new CubicBezier2d({
-          start: new Vec(c.start.x, c.start.y),
-          cp1: new Vec(c.cp1.x, c.cp1.y),
-          cp2: new Vec(c.cp2.x, c.cp2.y),
-          end: new Vec(c.end.x, c.end.y),
-          resolution: 24,
+        new Polyline2d({
+          points,
         }),
       ],
     });
   }
+
+  // Keep stock handles (start / middle / end) so arrows stay selectable & editable
+  // getHandles → super
 
   component(shape: TLArrowShape) {
     if (shape.props.kind === "elbow") {
@@ -205,14 +218,8 @@ export class SCurveArrowShapeUtil extends ArrowShapeUtil {
     if (shape.props.kind === "elbow") {
       return super.toSvg(shape, ctx);
     }
-    const endpoints = getArrowEndpoints(this.editor, shape);
-    if (!endpoints) return super.toSvg(shape, ctx);
-    const c = getSCurveControls(
-      endpoints.start,
-      endpoints.end,
-      shape.props.bend,
-      shape.props.scale,
-    );
+    const c = controlsFor(this.editor, shape);
+    if (!c) return super.toSvg(shape, ctx);
     const strokeWidth = STROKE_SIZES[shape.props.size] * shape.props.scale;
     const theme = getDefaultColorTheme({
       isDarkMode: ctx.isDarkMode ?? false,
@@ -240,9 +247,9 @@ export class SCurveArrowShapeUtil extends ArrowShapeUtil {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {head && (
+        {headStart && (
           <path
-            d={head}
+            d={headStart}
             fill="none"
             stroke={color}
             strokeWidth={strokeWidth}
@@ -250,9 +257,9 @@ export class SCurveArrowShapeUtil extends ArrowShapeUtil {
             strokeLinejoin="round"
           />
         )}
-        {headStart && (
+        {head && (
           <path
-            d={headStart}
+            d={head}
             fill="none"
             stroke={color}
             strokeWidth={strokeWidth}
@@ -265,20 +272,25 @@ export class SCurveArrowShapeUtil extends ArrowShapeUtil {
   }
 }
 
-function SCurveArrowSvg({ shape }: { shape: TLArrowShape }) {
+/** track() re-renders when bound shapes move (sticky notes, etc.). */
+const SCurveArrowSvg = track(function SCurveArrowSvg({
+  shape,
+}: {
+  shape: TLArrowShape;
+}) {
   const editor = useEditor();
   const theme = useDefaultColorTheme();
   const zoom = useValue("zoom", () => editor.getZoomLevel(), [editor]);
 
-  const endpoints = getArrowEndpoints(editor, shape);
-  if (!endpoints) return null;
+  // Read bindings so `track` subscribes to them
+  const bindings = getArrowBindings(editor, shape);
+  void bindings;
+  // Also touch bound shape records for transform tracking
+  if (bindings.start) editor.getShape(bindings.start.toId);
+  if (bindings.end) editor.getShape(bindings.end.toId);
 
-  const c = getSCurveControls(
-    endpoints.start,
-    endpoints.end,
-    shape.props.bend,
-    shape.props.scale,
-  );
+  const c = controlsFor(editor, shape);
+  if (!c) return null;
 
   const strokeWidth = STROKE_SIZES[shape.props.size] * shape.props.scale;
   const color = theme[shape.props.color].solid;
@@ -295,12 +307,10 @@ function SCurveArrowSvg({ shape }: { shape: TLArrowShape }) {
     shape.props.arrowheadStart,
   );
 
-  // Hint line when bound (same idea as stock arrows)
-  const bindings = getArrowBindings(editor, shape);
   const info = getArrowInfo(editor, shape);
   const showHint =
-    (bindings.start || bindings.end) &&
-    info &&
+    !!(bindings.start || bindings.end) &&
+    !!info &&
     editor.getOnlySelectedShapeId() === shape.id;
 
   return (
@@ -313,7 +323,7 @@ function SCurveArrowSvg({ shape }: { shape: TLArrowShape }) {
         strokeLinejoin="round"
         pointerEvents="none"
       >
-        {showHint && (
+        {showHint && info && (
           <path
             d={`M ${info.start.handle.x} ${info.start.handle.y} L ${info.end.handle.x} ${info.end.handle.y}`}
             className="tl-arrow-hint"
@@ -328,111 +338,32 @@ function SCurveArrowSvg({ shape }: { shape: TLArrowShape }) {
       </g>
     </SVGContainer>
   );
-}
+});
 
-function SCurveArrowIndicator({ shape }: { shape: TLArrowShape }) {
+const SCurveArrowIndicator = track(function SCurveArrowIndicator({
+  shape,
+}: {
+  shape: TLArrowShape;
+}) {
   const editor = useEditor();
-  const endpoints = getArrowEndpoints(editor, shape);
-  if (!endpoints) return null;
-  const c = getSCurveControls(
-    endpoints.start,
-    endpoints.end,
-    shape.props.bend,
-    shape.props.scale,
-  );
+  const bindings = getArrowBindings(editor, shape);
+  if (bindings.start) editor.getShape(bindings.start.toId);
+  if (bindings.end) editor.getShape(bindings.end.toId);
+
+  const c = controlsFor(editor, shape);
+  if (!c) return null;
   return <path d={sCurvePathD(c)} />;
-}
+});
 
 /**
- * Keep S-curve strength (bend) proportional to length while autoCurve is on.
- * Dragging the middle handle freezes auto and becomes manual intensity control.
+ * No continuous store rewriting — that broke selection/moving.
+ * Bend defaults from getDefaultProps; middle handle still adjusts S strength.
  */
-export function registerSCurveArrows(editor: Editor): () => void {
-  const applying = new Set<TLShapeId>();
-  let prevById = new Map<TLShapeId, TLArrowShape>();
-
-  const apply = (shape: TLArrowShape) => {
-    if (applying.has(shape.id)) return;
-    if (shape.props.kind !== "arc") return;
-    const meta = shape.meta as { autoCurve?: boolean };
-    if (meta.autoCurve === false) return;
-
-    const bend = defaultSoftBend(shape);
-    if (Math.abs(shape.props.bend - bend) < 0.75) {
-      if (meta.autoCurve === undefined) {
-        applying.add(shape.id);
-        editor.updateShape({
-          id: shape.id,
-          type: "arrow",
-          meta: { ...shape.meta, autoCurve: true },
-        });
-        applying.delete(shape.id);
-      }
-      return;
-    }
-
-    applying.add(shape.id);
-    editor.updateShape({
-      id: shape.id,
-      type: "arrow",
-      props: { bend },
-      meta: { ...shape.meta, autoCurve: true },
-    });
-    applying.delete(shape.id);
-  };
-
-  return editor.store.listen(
-    () => {
-      const arrows = editor
-        .getCurrentPageShapes()
-        .filter((s): s is TLArrowShape => s.type === "arrow");
-
-      const nextById = new Map<TLShapeId, TLArrowShape>();
-
-      for (const shape of arrows) {
-        nextById.set(shape.id, shape);
-        const prev = prevById.get(shape.id);
-
-        if (!prev) {
-          apply(shape);
-          continue;
-        }
-        if (applying.has(shape.id)) continue;
-
-        // Middle-handle / manual bend change → stop auto
-        if (
-          prev.props.bend !== shape.props.bend &&
-          (prev.meta as { autoCurve?: boolean }).autoCurve !== false &&
-          Math.abs(shape.props.bend - defaultSoftBend(shape)) > 2
-        ) {
-          applying.add(shape.id);
-          editor.updateShape({
-            id: shape.id,
-            type: "arrow",
-            meta: { ...shape.meta, autoCurve: false },
-          });
-          applying.delete(shape.id);
-          continue;
-        }
-
-        if (
-          prev.props.start.x !== shape.props.start.x ||
-          prev.props.start.y !== shape.props.start.y ||
-          prev.props.end.x !== shape.props.end.x ||
-          prev.props.end.y !== shape.props.end.y ||
-          prev.props.scale !== shape.props.scale
-        ) {
-          apply(shape);
-        }
-      }
-
-      prevById = nextById;
-    },
-    { source: "all", scope: "document" },
-  );
+export function registerSCurveArrows(_editor: Editor): () => void {
+  return () => {};
 }
 
-/** @deprecated use SCurveArrowShapeUtil */
+/** @deprecated */
 export const SoftArrowShapeUtil = SCurveArrowShapeUtil;
-/** @deprecated use registerSCurveArrows */
+/** @deprecated */
 export const registerSoftArrows = registerSCurveArrows;
