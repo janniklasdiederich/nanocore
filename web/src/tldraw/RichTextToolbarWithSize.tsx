@@ -1,40 +1,45 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DefaultRichTextToolbar,
   DefaultRichTextToolbarContent,
-  TldrawUiToolbarButton,
   useEditor,
   useValue,
 } from "tldraw";
-import { DEFAULT_FONT_SIZE, FONT_SIZE_OPTIONS } from "./fontSizeOptions";
+import { DEFAULT_FONT_SIZE } from "./fontSizeOptions";
+
+const MIN_PX = 8;
+const MAX_PX = 96;
+
+type SelectionRange = { from: number; to: number };
 
 type TipTapLike = {
   on: (e: string, fn: (...args: unknown[]) => void) => void;
   off: (e: string, fn: (...args: unknown[]) => void) => void;
   getAttributes: (name: string) => Record<string, unknown>;
+  state: { selection: SelectionRange };
   chain: () => {
-    focus: () => {
-      setFontSize: (size: string) => { run: () => boolean };
-    };
+    focus: () => ChainEnd;
   };
 };
 
-/**
- * Keep pointerdown from stealing focus/selection (same as tldraw toolbar buttons).
- * Do NOT preventDefault on native <select> — it blocks opening.
- */
-function keepTextSelection(e: React.PointerEvent | React.MouseEvent) {
-  e.preventDefault();
+type ChainEnd = {
+  setTextSelection: (range: SelectionRange) => ChainEnd;
+  setFontSize: (size: string) => ChainEnd;
+  run: () => boolean;
+};
+
+function parsePx(value: string | undefined | null): number {
+  if (!value) return parseInt(DEFAULT_FONT_SIZE, 10);
+  const n = parseInt(String(value).replace(/px$/i, ""), 10);
+  return Number.isFinite(n) ? n : parseInt(DEFAULT_FONT_SIZE, 10);
 }
 
-function sizeIndex(value: string): number {
-  const i = FONT_SIZE_OPTIONS.findIndex((o) => o.value === value);
-  return i >= 0 ? i : FONT_SIZE_OPTIONS.findIndex((o) => o.value === DEFAULT_FONT_SIZE);
+function clampPx(n: number): number {
+  return Math.min(MAX_PX, Math.max(MIN_PX, Math.round(n)));
 }
 
 /**
- * Floating rich-text toolbar with A− / A+ size controls + default bold/italic/etc.
- * Uses real toolbar buttons so pointer-events and selection behavior match tldraw.
+ * Floating rich-text toolbar with a numeric font-size field + default formatting.
  */
 export function RichTextToolbarWithSize() {
   const editor = useEditor();
@@ -46,70 +51,108 @@ export function RichTextToolbarWithSize() {
       ).getRichTextEditor?.() ?? null,
     [editor],
   );
+
+  const selectionRef = useRef<SelectionRange | null>(null);
+  const [draft, setDraft] = useState("");
+  const [focused, setFocused] = useState(false);
   const [, setTick] = useState(0);
 
+  // Keep draft in sync with selection attributes when not typing
   useEffect(() => {
     if (!textEditor) return;
-    const bump = () => setTick((n) => n + 1);
-    textEditor.on("transaction", bump);
-    textEditor.on("selectionUpdate", bump);
-    return () => {
-      textEditor.off("transaction", bump);
-      textEditor.off("selectionUpdate", bump);
+    const sync = () => {
+      if (focused) return;
+      const px = parsePx(
+        textEditor.getAttributes("textStyle").fontSize as string | undefined,
+      );
+      setDraft(String(px));
     };
-  }, [textEditor]);
+    sync();
+    textEditor.on("transaction", sync);
+    textEditor.on("selectionUpdate", sync);
+    return () => {
+      textEditor.off("transaction", sync);
+      textEditor.off("selectionUpdate", sync);
+    };
+  }, [textEditor, focused]);
 
   const applySize = useCallback(
-    (value: string) => {
+    (raw: string) => {
       if (!textEditor) return;
-      textEditor.chain().focus().setFontSize(value).run();
-      setTick((n) => n + 1);
+      const n = parseInt(raw, 10);
+      if (!Number.isFinite(n)) {
+        // Reset draft to current attribute
+        const px = parsePx(
+          textEditor.getAttributes("textStyle").fontSize as string | undefined,
+        );
+        setDraft(String(px));
+        return;
+      }
+      const px = clampPx(n);
+      setDraft(String(px));
+
+      const sel = selectionRef.current ?? textEditor.state.selection;
+      const chain = textEditor.chain().focus();
+      // Restore the canvas text selection, then apply size
+      chain.setTextSelection(sel).setFontSize(`${px}px`).run();
+      setTick((t) => t + 1);
     },
     [textEditor],
   );
 
   if (!textEditor) return null;
 
-  const currentSize =
-    (textEditor.getAttributes("textStyle").fontSize as string | undefined) ||
-    DEFAULT_FONT_SIZE;
-  const idx = sizeIndex(currentSize);
-  const label = FONT_SIZE_OPTIONS[idx]?.label ?? "M";
-  const canSmaller = idx > 0;
-  const canLarger = idx < FONT_SIZE_OPTIONS.length - 1;
-
   return (
     <DefaultRichTextToolbar>
       <div className="nc-rich-text-size-group" role="group" aria-label="Font size">
-        <TldrawUiToolbarButton
-          type="icon"
-          title="Smaller text"
-          aria-label="Smaller text"
-          disabled={!canSmaller}
-          onPointerDown={keepTextSelection}
-          onClick={() => {
-            if (!canSmaller) return;
-            applySize(FONT_SIZE_OPTIONS[idx - 1]!.value);
+        <input
+          type="number"
+          className="nc-rich-text-size-input"
+          inputMode="numeric"
+          min={MIN_PX}
+          max={MAX_PX}
+          step={1}
+          value={draft}
+          title="Font size (px)"
+          aria-label="Font size in pixels"
+          onPointerDown={(e) => {
+            // Capture current text selection before the input takes focus
+            selectionRef.current = { ...textEditor.state.selection };
+            e.stopPropagation();
           }}
-        >
-          <span className="nc-rich-text-size-btn">A−</span>
-        </TldrawUiToolbarButton>
-        <span className="nc-rich-text-size-label" title={`Font size ${currentSize}`}>
-          {label}
+          onFocus={() => {
+            selectionRef.current = { ...textEditor.state.selection };
+            setFocused(true);
+          }}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            setFocused(false);
+            applySize(draft);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              applySize(draft);
+              (e.target as HTMLInputElement).blur();
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              const px = parsePx(
+                textEditor.getAttributes("textStyle").fontSize as
+                  | string
+                  | undefined,
+              );
+              setDraft(String(px));
+              (e.target as HTMLInputElement).blur();
+              textEditor.chain().focus().run();
+            }
+            // Don't let canvas shortcuts eat digits / arrows while typing
+            e.stopPropagation();
+          }}
+        />
+        <span className="nc-rich-text-size-unit" aria-hidden>
+          px
         </span>
-        <TldrawUiToolbarButton
-          type="icon"
-          title="Larger text"
-          aria-label="Larger text"
-          disabled={!canLarger}
-          onPointerDown={keepTextSelection}
-          onClick={() => {
-            if (!canLarger) return;
-            applySize(FONT_SIZE_OPTIONS[idx + 1]!.value);
-          }}
-        >
-          <span className="nc-rich-text-size-btn">A+</span>
-        </TldrawUiToolbarButton>
       </div>
       <DefaultRichTextToolbarContent textEditor={textEditor as never} />
     </DefaultRichTextToolbar>
