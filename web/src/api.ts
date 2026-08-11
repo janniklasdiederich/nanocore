@@ -125,6 +125,12 @@ export const api = {
   deleteUser: (id: string) =>
     request<{ ok: boolean }>(`/api/users/${id}`, { method: "DELETE" }),
 
+  setUserRole: (id: string, role: "admin" | "member") =>
+    request<{ user: User }>(`/api/users/${id}/role`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    }),
+
   listInvites: () => request<{ invites: Invite[] }>("/api/invites"),
 
   createInvite: (body: { expiresAt: string; maxUses?: number | null }) =>

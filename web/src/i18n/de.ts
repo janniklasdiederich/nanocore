@@ -107,6 +107,13 @@ export const de: Messages = {
   "users.email": "E-Mail",
   "users.tempPassword": "Temporäres Passwort",
   "users.createFailed": "Benutzer konnte nicht erstellt werden",
+  "users.makeAdmin": "Zum Admin machen",
+  "users.makeMember": "Zum Mitglied machen",
+  "users.roleFailed": "Rolle konnte nicht geändert werden",
+  "users.roleConfirmAdmin":
+    "{email} zum Admin machen? Die Person kann Benutzer und Einladungen verwalten.",
+  "users.roleConfirmMember":
+    "Admin-Rechte von {email} entfernen? Die Person wird ein normales Mitglied.",
 
   "invites.title": "Einladungslinks",
   "invites.subtitle":

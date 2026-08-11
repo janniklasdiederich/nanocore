@@ -112,6 +112,12 @@ export const en = {
   "users.email": "Email",
   "users.tempPassword": "Temporary password",
   "users.createFailed": "Could not create user",
+  "users.makeAdmin": "Make admin",
+  "users.makeMember": "Make member",
+  "users.roleFailed": "Could not change role",
+  "users.roleConfirmAdmin": "Make {email} an admin? They can manage users and invites.",
+  "users.roleConfirmMember":
+    "Remove admin rights from {email}? They will become a normal member.",
 
   // Invite links (admin)
   "invites.title": "Invite links",

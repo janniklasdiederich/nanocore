@@ -65,6 +65,31 @@ export function UsersPage() {
     }
   }
 
+  async function setRole(user: User, role: "admin" | "member") {
+    const confirmKey =
+      role === "admin"
+        ? "users.roleConfirmAdmin"
+        : "users.roleConfirmMember";
+    if (!window.confirm(t(confirmKey, { email: user.email }))) {
+      return;
+    }
+    try {
+      const res = await api.setUserRole(user.id, role);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? res.user : u)),
+      );
+      // If we demoted ourselves, session still has old role until refresh
+      if (user.id === me?.id) {
+        await load();
+        window.location.reload();
+      }
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("users.roleFailed"),
+      );
+    }
+  }
+
   function resolveExpiresAt(): string {
     if (expirePreset === "custom") {
       if (!customExpires) throw new Error("missing date");
@@ -359,15 +384,34 @@ export function UsersPage() {
                   )}
                 </td>
                 <td>
-                  {user.id !== me?.id && (
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => void removeUser(user)}
-                    >
-                      {t("common.remove")}
-                    </button>
-                  )}
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {user.role === "member" ? (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void setRole(user, "admin")}
+                      >
+                        {t("users.makeAdmin")}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void setRole(user, "member")}
+                      >
+                        {t("users.makeMember")}
+                      </button>
+                    )}
+                    {user.id !== me?.id && (
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => void removeUser(user)}
+                      >
+                        {t("common.remove")}
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

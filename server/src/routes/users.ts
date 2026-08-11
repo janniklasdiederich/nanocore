@@ -79,6 +79,51 @@ userRoutes.post("/", requireAdmin, async (c) => {
   return c.json({ user: publicUser(user) }, 201);
 });
 
+userRoutes.patch("/:id/role", requireAdmin, async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const id = c.req.param("id");
+  if (!id) {
+    return c.json({ error: "User id required" }, 400);
+  }
+
+  const body = await c.req.json().catch(() => null);
+  const role = body?.role;
+  if (role !== "admin" && role !== "member") {
+    return c.json({ error: "role must be 'admin' or 'member'" }, 400);
+  }
+
+  const target = db
+    .query("SELECT * FROM users WHERE id = ?")
+    .get(id) as UserRow | null;
+  if (!target) {
+    return c.json({ error: "User not found" }, 404);
+  }
+
+  if (target.role === role) {
+    return c.json({ user: publicUser(target) });
+  }
+
+  // Never leave the workspace without an admin
+  if (target.role === "admin" && role === "member") {
+    const adminCount = (
+      db
+        .query(`SELECT COUNT(*) AS n FROM users WHERE role = 'admin'`)
+        .get() as { n: number }
+    ).n;
+    if (adminCount <= 1) {
+      return c.json({ error: "Cannot demote the last admin" }, 400);
+    }
+  }
+
+  db.query(`UPDATE users SET role = ? WHERE id = ?`).run(role, id);
+  const updated = db
+    .query("SELECT * FROM users WHERE id = ?")
+    .get(id) as UserRow;
+  return c.json({ user: publicUser(updated) });
+});
+
 userRoutes.delete("/:id", requireAdmin, async (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
