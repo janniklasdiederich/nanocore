@@ -253,4 +253,5 @@ function PeerRow({
 
 export const boardUiComponents: TLComponents = {
   SharePanel: NanocoreSharePanel,
+  // RichTextToolbar is set in boardComponents.ts together with font-size
 };

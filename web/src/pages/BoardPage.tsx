@@ -5,11 +5,13 @@ import { useSync } from "@tldraw/sync";
 import "tldraw/tldraw.css";
 import { api, type Board } from "../api";
 import { useAuth } from "../auth";
-import { boardUiComponents } from "../components/LockedPeopleMenu";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
+import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
+import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
+import { boardTextOptions } from "../tldraw/textOptions";
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -140,6 +142,9 @@ function BoardCanvas({
         color: userInfo.color,
         locale: tldrawLocale,
       });
+      // Convert leftover markdown → rich text when leaving the text editor
+      const stop = registerMarkdownOnEditEnd(editor);
+      return () => stop();
     },
     [userInfo.name, userInfo.color, tldrawLocale],
   );
@@ -174,6 +179,7 @@ function BoardCanvas({
         store={store}
         components={boardUiComponents}
         overrides={boardUiOverrides}
+        textOptions={boardTextOptions}
         onMount={onMount}
       />
     </div>

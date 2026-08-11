@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@tiptap/core": "2.27.2",
+    "@tiptap/extension-text-style": "2.27.2",
     "@tldraw/sync": "^3.15.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

@@ -732,3 +732,26 @@ input {
   border-radius: 8px;
   border: 1px solid var(--border);
 }
+
+/* Rich-text toolbar font size (inside tldraw floating menu) */
+.nc-rich-text-size {
+  appearance: none;
+  margin: 0 2px;
+  padding: 2px 6px;
+  max-width: 4.5rem;
+  height: 28px;
+  border: 1px solid var(--tl-color-muted-1, rgba(0, 0, 0, 0.12));
+  border-radius: 6px;
+  background: var(--tl-color-panel, #fff);
+  color: var(--tl-color-text, #1d1d1d);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.nc-rich-text-size:focus {
+  outline: 2px solid var(--tl-color-primary, #4465e9);
+  outline-offset: 1px;
+}
