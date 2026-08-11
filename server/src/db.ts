@@ -48,8 +48,21 @@ db.exec(`
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS invite_links (
+    id TEXT PRIMARY KEY,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TEXT NOT NULL,
+    max_uses INTEGER,
+    use_count INTEGER NOT NULL DEFAULT 0,
+    revoked_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    CHECK (max_uses IS NULL OR max_uses >= 1)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
+  CREATE INDEX IF NOT EXISTS idx_invite_token ON invite_links(token_hash);
 `);
 
 export type UserRole = "admin" | "member";

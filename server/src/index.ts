@@ -17,6 +17,10 @@ import { authRoutes } from "./routes/auth";
 import { userRoutes } from "./routes/users";
 import { boardRoutes } from "./routes/boards";
 import { assetRoutes } from "./routes/assets";
+import {
+  inviteAdminRoutes,
+  invitePublicRoutes,
+} from "./routes/invites";
 
 type WsData = {
   sessionId: string;
@@ -43,6 +47,8 @@ app.route("/api/auth", authRoutes);
 app.route("/api/users", userRoutes);
 app.route("/api/boards", boardRoutes);
 app.route("/api/assets", assetRoutes);
+app.route("/api/invites", inviteAdminRoutes);
+app.route("/api/invite", invitePublicRoutes);
 
 // Production: serve Vite build
 const webDist = env.webDist;

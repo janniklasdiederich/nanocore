@@ -6,6 +6,7 @@ import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { BoardsPage } from "./pages/BoardsPage";
 import { BoardPage } from "./pages/BoardPage";
 import { UsersPage } from "./pages/UsersPage";
+import { InvitePage } from "./pages/InvitePage";
 
 function Guard({
   children,
@@ -110,6 +111,16 @@ export function App() {
           <Guard adminOnly>
             <UsersPage />
           </Guard>
+        }
+      />
+      <Route
+        path="/invite/:token"
+        element={
+          !setupComplete ? (
+            <Navigate to="/setup" replace />
+          ) : (
+            <InvitePage />
+          )
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

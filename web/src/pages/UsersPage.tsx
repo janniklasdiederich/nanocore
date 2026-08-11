@@ -1,25 +1,48 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { api, ApiError, type User } from "../api";
+import {
+  api,
+  ApiError,
+  type Invite,
+  type User,
+} from "../api";
 import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
-import { useT } from "../i18n";
+import { useI18n, useT } from "../i18n";
 
 export function UsersPage() {
   const { user: me } = useAuth();
   const t = useT();
+  const { locale } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [freshInvite, setFreshInvite] = useState<Invite | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Create-invite form
+  const [expirePreset, setExpirePreset] = useState<"7" | "30" | "custom">(
+    "7",
+  );
+  const [customExpires, setCustomExpires] = useState("");
+  const [maxUsesInput, setMaxUsesInput] = useState("");
+  const [creatingInvite, setCreatingInvite] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.listUsers();
-      setUsers(res.users);
+      const [u, inv] = await Promise.all([
+        api.listUsers(),
+        api.listInvites(),
+      ]);
+      setUsers(u.users);
+      setInvites(inv.invites);
       setError(null);
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : t("users.loadFailed"),
+        err instanceof ApiError
+          ? err.message
+          : t("users.loadFailed"),
       );
     }
   }, [t]);
@@ -41,6 +64,104 @@ export function UsersPage() {
       );
     }
   }
+
+  function resolveExpiresAt(): string {
+    if (expirePreset === "custom") {
+      if (!customExpires) throw new Error("missing date");
+      return new Date(customExpires).toISOString();
+    }
+    const days = expirePreset === "7" ? 7 : 30;
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  }
+
+  async function createInvite(e: FormEvent) {
+    e.preventDefault();
+    setCreatingInvite(true);
+    setError(null);
+    setCopied(false);
+    try {
+      let expiresAt: string;
+      try {
+        expiresAt = resolveExpiresAt();
+      } catch {
+        setError(t("invites.createFailed"));
+        return;
+      }
+      if (Number.isNaN(new Date(expiresAt).getTime())) {
+        setError(t("invites.createFailed"));
+        return;
+      }
+
+      let maxUses: number | null = null;
+      if (maxUsesInput.trim()) {
+        const n = Number(maxUsesInput.trim());
+        if (!Number.isInteger(n) || n < 1) {
+          setError(t("invites.createFailed"));
+          return;
+        }
+        maxUses = n;
+      }
+
+      const res = await api.createInvite({ expiresAt, maxUses });
+      setFreshInvite(res.invite);
+      setInvites((prev) => [res.invite, ...prev]);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("invites.createFailed"),
+      );
+    } finally {
+      setCreatingInvite(false);
+    }
+  }
+
+  async function copyFreshLink() {
+    if (!freshInvite?.path) return;
+    const url = `${window.location.origin}${freshInvite.path}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+    } catch {
+      window.prompt(t("invites.copy"), url);
+    }
+  }
+
+  async function revokeInvite(id: string) {
+    try {
+      const res = await api.revokeInvite(id);
+      setInvites((prev) =>
+        prev.map((i) => (i.id === id ? res.invite : i)),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("invites.revokeFailed"),
+      );
+    }
+  }
+
+  async function deleteInvite(id: string) {
+    try {
+      await api.deleteInvite(id);
+      setInvites((prev) => prev.filter((i) => i.id !== id));
+      if (freshInvite?.id === id) setFreshInvite(null);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("invites.deleteFailed"),
+      );
+    }
+  }
+
+  const dateLocale = locale === "de" ? "de-DE" : "en-US";
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleString(dateLocale, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+  // datetime-local default for custom: +7 days
+  const customMin = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
 
   return (
     <AppShell title={t("users.title")}>
@@ -64,54 +185,195 @@ export function UsersPage() {
 
       {error && <div className="error-banner">{error}</div>}
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>{t("users.colName")}</th>
-            <th>{t("users.colEmail")}</th>
-            <th>{t("users.colRole")}</th>
-            <th>{t("users.colStatus")}</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.displayName}</td>
-              <td>{user.email}</td>
-              <td>
-                <span
-                  className={
-                    user.role === "admin" ? "badge badge-admin" : "badge"
-                  }
-                >
-                  {user.role === "admin"
-                    ? t("role.admin")
-                    : t("role.member")}
-                </span>
-              </td>
-              <td>
-                {user.mustChangePassword ? (
-                  <span className="badge">{t("status.tempPassword")}</span>
-                ) : (
-                  <span className="badge">{t("status.active")}</span>
-                )}
-              </td>
-              <td>
-                {user.id !== me?.id && (
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={() => void removeUser(user)}
-                  >
-                    {t("common.remove")}
-                  </button>
-                )}
-              </td>
+      <section className="admin-section">
+        <h2 className="admin-section__title">{t("invites.title")}</h2>
+        <p className="admin-section__sub">{t("invites.subtitle")}</p>
+
+        <form className="invite-form" onSubmit={(e) => void createInvite(e)}>
+          <div className="invite-form__row">
+            <div className="field" style={{ marginBottom: 0, flex: 1 }}>
+              <label htmlFor="inv-exp">{t("invites.expires")}</label>
+              <select
+                id="inv-exp"
+                value={expirePreset}
+                onChange={(e) =>
+                  setExpirePreset(e.target.value as "7" | "30" | "custom")
+                }
+              >
+                <option value="7">{t("invites.preset7d")}</option>
+                <option value="30">{t("invites.preset30d")}</option>
+                <option value="custom">{t("invites.presetCustom")}</option>
+              </select>
+            </div>
+            {expirePreset === "custom" && (
+              <div className="field" style={{ marginBottom: 0, flex: 1 }}>
+                <label htmlFor="inv-custom">{t("invites.expires")}</label>
+                <input
+                  id="inv-custom"
+                  type="datetime-local"
+                  value={customExpires}
+                  min={customMin}
+                  onChange={(e) => setCustomExpires(e.target.value)}
+                  required
+                />
+              </div>
+            )}
+            <div className="field" style={{ marginBottom: 0, flex: 1 }}>
+              <label htmlFor="inv-uses">{t("invites.maxUses")}</label>
+              <input
+                id="inv-uses"
+                type="number"
+                min={1}
+                max={10000}
+                placeholder={t("invites.maxUsesPlaceholder")}
+                value={maxUsesInput}
+                onChange={(e) => setMaxUsesInput(e.target.value)}
+              />
+              <span className="field-hint">{t("invites.maxUsesHint")}</span>
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "auto", marginTop: 12 }}
+            disabled={creatingInvite}
+          >
+            {creatingInvite ? t("common.creating") : t("invites.create")}
+          </button>
+        </form>
+
+        {freshInvite?.path && (
+          <div className="invite-fresh">
+            <p>{t("invites.generated")}</p>
+            <code className="invite-fresh__url">
+              {window.location.origin}
+              {freshInvite.path}
+            </code>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => void copyFreshLink()}
+            >
+              {copied ? t("invites.copied") : t("invites.copy")}
+            </button>
+          </div>
+        )}
+
+        {invites.length === 0 ? (
+          <p className="admin-section__sub" style={{ marginTop: 16 }}>
+            {t("invites.empty")}
+          </p>
+        ) : (
+          <table className="table" style={{ marginTop: 16 }}>
+            <thead>
+              <tr>
+                <th>{t("invites.colLink")}</th>
+                <th>{t("invites.colExpires")}</th>
+                <th>{t("invites.colUses")}</th>
+                <th>{t("invites.colActions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invites.map((inv) => (
+                <tr key={inv.id}>
+                  <td>
+                    <span
+                      className={
+                        inv.status === "active"
+                          ? "badge badge-admin"
+                          : "badge"
+                      }
+                    >
+                      {t(`invites.status.${inv.status}`)}
+                    </span>
+                  </td>
+                  <td>{fmt(inv.expiresAt)}</td>
+                  <td>
+                    {inv.maxUses == null
+                      ? t("invites.usesUnlimited", { count: inv.useCount })
+                      : t("invites.usesLimited", {
+                          count: inv.useCount,
+                          max: inv.maxUses,
+                        })}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {inv.status === "active" && (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => void revokeInvite(inv.id)}
+                        >
+                          {t("invites.revoke")}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => void deleteInvite(inv.id)}
+                      >
+                        {t("invites.delete")}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="admin-section" style={{ marginTop: 36 }}>
+        <h2 className="admin-section__title">{t("users.title")}</h2>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>{t("users.colName")}</th>
+              <th>{t("users.colEmail")}</th>
+              <th>{t("users.colRole")}</th>
+              <th>{t("users.colStatus")}</th>
+              <th />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id}>
+                <td>{user.displayName}</td>
+                <td>{user.email}</td>
+                <td>
+                  <span
+                    className={
+                      user.role === "admin" ? "badge badge-admin" : "badge"
+                    }
+                  >
+                    {user.role === "admin"
+                      ? t("role.admin")
+                      : t("role.member")}
+                  </span>
+                </td>
+                <td>
+                  {user.mustChangePassword ? (
+                    <span className="badge">{t("status.tempPassword")}</span>
+                  ) : (
+                    <span className="badge">{t("status.active")}</span>
+                  )}
+                </td>
+                <td>
+                  {user.id !== me?.id && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => void removeUser(user)}
+                    >
+                      {t("common.remove")}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
       {showCreate && (
         <CreateUserModal
