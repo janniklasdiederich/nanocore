@@ -9,6 +9,7 @@ import { boardUiComponents } from "../components/LockedPeopleMenu";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
+import { boardUiOverrides } from "../tldraw/boardOverrides";
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -172,6 +173,7 @@ function BoardCanvas({
         key={tldrawLocale}
         store={store}
         components={boardUiComponents}
+        overrides={boardUiOverrides}
         onMount={onMount}
       />
     </div>
