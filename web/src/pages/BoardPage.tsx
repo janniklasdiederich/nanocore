@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Tldraw, type Editor, type TLAssetStore } from "tldraw";
+import {
+  Tldraw,
+  type Editor,
+  type TLAssetStore,
+} from "tldraw";
 import { useSync } from "@tldraw/sync";
 import "tldraw/tldraw.css";
 import { api, type Board } from "../api";
@@ -11,7 +15,13 @@ import { useI18n, useT } from "../i18n";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
+import {
+  registerSoftArrows,
+  SoftArrowShapeUtil,
+} from "../tldraw/softArrows";
 import { boardTextOptions } from "../tldraw/textOptions";
+
+const boardShapeUtils = [SoftArrowShapeUtil];
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -143,8 +153,13 @@ function BoardCanvas({
         locale: tldrawLocale,
       });
       // Convert leftover markdown → rich text when leaving the text editor
-      const stop = registerMarkdownOnEditEnd(editor);
-      return () => stop();
+      const stopMarkdown = registerMarkdownOnEditEnd(editor);
+      // Soft auto-curve for arc arrows (Miro-like default, not dead-straight)
+      const stopArrows = registerSoftArrows(editor);
+      return () => {
+        stopMarkdown();
+        stopArrows();
+      };
     },
     [userInfo.name, userInfo.color, tldrawLocale],
   );
@@ -177,6 +192,7 @@ function BoardCanvas({
       <Tldraw
         key={tldrawLocale}
         store={store}
+        shapeUtils={boardShapeUtils}
         components={boardUiComponents}
         overrides={boardUiOverrides}
         textOptions={boardTextOptions}
