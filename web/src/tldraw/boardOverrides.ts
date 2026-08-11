@@ -1,9 +1,15 @@
-import type { Editor, TLUiOverrides } from "tldraw";
+import type {
+  Editor,
+  TLAssetId,
+  TLImageShape,
+  TLUiOverrides,
+  TLVideoShape,
+} from "tldraw";
 
-function canDownloadOriginal(
+function isMediaWithAsset(
   editor: Editor,
   shape: ReturnType<Editor["getSelectedShapes"]>[number],
-): boolean {
+): shape is TLImageShape | TLVideoShape {
   return (
     (editor.isShapeOfType(shape, "image") ||
       editor.isShapeOfType(shape, "video")) &&
@@ -27,10 +33,10 @@ export const boardUiOverrides: TLUiOverrides = {
         onSelect: async () => {
           const mediaShapes = editor
             .getSelectedShapes()
-            .filter((s) => canDownloadOriginal(editor, s));
+            .filter((s) => isMediaWithAsset(editor, s));
 
           for (const shape of mediaShapes) {
-            const assetId = shape.props.assetId as string;
+            const assetId = shape.props.assetId as TLAssetId;
             const asset = editor.getAsset(assetId);
             if (!asset?.props.src) continue;
 
