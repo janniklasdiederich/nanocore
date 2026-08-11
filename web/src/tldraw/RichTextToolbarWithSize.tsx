@@ -17,12 +17,16 @@ type TipTapLike = {
   off: (e: string, fn: (...args: unknown[]) => void) => void;
   getAttributes: (name: string) => Record<string, unknown>;
   state: { selection: SelectionRange };
-  chain: () => {
-    focus: () => ChainEnd;
+  isFocused: boolean;
+  chain: () => ChainEnd;
+  commands: {
+    focus: () => void;
+    setTextSelection: (range: SelectionRange) => void;
   };
 };
 
 type ChainEnd = {
+  focus: () => ChainEnd;
   setTextSelection: (range: SelectionRange) => ChainEnd;
   setFontSize: (size: string) => ChainEnd;
   run: () => boolean;
@@ -38,8 +42,18 @@ function clampPx(n: number): number {
   return Math.min(MAX_PX, Math.max(MIN_PX, Math.round(n)));
 }
 
+function isNonEmptyRange(sel: SelectionRange | null | undefined): sel is SelectionRange {
+  return !!sel && sel.from !== sel.to;
+}
+
 /**
- * Floating rich-text toolbar with a numeric font-size field + default formatting.
+ * Floating rich-text toolbar with a numeric font-size field.
+ *
+ * TipTap drops the visual selection when the input is focused, so we:
+ * 1) continuously remember the last non-empty canvas selection
+ * 2) freeze that range when the size field is focused
+ * 3) apply font-size to the frozen range (not the collapsed caret)
+ * 4) restore the highlight after applying
  */
 export function RichTextToolbarWithSize() {
   const editor = useEditor();
@@ -52,59 +66,107 @@ export function RichTextToolbarWithSize() {
     [editor],
   );
 
-  const selectionRef = useRef<SelectionRange | null>(null);
+  /** Last non-empty selection while editing text on the canvas */
+  const lastRangeRef = useRef<SelectionRange | null>(null);
+  /** Selection frozen when the size input is focused */
+  const frozenRangeRef = useRef<SelectionRange | null>(null);
   const [draft, setDraft] = useState("");
   const [focused, setFocused] = useState(false);
-  const [, setTick] = useState(0);
 
-  // Keep draft in sync with selection attributes when not typing
+  // Track selection from the canvas text editor (skip while size field is focused)
   useEffect(() => {
     if (!textEditor) return;
-    const sync = () => {
-      if (focused) return;
-      const px = parsePx(
-        textEditor.getAttributes("textStyle").fontSize as string | undefined,
-      );
-      setDraft(String(px));
+
+    const remember = () => {
+      const sel = textEditor.state.selection;
+      if (isNonEmptyRange(sel) && !focused) {
+        lastRangeRef.current = { from: sel.from, to: sel.to };
+      }
+      if (!focused) {
+        const px = parsePx(
+          textEditor.getAttributes("textStyle").fontSize as string | undefined,
+        );
+        setDraft(String(px));
+      }
     };
-    sync();
-    textEditor.on("transaction", sync);
-    textEditor.on("selectionUpdate", sync);
+
+    remember();
+    textEditor.on("selectionUpdate", remember);
+    textEditor.on("transaction", remember);
     return () => {
-      textEditor.off("transaction", sync);
-      textEditor.off("selectionUpdate", sync);
+      textEditor.off("selectionUpdate", remember);
+      textEditor.off("transaction", remember);
     };
   }, [textEditor, focused]);
 
+  const resolveTargetRange = useCallback((): SelectionRange | null => {
+    if (isNonEmptyRange(frozenRangeRef.current)) return frozenRangeRef.current;
+    if (isNonEmptyRange(lastRangeRef.current)) return lastRangeRef.current;
+    if (textEditor && isNonEmptyRange(textEditor.state.selection)) {
+      return { ...textEditor.state.selection };
+    }
+    return null;
+  }, [textEditor]);
+
   const applySize = useCallback(
-    (raw: string) => {
+    (raw: string, { restoreFocus = true }: { restoreFocus?: boolean } = {}) => {
       if (!textEditor) return;
+
       const n = parseInt(raw, 10);
       if (!Number.isFinite(n)) {
-        // Reset draft to current attribute
         const px = parsePx(
           textEditor.getAttributes("textStyle").fontSize as string | undefined,
         );
         setDraft(String(px));
         return;
       }
+
       const px = clampPx(n);
       setDraft(String(px));
 
-      const sel = selectionRef.current ?? textEditor.state.selection;
-      const chain = textEditor.chain().focus();
-      // Restore the canvas text selection, then apply size
-      chain.setTextSelection(sel).setFontSize(`${px}px`).run();
-      setTick((t) => t + 1);
+      const range = resolveTargetRange();
+      if (!range) {
+        // No range — apply at caret if any
+        textEditor.chain().focus().setFontSize(`${px}px`).run();
+        return;
+      }
+
+      // Apply to the remembered range, then put selection + focus back on the text
+      textEditor
+        .chain()
+        .setTextSelection(range)
+        .setFontSize(`${px}px`)
+        .setTextSelection(range)
+        .run();
+
+      if (restoreFocus) {
+        // Next frame so the input blur completes first
+        requestAnimationFrame(() => {
+          try {
+            textEditor.commands.setTextSelection(range);
+            textEditor.commands.focus();
+          } catch {
+            // editor may have unmounted
+          }
+        });
+      }
+
+      // Keep frozen range so further edits still hit the same span
+      frozenRangeRef.current = range;
+      lastRangeRef.current = range;
     },
-    [textEditor],
+    [textEditor, resolveTargetRange],
   );
 
   if (!textEditor) return null;
 
   return (
     <DefaultRichTextToolbar>
-      <div className="nc-rich-text-size-group" role="group" aria-label="Font size">
+      <div
+        className="nc-rich-text-size-group"
+        role="group"
+        aria-label="Font size"
+      >
         <input
           type="number"
           className="nc-rich-text-size-input"
@@ -113,26 +175,40 @@ export function RichTextToolbarWithSize() {
           max={MAX_PX}
           step={1}
           value={draft}
-          title="Font size (px)"
+          title="Font size (px) — applies to selected text"
           aria-label="Font size in pixels"
-          onPointerDown={(e) => {
-            // Capture current text selection before the input takes focus
-            selectionRef.current = { ...textEditor.state.selection };
-            e.stopPropagation();
+          onPointerDown={() => {
+            // Freeze selection BEFORE the input takes focus and TipTap collapses it
+            const sel = textEditor.state.selection;
+            if (isNonEmptyRange(sel)) {
+              frozenRangeRef.current = { from: sel.from, to: sel.to };
+              lastRangeRef.current = frozenRangeRef.current;
+            } else if (isNonEmptyRange(lastRangeRef.current)) {
+              frozenRangeRef.current = lastRangeRef.current;
+            }
           }}
           onFocus={() => {
-            selectionRef.current = { ...textEditor.state.selection };
+            // Pointerdown already froze; double-check from last remembered range
+            if (
+              !isNonEmptyRange(frozenRangeRef.current) &&
+              isNonEmptyRange(lastRangeRef.current)
+            ) {
+              frozenRangeRef.current = lastRangeRef.current;
+            }
             setFocused(true);
           }}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={() => {
             setFocused(false);
-            applySize(draft);
+            applySize(draft, { restoreFocus: true });
           }}
           onKeyDown={(e) => {
+            // Keep canvas shortcuts from eating keys while typing a size
+            e.stopPropagation();
+
             if (e.key === "Enter") {
               e.preventDefault();
-              applySize(draft);
+              applySize(draft, { restoreFocus: true });
               (e.target as HTMLInputElement).blur();
             }
             if (e.key === "Escape") {
@@ -143,11 +219,14 @@ export function RichTextToolbarWithSize() {
                   | undefined,
               );
               setDraft(String(px));
+              setFocused(false);
               (e.target as HTMLInputElement).blur();
-              textEditor.chain().focus().run();
+              const range = resolveTargetRange();
+              if (range) {
+                textEditor.commands.setTextSelection(range);
+              }
+              textEditor.commands.focus();
             }
-            // Don't let canvas shortcuts eat digits / arrows while typing
-            e.stopPropagation();
           }}
         />
         <span className="nc-rich-text-size-unit" aria-hidden>
