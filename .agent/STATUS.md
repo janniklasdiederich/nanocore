@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: stay on tldraw 3.15; deleted v5 spike branch_
+_Last updated: 2026-08-12 after: colorable frames (showColors)_
 
 ## What's Been Built
 
@@ -15,12 +15,13 @@ _Last updated: 2026-08-12 after: stay on tldraw 3.15; deleted v5 spike branch_
 - **Security**: prod refuses weak SESSION_SECRET; CORS allowlist; upload caps
 - **i18n**: en + de
 - **Page backgrounds** + **custom shape colors** (document.meta palette, validationFn patch, theme seed custom-1…N)
+- **Colorable frames**: `FrameShapeUtil.configure({ showColors: true })`; stock + custom-* colors; frame validator patched on client/server
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only
 
 ## Current Task / Last Completed
 
-Staying on **tldraw v3**. Spike branch `upgrade/tldraw-v5-bare` deleted (local + `origin`). Reason: v4/v5 require a production license key on HTTPS domains; v3 still runs on real domains with watermark-only enforcement. Clipboard polyfill for Docker HTTP was attempted and **reverted** (`685085e`).
+Frames are colorable via tldraw 3.15 `showColors`. Style panel + My colors apply to selected frames. Server accepts `custom-*` on `frameShapeProps.color`.
 
 ## Known Issues & TODOs
 

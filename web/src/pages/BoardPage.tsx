@@ -10,6 +10,7 @@ import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
+import { ColorableFrameShapeUtil } from "../tldraw/colorableFrame";
 import {
   listenCustomColorPalette,
   syncCustomColorsFromDocument,
@@ -17,6 +18,8 @@ import {
 } from "../tldraw/customColors";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { boardTextOptions } from "../tldraw/textOptions";
+
+const colorableFrameUtils = [ColorableFrameShapeUtil];
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -196,6 +199,7 @@ function BoardCanvas({
       <Tldraw
         key={tldrawLocale}
         store={store}
+        shapeUtils={colorableFrameUtils}
         components={boardUiComponents}
         overrides={boardUiOverrides}
         textOptions={boardTextOptions}

@@ -10,6 +10,7 @@
 import {
   DefaultColorStyle,
   DefaultColorThemePalette,
+  FrameShapeUtil,
   TLDOCUMENT_ID,
   type Editor,
   type TLDefaultColorThemeColor,
@@ -87,8 +88,67 @@ export function patchColorStyleValidation(): void {
   }
 }
 
+/**
+ * Frame color is a T.literalEnum of stock values (not DefaultColorStyle) so
+ * the style panel can stay hidden unless showColors is on. Custom-* must be
+ * allowed here or the store rejects colored frames on sync.
+ */
+function patchFrameColorValidation(): void {
+  const color = (FrameShapeUtil.props as { color?: ColorValidatorLike }).color;
+  if (!color) return;
+  wrapColorValidator(color);
+}
+
+type ColorValidatorLike = {
+  validate?: (value: unknown) => unknown;
+  validationFn?: (value: unknown) => unknown;
+  validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
+  validateUsingKnownGoodVersionFn?: (prev: unknown, next: unknown) => unknown;
+};
+
+function wrapColorValidator(validator: ColorValidatorLike): void {
+  const allowCustom = (value: unknown): unknown | undefined => {
+    if (isCustomColorKey(value)) return value;
+    return undefined;
+  };
+
+  if (typeof validator.validationFn === "function") {
+    const origFn = validator.validationFn.bind(validator);
+    validator.validationFn = (value: unknown) => {
+      const custom = allowCustom(value);
+      if (custom !== undefined) return custom;
+      return origFn(value);
+    };
+  }
+  if (typeof validator.validateUsingKnownGoodVersionFn === "function") {
+    const origKnown = validator.validateUsingKnownGoodVersionFn.bind(validator);
+    validator.validateUsingKnownGoodVersionFn = (prev: unknown, next: unknown) => {
+      const custom = allowCustom(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
+  if (typeof validator.validate === "function") {
+    const origValidate = validator.validate.bind(validator);
+    validator.validate = (value: unknown) => {
+      const custom = allowCustom(value);
+      if (custom !== undefined) return custom;
+      return origValidate(value);
+    };
+  }
+  if (typeof validator.validateUsingKnownGoodVersion === "function") {
+    const origKnown = validator.validateUsingKnownGoodVersion.bind(validator);
+    validator.validateUsingKnownGoodVersion = (prev: unknown, next: unknown) => {
+      const custom = allowCustom(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
+}
+
 // Run at import time so the first sync put() already accepts custom-* colors
 patchColorStyleValidation();
+patchFrameColorValidation();
 
 export function isCustomColorKey(value: unknown): value is CustomColorKey {
   return typeof value === "string" && /^custom-\d+$/.test(value);

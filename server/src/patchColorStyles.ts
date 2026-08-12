@@ -4,7 +4,7 @@
  * Must patch the internal T.Validator.validationFn — StyleProp.validate alone is
  * not enough because Validator.validate always calls validationFn.
  */
-import { DefaultColorStyle } from "@tldraw/tlschema";
+import { DefaultColorStyle, frameShapeProps } from "@tldraw/tlschema";
 
 function isCustomColorKey(value: unknown): boolean {
   return typeof value === "string" && /^custom-\d+$/.test(value);
@@ -57,6 +57,69 @@ export function patchColorStylesForSync(): void {
   if (style.validateUsingKnownGoodVersion) {
     const origKnown = style.validateUsingKnownGoodVersion.bind(style);
     style.validateUsingKnownGoodVersion = (prev: unknown, next: unknown) => {
+      const custom = allow(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
+
+  // Frames store color as T.literalEnum(stock values), not DefaultColorStyle.
+  wrapValidator(
+    frameShapeProps.color as {
+      validate?: (value: unknown) => unknown;
+      validationFn?: (value: unknown) => unknown;
+      validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
+      validateUsingKnownGoodVersionFn?: (
+        prev: unknown,
+        next: unknown,
+      ) => unknown;
+    },
+    allow,
+  );
+}
+
+function wrapValidator(
+  validator: {
+    validate?: (value: unknown) => unknown;
+    validationFn?: (value: unknown) => unknown;
+    validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
+    validateUsingKnownGoodVersionFn?: (prev: unknown, next: unknown) => unknown;
+  },
+  allow: (value: unknown) => unknown,
+): void {
+  if (typeof validator.validationFn === "function") {
+    const origFn = validator.validationFn.bind(validator);
+    validator.validationFn = (value: unknown) => {
+      const custom = allow(value);
+      if (custom !== undefined) return custom;
+      return origFn(value);
+    };
+  }
+  if (typeof validator.validateUsingKnownGoodVersionFn === "function") {
+    const origKnown = validator.validateUsingKnownGoodVersionFn.bind(validator);
+    validator.validateUsingKnownGoodVersionFn = (
+      prev: unknown,
+      next: unknown,
+    ) => {
+      const custom = allow(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
+  if (typeof validator.validate === "function") {
+    const origValidate = validator.validate.bind(validator);
+    validator.validate = (value: unknown) => {
+      const custom = allow(value);
+      if (custom !== undefined) return custom;
+      return origValidate(value);
+    };
+  }
+  if (typeof validator.validateUsingKnownGoodVersion === "function") {
+    const origKnown = validator.validateUsingKnownGoodVersion.bind(validator);
+    validator.validateUsingKnownGoodVersion = (
+      prev: unknown,
+      next: unknown,
+    ) => {
       const custom = allow(next);
       if (custom !== undefined) return custom;
       return origKnown(prev, next);
