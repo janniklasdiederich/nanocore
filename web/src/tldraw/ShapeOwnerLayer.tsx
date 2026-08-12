@@ -1,6 +1,6 @@
 import { track, useEditor, type TLShapeId } from "tldraw";
 import { useT } from "../i18n";
-import { readOwner, useOwnerLabelMode } from "./shapeOwner";
+import { readOwner, shapeShowsOwner, useOwnerLabelMode } from "./shapeOwner";
 
 /**
  * Screen-space owner name at the top-right of shapes.
@@ -19,6 +19,7 @@ export const ShapeOwnerLayer = track(function ShapeOwnerLayer() {
     [];
 
   for (const shape of editor.getCurrentPageShapes()) {
+    if (!shapeShowsOwner(shape)) continue;
     const owner = readOwner(shape);
     if (!owner) continue;
     if (mode === "hover" && hovered !== shape.id) continue;

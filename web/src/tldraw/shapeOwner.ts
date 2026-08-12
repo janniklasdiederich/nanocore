@@ -7,6 +7,13 @@ export const OWNER_LABEL_STORAGE_KEY = "nanocore_ownerLabel";
 export type ShapeOwner = { id: string; name: string };
 export type OwnerLabelMode = "always" | "never" | "hover";
 
+/** Stickies, text, images/GIFs, geo + freehand. Not arrows, frames, lines, etc. */
+const OWNER_LABEL_TYPES = new Set(["note", "text", "image", "geo", "draw"]);
+
+export function shapeShowsOwner(shape: TLShape): boolean {
+  return OWNER_LABEL_TYPES.has(shape.type);
+}
+
 const OWNER_LABEL_MODES: readonly OwnerLabelMode[] = [
   "always",
   "never",
@@ -44,6 +51,7 @@ export function registerShapeOwnerStamp(
     "shape",
     (shape, source) => {
       if (source !== "user") return shape;
+      if (!shapeShowsOwner(shape)) return shape;
       const name = owner.name.trim();
       if (!owner.id || !name) return shape;
       return {

@@ -26,7 +26,7 @@ _Last updated: 2026-08-12 after: shape owner labels + preference
 
 ## Current Task / Last Completed
 
-Shape owner labels: each locally created shape (draw/paste/duplicate) stamps `{id,name}` on `shape.meta.nanocoreOwner`. Overlay sits at top-right (reactions occupy bottom-left). Menu ▸ Preferences ▸ Owner labels: always / show on hover (default) / never. Preference is local (`localStorage nanocore_ownerLabel`). Shapes created before this feature have no owner and show no label.
+Shape owner labels: each locally created **note / text / image / geo / draw** stamps `{id,name}` on `shape.meta.nanocoreOwner`. Overlay sits at top-right (reactions occupy bottom-left). Not shown on arrows, frames, lines, etc. Menu ▸ Preferences ▸ Owner labels: always / show on hover (default) / never. Preference is local (`localStorage nanocore_ownerLabel`). Shapes created before this feature have no owner and show no label.
 
 ## Known Issues & TODOs
 
