@@ -620,27 +620,6 @@ input {
   flex-shrink: 0;
 }
 
-.nc-custom-colors__preview {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  margin-left: 4px;
-}
-
-.nc-custom-colors__preview-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  border: 1px solid rgba(128, 128, 128, 0.35);
-  flex-shrink: 0;
-}
-
-.nc-custom-colors__preview-more {
-  font-size: 10px;
-  opacity: 0.55;
-  margin-left: 1px;
-}
-
 .nc-custom-colors__body {
   display: flex;
   flex-direction: column;

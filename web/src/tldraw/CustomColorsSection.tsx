@@ -124,23 +124,6 @@ export const CustomColorsSection = track(function CustomColorsSection() {
         <span className="nc-custom-colors__count">
           {palette.length}/{MAX_CUSTOM_COLORS}
         </span>
-        {/* Mini preview of saved colors when collapsed */}
-        {!expanded && palette.length > 0 && (
-          <span className="nc-custom-colors__preview" aria-hidden>
-            {palette.slice(0, 6).map((hex) => (
-              <span
-                key={hex}
-                className="nc-custom-colors__preview-dot"
-                style={{ backgroundColor: hex }}
-              />
-            ))}
-            {palette.length > 6 && (
-              <span className="nc-custom-colors__preview-more">
-                +{palette.length - 6}
-              </span>
-            )}
-          </span>
-        )}
       </button>
 
       {expanded && (
