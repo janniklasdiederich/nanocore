@@ -13,7 +13,6 @@ COPY web/package.json ./web/
 RUN bun install --frozen-lockfile || bun install
 
 COPY . .
-# Build web; public/config.js is copied into dist by Vite
 RUN bun run --filter web build \
   && test -f web/dist/index.html \
   && printf '%s\n' \
@@ -23,6 +22,8 @@ RUN bun run --filter web build \
   && ls -la web/dist
 
 # ---- runtime ----
+# Install server deps *inside* /app/server so Bun always resolves hono/@tldraw/*
+# from server/node_modules (no monorepo hoist / overwrite bugs).
 FROM oven/bun:1.2-slim
 WORKDIR /app
 
@@ -31,27 +32,31 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     DATA_DIR=/data \
     WEB_DIST=/app/web/dist \
-    # HTTP by default in Docker; set COOKIE_SECURE=true behind HTTPS reverse proxy
     COOKIE_SECURE=false \
-    # Empty = same-origin only (correct for this image). Set only if UI is on another origin.
     ALLOWED_ORIGINS=
 
-# Production deps for the server workspace only (smaller image)
-COPY package.json bun.lock* bun.lockb* ./
-COPY server/package.json ./server/
-# Workspace root expects a web package; keep a stub so bun install succeeds
-RUN mkdir -p web \
-  && printf '%s\n' '{"name":"web","private":true,"version":"0.0.0"}' > web/package.json \
-  && bun install --production --filter server \
-  || bun install --production
+# Server package + lockfile (lockfile optional but keeps versions stable when present)
+COPY server/package.json ./server/package.json
+COPY bun.lock* bun.lockb* ./
+WORKDIR /app/server
+# Install production deps into /app/server/node_modules
+RUN bun install --production
 
-COPY server ./server
-COPY docker/entrypoint.sh /app/docker/entrypoint.sh
+# Server source (after install so we never wipe node_modules)
+COPY server/src ./src
+COPY server/tsconfig.json ./tsconfig.json
+
+# SPA + entrypoint
+WORKDIR /app
 COPY --from=build /app/web/dist ./web/dist
-
+COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 RUN chmod +x /app/docker/entrypoint.sh \
   && test -f /app/web/dist/index.html \
-  && test -f /app/web/dist/config.js
+  && test -f /app/web/dist/config.js \
+  && test -d /app/server/node_modules/hono \
+  && test -d /app/server/node_modules/@tldraw/sync-core \
+  && cd /app/server \
+  && bun -e "import 'hono'; import '@tldraw/sync-core'; console.log('runtime deps ok')"
 
 VOLUME ["/data"]
 EXPOSE 3001

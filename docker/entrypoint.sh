@@ -48,4 +48,6 @@ if [ ! -f "$WEB_DIST/config.js" ]; then
 fi
 
 echo "[nanocore] Starting (WEB_DIST=${WEB_DIST}, DATA_DIR=${DATA_DIR}, PORT=${PORT_NUM})"
-exec bun run /app/server/src/index.ts
+# Run from server package root so local node_modules resolve (hono, @tldraw/sync-core)
+cd /app/server
+exec bun run src/index.ts
