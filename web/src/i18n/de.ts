@@ -98,6 +98,8 @@ export const de: Messages = {
     "Hintergrund für „{name}“. Jede Seite kann eine eigene Farbe haben.",
   "board.pageColorReset": "Standard wiederherstellen",
   "board.customColors": "Meine Farben",
+  "board.customColorsExpand": "Meine Farben ausklappen",
+  "board.customColorsCollapse": "Meine Farben einklappen",
   "board.customColorsEmpty": "Speichere Farben, die du oft nutzt.",
   "board.customColorAdd": "Farbe hinzufügen",
   "board.customColorSave": "Speichern",

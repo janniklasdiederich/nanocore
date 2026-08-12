@@ -18,9 +18,23 @@ import {
   syncCustomColorsFromDocument,
 } from "./customColors";
 
+const COLLAPSE_KEY = "nanocore.customColors.expanded";
+
+function readExpandedDefault(): boolean {
+  try {
+    const v = localStorage.getItem(COLLAPSE_KEY);
+    if (v === "0") return false;
+    if (v === "1") return true;
+  } catch {
+    // ignore
+  }
+  // Default expanded so the feature is discoverable
+  return true;
+}
+
 /**
  * Style-panel section: color picker + saved custom swatches.
- * Renders under the built-in colors / opacity controls.
+ * Collapsible header keeps the panel compact when not needed.
  */
 export const CustomColorsSection = track(function CustomColorsSection() {
   const editor = useEditor();
@@ -49,8 +63,22 @@ export const CustomColorsSection = track(function CustomColorsSection() {
     [editor],
   );
 
+  const [expanded, setExpanded] = useState(readExpandedDefault);
   const [draft, setDraft] = useState("#6c8cff");
   const [picking, setPicking] = useState(false);
+
+  const toggleExpanded = useCallback(() => {
+    setExpanded((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      if (!next) setPicking(false);
+      return next;
+    });
+  }, []);
 
   const openPicker = useCallback(() => {
     setDraft(randomPleasantHex());
@@ -70,111 +98,159 @@ export const CustomColorsSection = track(function CustomColorsSection() {
 
   return (
     <div
-      className="tlui-style-panel__section nc-custom-colors"
+      className={
+        "tlui-style-panel__section nc-custom-colors" +
+        (expanded ? " is-expanded" : " is-collapsed")
+      }
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div className="nc-custom-colors__header">
+      <button
+        type="button"
+        className="nc-custom-colors__toggle"
+        onClick={toggleExpanded}
+        aria-expanded={expanded}
+        title={
+          expanded
+            ? t("board.customColorsCollapse")
+            : t("board.customColorsExpand")
+        }
+      >
+        <span className="nc-custom-colors__chevron" aria-hidden>
+          {expanded ? "▾" : "▸"}
+        </span>
         <span className="nc-custom-colors__title">
           {t("board.customColors")}
         </span>
         <span className="nc-custom-colors__count">
           {palette.length}/{MAX_CUSTOM_COLORS}
         </span>
-      </div>
+        {/* Mini preview of saved colors when collapsed */}
+        {!expanded && palette.length > 0 && (
+          <span className="nc-custom-colors__preview" aria-hidden>
+            {palette.slice(0, 6).map((hex) => (
+              <span
+                key={hex}
+                className="nc-custom-colors__preview-dot"
+                style={{ backgroundColor: hex }}
+              />
+            ))}
+            {palette.length > 6 && (
+              <span className="nc-custom-colors__preview-more">
+                +{palette.length - 6}
+              </span>
+            )}
+          </span>
+        )}
+      </button>
 
-      {palette.length > 0 && (
-        <div className="nc-custom-colors__swatches" role="list">
-          {palette.map((hex, i) => {
-            const key = customKeyForIndex(i);
-            const active = currentColor === key;
-            return (
-              <div key={key} className="nc-custom-colors__swatch-wrap" role="listitem">
-                <button
-                  type="button"
-                  className={
-                    "nc-custom-colors__swatch" + (active ? " is-active" : "")
-                  }
-                  style={{ backgroundColor: hex }}
-                  title={hex}
-                  aria-label={t("board.customColorApply", { color: hex })}
-                  aria-pressed={active}
-                  onClick={() => applyCustomColorSlot(editor, i)}
-                />
-                <button
-                  type="button"
-                  className="nc-custom-colors__remove"
-                  title={t("board.customColorRemove")}
-                  aria-label={t("board.customColorRemove")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCustomColor(editor, i);
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {expanded && (
+        <div className="nc-custom-colors__body">
+          {palette.length > 0 && (
+            <div className="nc-custom-colors__swatches" role="list">
+              {palette.map((hex, i) => {
+                const key = customKeyForIndex(i);
+                const active = currentColor === key;
+                return (
+                  <div
+                    key={key}
+                    className="nc-custom-colors__swatch-wrap"
+                    role="listitem"
+                  >
+                    <button
+                      type="button"
+                      className={
+                        "nc-custom-colors__swatch" +
+                        (active ? " is-active" : "")
+                      }
+                      style={{ backgroundColor: hex }}
+                      title={hex}
+                      aria-label={t("board.customColorApply", { color: hex })}
+                      aria-pressed={active}
+                      onClick={() => applyCustomColorSlot(editor, i)}
+                    />
+                    <button
+                      type="button"
+                      className="nc-custom-colors__remove"
+                      title={t("board.customColorRemove")}
+                      aria-label={t("board.customColorRemove")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCustomColor(editor, i);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-      {palette.length === 0 && !picking && (
-        <p className="nc-custom-colors__empty">{t("board.customColorsEmpty")}</p>
-      )}
+          {palette.length === 0 && !picking && (
+            <p className="nc-custom-colors__empty">
+              {t("board.customColorsEmpty")}
+            </p>
+          )}
 
-      <input
-        ref={inputRef}
-        type="color"
-        className="nc-custom-colors__native"
-        value={normalizeHex6(draft)}
-        tabIndex={-1}
-        aria-hidden
-        onChange={(e) => setDraft(e.target.value)}
-      />
-
-      {picking ? (
-        <div className="nc-custom-colors__staging">
-          <button
-            type="button"
-            className="nc-custom-colors__swatch nc-custom-colors__swatch--lg"
-            style={{ backgroundColor: draft }}
-            onClick={() => inputRef.current?.click()}
-            aria-label={t("board.customColorEdit")}
+          <input
+            ref={inputRef}
+            type="color"
+            className="nc-custom-colors__native"
+            value={normalizeHex6(draft)}
+            tabIndex={-1}
+            aria-hidden
+            onChange={(e) => setDraft(e.target.value)}
           />
-          <code className="nc-custom-colors__hex">{draft.toUpperCase()}</code>
-          <button
-            type="button"
-            className="nc-custom-colors__btn nc-custom-colors__btn--primary"
-            onClick={commit}
-          >
-            {t("board.customColorSave")}
-          </button>
-          <button
-            type="button"
-            className="nc-custom-colors__btn"
-            onClick={cancel}
-          >
-            {t("common.cancel")}
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          className="nc-custom-colors__btn nc-custom-colors__btn--block"
-          disabled={isFull}
-          title={
-            isFull
-              ? t("board.customColorsFull", { max: MAX_CUSTOM_COLORS })
-              : t("board.customColorAdd")
-          }
-          onClick={openPicker}
-        >
-          + {t("board.customColorAdd")}
-        </button>
-      )}
 
-      {isCustomColorKey(currentColor) && (
-        <p className="nc-custom-colors__hint">{t("board.customColorActive")}</p>
+          {picking ? (
+            <div className="nc-custom-colors__staging">
+              <button
+                type="button"
+                className="nc-custom-colors__swatch nc-custom-colors__swatch--lg"
+                style={{ backgroundColor: draft }}
+                onClick={() => inputRef.current?.click()}
+                aria-label={t("board.customColorEdit")}
+              />
+              <code className="nc-custom-colors__hex">
+                {draft.toUpperCase()}
+              </code>
+              <button
+                type="button"
+                className="nc-custom-colors__btn nc-custom-colors__btn--primary"
+                onClick={commit}
+              >
+                {t("board.customColorSave")}
+              </button>
+              <button
+                type="button"
+                className="nc-custom-colors__btn"
+                onClick={cancel}
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="nc-custom-colors__btn nc-custom-colors__btn--block"
+              disabled={isFull}
+              title={
+                isFull
+                  ? t("board.customColorsFull", { max: MAX_CUSTOM_COLORS })
+                  : t("board.customColorAdd")
+              }
+              onClick={openPicker}
+            >
+              + {t("board.customColorAdd")}
+            </button>
+          )}
+
+          {isCustomColorKey(currentColor) && (
+            <p className="nc-custom-colors__hint">
+              {t("board.customColorActive")}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

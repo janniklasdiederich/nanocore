@@ -101,6 +101,8 @@ export const en = {
   "board.pageColorHelp": "Background for “{name}”. Each page can have its own color.",
   "board.pageColorReset": "Reset to default",
   "board.customColors": "My colors",
+  "board.customColorsExpand": "Expand my colors",
+  "board.customColorsCollapse": "Collapse my colors",
   "board.customColorsEmpty": "Save colors you use often.",
   "board.customColorAdd": "Add color",
   "board.customColorSave": "Save",
