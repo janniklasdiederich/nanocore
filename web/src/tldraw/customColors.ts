@@ -24,7 +24,13 @@ export type CustomColorKey = `custom-${number}`;
 
 let validationPatched = false;
 
-/** Allow custom-* values through DefaultColorStyle / DefaultLabelColorStyle validators. */
+/**
+ * Allow custom-* values through DefaultColorStyle.
+ * Must run **before** useSync validates remote shapes (see main.tsx import).
+ *
+ * tldraw's T.Validator.validate always calls internal `validationFn` — patching
+ * only StyleProp.validate is not enough; we must patch type.validationFn.
+ */
 export function patchColorStyleValidation(): void {
   if (validationPatched) return;
   validationPatched = true;
@@ -32,20 +38,57 @@ export function patchColorStyleValidation(): void {
   const s = DefaultColorStyle as unknown as {
     validate: (value: unknown) => unknown;
     validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
+    type: {
+      validationFn: (value: unknown) => unknown;
+      validateUsingKnownGoodVersionFn?: (prev: unknown, next: unknown) => unknown;
+      validate: (value: unknown) => unknown;
+    };
   };
-  const orig = s.validate.bind(s);
-  s.validate = (value: unknown) => {
+
+  const allowCustom = (value: unknown): unknown | undefined => {
     if (isCustomColorKey(value)) return value;
-    return orig(value);
+    return undefined;
+  };
+
+  // Primary path used by schema ObjectValidator → StyleProp.validate → type.validate
+  // → type.validationFn
+  if (s.type && typeof s.type.validationFn === "function") {
+    const origFn = s.type.validationFn.bind(s.type);
+    s.type.validationFn = (value: unknown) => {
+      const custom = allowCustom(value);
+      if (custom !== undefined) return custom;
+      return origFn(value);
+    };
+  }
+
+  if (s.type?.validateUsingKnownGoodVersionFn) {
+    const origKnown = s.type.validateUsingKnownGoodVersionFn.bind(s.type);
+    s.type.validateUsingKnownGoodVersionFn = (prev: unknown, next: unknown) => {
+      const custom = allowCustom(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
+
+  // StyleProp.validate shortcut
+  const origValidate = s.validate.bind(s);
+  s.validate = (value: unknown) => {
+    const custom = allowCustom(value);
+    if (custom !== undefined) return custom;
+    return origValidate(value);
   };
   if (s.validateUsingKnownGoodVersion) {
     const origKnown = s.validateUsingKnownGoodVersion.bind(s);
     s.validateUsingKnownGoodVersion = (prev: unknown, next: unknown) => {
-      if (isCustomColorKey(next)) return next;
+      const custom = allowCustom(next);
+      if (custom !== undefined) return custom;
       return origKnown(prev, next);
     };
   }
 }
+
+// Run at import time so the first sync put() already accepts custom-* colors
+patchColorStyleValidation();
 
 export function isCustomColorKey(value: unknown): value is CustomColorKey {
   return typeof value === "string" && /^custom-\d+$/.test(value);

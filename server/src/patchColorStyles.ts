@@ -1,37 +1,13 @@
 /**
  * Accept custom color style values (custom-1 … custom-N) used by the web client.
  *
- * The board UI injects those keys into the color theme and writes them on shapes.
- * Without the same validation looseness on the sync server, TLSocketRoom rejects
- * the records as INVALID_RECORD and the board disconnects.
+ * Must patch the internal T.Validator.validationFn — StyleProp.validate alone is
+ * not enough because Validator.validate always calls validationFn.
  */
 import { DefaultColorStyle } from "@tldraw/tlschema";
 
 function isCustomColorKey(value: unknown): boolean {
   return typeof value === "string" && /^custom-\d+$/.test(value);
-}
-
-function patchStyle(style: {
-  validate: (value: unknown) => unknown;
-  validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
-}): void {
-  const marked = style as { __nanocoreColorPatch?: boolean };
-  if (marked.__nanocoreColorPatch) return;
-  marked.__nanocoreColorPatch = true;
-
-  const orig = style.validate.bind(style);
-  style.validate = (value: unknown) => {
-    if (isCustomColorKey(value)) return value;
-    return orig(value);
-  };
-
-  if (style.validateUsingKnownGoodVersion) {
-    const origKnown = style.validateUsingKnownGoodVersion.bind(style);
-    style.validateUsingKnownGoodVersion = (prev: unknown, next: unknown) => {
-      if (isCustomColorKey(next)) return next;
-      return origKnown(prev, next);
-    };
-  }
 }
 
 let done = false;
@@ -40,6 +16,50 @@ let done = false;
 export function patchColorStylesForSync(): void {
   if (done) return;
   done = true;
-  // Sticky notes, geo, draw, etc. all use DefaultColorStyle for props.color
-  patchStyle(DefaultColorStyle as never);
+
+  const style = DefaultColorStyle as unknown as {
+    validate: (value: unknown) => unknown;
+    validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
+    type: {
+      validationFn: (value: unknown) => unknown;
+      validateUsingKnownGoodVersionFn?: (prev: unknown, next: unknown) => unknown;
+    };
+  };
+
+  const allow = (value: unknown) =>
+    isCustomColorKey(value) ? value : undefined;
+
+  // Schema path: props.color → StyleProp → type.validationFn
+  const type = style.type;
+  if (type && typeof type.validationFn === "function") {
+    const origFn = type.validationFn.bind(type);
+    type.validationFn = (value: unknown) => {
+      const custom = allow(value);
+      if (custom !== undefined) return custom;
+      return origFn(value);
+    };
+  }
+  if (type?.validateUsingKnownGoodVersionFn) {
+    const origKnown = type.validateUsingKnownGoodVersionFn.bind(type);
+    type.validateUsingKnownGoodVersionFn = (prev: unknown, next: unknown) => {
+      const custom = allow(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
+
+  const origValidate = style.validate.bind(style);
+  style.validate = (value: unknown) => {
+    const custom = allow(value);
+    if (custom !== undefined) return custom;
+    return origValidate(value);
+  };
+  if (style.validateUsingKnownGoodVersion) {
+    const origKnown = style.validateUsingKnownGoodVersion.bind(style);
+    style.validateUsingKnownGoodVersion = (prev: unknown, next: unknown) => {
+      const custom = allow(next);
+      if (custom !== undefined) return custom;
+      return origKnown(prev, next);
+    };
+  }
 }
