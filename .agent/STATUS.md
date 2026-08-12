@@ -22,7 +22,7 @@ _Last updated: 2026-08-12 after: GIF picker in More toolbar
 
 ## Current Task / Last Completed
 
-GIF tool in the toolbar More overflow. Giphy search is proxied (`GIPHY_API_KEY`); pick downloads to `/api/assets` and places an animated image at the viewport center.
+Style extras: fill value `fill` (True solid = actual color) shown in the panel; dash `none` accepted on client/server and skips outlines.
 
 ## Known Issues & TODOs
 

@@ -11,6 +11,7 @@ import { useI18n, useT } from "../i18n";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
 import { ColorableFrameShapeUtil } from "../tldraw/colorableFrame";
+import { NanocoreDrawShapeUtil } from "../tldraw/styleExtras";
 import {
   listenCustomColorPalette,
   syncCustomColorsFromDocument,
@@ -19,7 +20,7 @@ import {
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { boardTextOptions } from "../tldraw/textOptions";
 
-const colorableFrameUtils = [ColorableFrameShapeUtil];
+const boardShapeUtils = [ColorableFrameShapeUtil, NanocoreDrawShapeUtil];
 
 const multiplayerAssets: TLAssetStore = {
   async upload(_asset, file) {
@@ -199,7 +200,7 @@ function BoardCanvas({
       <Tldraw
         key={tldrawLocale}
         store={store}
-        shapeUtils={colorableFrameUtils}
+        shapeUtils={boardShapeUtils}
         components={boardUiComponents}
         overrides={boardUiOverrides}
         textOptions={boardTextOptions}

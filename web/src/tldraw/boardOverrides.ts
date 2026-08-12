@@ -11,10 +11,14 @@ export const boardUiOverrides: TLUiOverrides = {
     en: {
       "page-menu.submenu.change-color": "Change color",
       "tool.gif": "GIF",
+      "fill-style.fill": "True solid",
+      "dash-style.none": "None",
     },
     de: {
       "page-menu.submenu.change-color": "Farbe ändern",
       "tool.gif": "GIF",
+      "fill-style.fill": "Echt deckend",
+      "dash-style.none": "Keine",
     },
   },
   tools(_editor, tools, { addDialog }) {

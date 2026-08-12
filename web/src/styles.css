@@ -1122,3 +1122,11 @@ input {
   background: rgba(0, 0, 0, 0.45);
   color: #fff;
 }
+
+/* Draw tool: hide outline when dash is none (geo/line/arrow use PathBuilder). */
+.nc-no-dash {
+  display: contents;
+}
+.nc-no-dash path[stroke] {
+  stroke: none !important;
+}

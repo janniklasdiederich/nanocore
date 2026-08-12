@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 // Patch DefaultColorStyle before any board store loads custom-* shape colors
 import "./tldraw/customColors";
+// Extra fill/dash options (true solid + dash none) before the editor mounts
+import "./tldraw/styleExtras";
 import { AuthProvider } from "./auth";
 import { I18nProvider } from "./i18n";
 import { App } from "./App";

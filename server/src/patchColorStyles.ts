@@ -4,7 +4,11 @@
  * Must patch the internal T.Validator.validationFn — StyleProp.validate alone is
  * not enough because Validator.validate always calls validationFn.
  */
-import { DefaultColorStyle, frameShapeProps } from "@tldraw/tlschema";
+import {
+  DefaultColorStyle,
+  DefaultDashStyle,
+  frameShapeProps,
+} from "@tldraw/tlschema";
 
 function isCustomColorKey(value: unknown): boolean {
   return typeof value === "string" && /^custom-\d+$/.test(value);
@@ -61,6 +65,34 @@ export function patchColorStylesForSync(): void {
       if (custom !== undefined) return custom;
       return origKnown(prev, next);
     };
+  }
+
+  wrapValidator(
+    DefaultDashStyle as unknown as {
+      validate?: (value: unknown) => unknown;
+      validationFn?: (value: unknown) => unknown;
+      validateUsingKnownGoodVersion?: (prev: unknown, next: unknown) => unknown;
+      validateUsingKnownGoodVersionFn?: (
+        prev: unknown,
+        next: unknown,
+      ) => unknown;
+    },
+    (value) => (value === "none" ? "none" : undefined),
+  );
+  const dashType = (
+    DefaultDashStyle as unknown as {
+      type?: {
+        validationFn?: (value: unknown) => unknown;
+        validate?: (value: unknown) => unknown;
+        validateUsingKnownGoodVersionFn?: (
+          prev: unknown,
+          next: unknown,
+        ) => unknown;
+      };
+    }
+  ).type;
+  if (dashType) {
+    wrapValidator(dashType, (value) => (value === "none" ? "none" : undefined));
   }
 
   // Frames store color as T.literalEnum(stock values), not DefaultColorStyle.
