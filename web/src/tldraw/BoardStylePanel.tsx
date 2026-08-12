@@ -29,13 +29,37 @@ const FILL_ITEMS = [
   { value: "fill", icon: "fill-fill" },
 ] as const;
 
+const DASH_NONE_ICON = (
+  <div className="tlui-icon nc-dash-none-icon" aria-hidden>
+    <svg viewBox="0 0 16 16" width="16" height="16">
+      <circle
+        cx="8"
+        cy="8"
+        r="5.25"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <line
+        x1="4.2"
+        y1="11.8"
+        x2="11.8"
+        y2="4.2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  </div>
+);
+
 const DASH_ITEMS = [
   { value: "draw", icon: "dash-draw" },
   { value: "dashed", icon: "dash-dashed" },
   { value: "dotted", icon: "dash-dotted" },
   { value: "solid", icon: "dash-solid" },
-  { value: "none", icon: "fill-none" },
-] as const;
+  { value: "none", icon: DASH_NONE_ICON },
+];
 
 const SIZE_ITEMS = [
   { value: "s", icon: "size-small" },
