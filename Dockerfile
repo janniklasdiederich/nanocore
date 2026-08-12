@@ -50,7 +50,10 @@ COPY server/tsconfig.json ./tsconfig.json
 WORKDIR /app
 COPY --from=build /app/web/dist ./web/dist
 COPY docker/entrypoint.sh /app/docker/entrypoint.sh
-RUN chmod +x /app/docker/entrypoint.sh \
+# Strip Windows CRLF if present (checkout on Windows → "set: Illegal option -" in /bin/sh)
+RUN sed -i 's/\r$//' /app/docker/entrypoint.sh \
+  && chmod +x /app/docker/entrypoint.sh \
+  && head -n 5 /app/docker/entrypoint.sh \
   && test -f /app/web/dist/index.html \
   && test -f /app/web/dist/config.js \
   && test -d /app/server/node_modules/hono \
