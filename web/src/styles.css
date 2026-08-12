@@ -1149,6 +1149,12 @@ input {
 }
 .nc-board-style-panel
   > .tlui-style-panel__section:has([data-testid="style.fill"])
-  ~ .tlui-style-panel__section:has([data-testid="style.fill"]) {
+  ~ .tlui-style-panel__section:has([data-testid="style.fill"]),
+.nc-board-style-panel
+  > .tlui-style-panel__section:has([data-testid="style.size"])
+  ~ .tlui-style-panel__section:has([data-testid="style.size"]),
+.nc-board-style-panel
+  > .tlui-style-panel__section:has([data-testid="style.dash"])
+  ~ .tlui-style-panel__section:has([data-testid="style.dash"]) {
   display: none;
 }
