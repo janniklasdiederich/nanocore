@@ -84,7 +84,8 @@ export function setSessionCookie(c: Context, token: string): void {
     httpOnly: true,
     sameSite: "Lax",
     path: "/",
-    secure: env.isProd,
+    // Only Secure over HTTPS — plain HTTP Docker would never set cookies if always true
+    secure: env.cookieSecure,
     maxAge: SESSION_DAYS * 24 * 60 * 60,
   });
 }

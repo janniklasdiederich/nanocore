@@ -1,0 +1,34 @@
+# Dependencies & build output (rebuilt in image)
+node_modules
+**/node_modules
+web/dist
+server/dist
+dist
+
+# Local data & secrets
+data
+server/data
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+uploads
+.env
+.env.*
+!.env.example
+
+# VCS / IDE / docs noise
+.git
+.github
+.agent
+.vscode
+.idea
+**/*.md
+!README.md
+
+# Tests & caches
+**/*.tsbuildinfo
+.vite
+coverage
+*.log
+.DS_Store

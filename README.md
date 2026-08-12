@@ -6,10 +6,11 @@ Single-tenant, self-hosted: one install = one organization, one SQLite file.
 ## Features (v0.1)
 
 - First-run setup: organization name + admin account
-- Admin-created users (email + temporary password)
+- Admin-created users + invite links
 - Forced password change on first login
-- Shared infinite canvases with live cursors (tldraw defaults + images)
+- Shared infinite canvases with live cursors (tldraw)
 - WebSocket collaboration (no Cloudflare required)
+- Admin-only board create / rename / delete
 
 ## Stack
 
@@ -18,63 +19,101 @@ Single-tenant, self-hosted: one install = one organization, one SQLite file.
 - **UI:** React + Vite + [tldraw](https://tldraw.dev)
 - **DB:** SQLite (single file under `DATA_DIR`)
 
-## Quick start (dev)
+---
+
+## Easiest production: Docker (recommended)
+
+**One container serves the web UI, REST API, and WebSockets on the same port.**  
+No separate frontend process, no CORS allowlist required.
+
+```bash
+# from the repo root
+docker compose up --build
+```
+
+Open **http://localhost:3001** and complete first-run setup.
+
+| What | Where |
+|---|---|
+| UI + API + WS | `http://localhost:3001` |
+| SQLite + uploads | Docker volume `nanocore-data` |
+| Session secret | Auto-generated into the volume if `SESSION_SECRET` is unset/`auto` |
+
+### Optional `.env` (repo root)
+
+```bash
+cp .env.example .env
+# edit SESSION_SECRET / COOKIE_SECURE if you want
+docker compose up --build
+```
+
+| Variable | Default (Docker) | Notes |
+|---|---|---|
+| `SESSION_SECRET` | `auto` | Generated & stored in `/data/.session_secret` |
+| `COOKIE_SECURE` | `false` | Set `true` only if browsers use **HTTPS** |
+| `ALLOWED_ORIGINS` | _(empty)_ | Only if the SPA is on another origin |
+| `PORT` | `3001` | Host port mapping |
+
+### Behind an HTTPS reverse proxy
+
+Terminate TLS at nginx/Caddy/Traefik, proxy to the container on `3001`, then:
+
+```env
+COOKIE_SECURE=true
+# PUBLIC_URL=https://boards.example.com   # optional
+# ALLOWED_ORIGINS=                        # still empty if UI is same host
+```
+
+### Split UI origin (unusual)
+
+If the SPA is hosted elsewhere (not recommended for Docker):
+
+```env
+ALLOWED_ORIGINS=https://app.example.com
+# and point the SPA's VITE_API_URL / config.js at the API origin
+```
+
+---
+
+## Local development
 
 ```bash
 bun install
 cp .env.example .env
 bun run dev:server   # http://localhost:3001
-bun run dev:web      # http://localhost:5173
+bun run dev:web      # http://localhost:5173  (proxies /api → :3001)
 ```
 
-Open the web URL. On first visit you’ll complete setup (org name + admin).
+For Vite-on-another-origin, leave `ALLOWED_ORIGINS` empty in **development** (dev CORS reflects any origin).
 
-## Production (single process)
+---
 
-Build the web UI, then run the server (it serves the built UI and API/WebSocket):
+## Bare-metal production (no Docker)
 
 ```bash
 bun install
-bun run build
-PORT=3001 DATA_DIR=./data bun run start
+bun run build                 # builds web → web/dist
+export NODE_ENV=production
+export SESSION_SECRET=$(openssl rand -hex 32)
+export COOKIE_SECURE=false    # true if you serve HTTPS
+export DATA_DIR=./data
+bun run start                 # serves API + web/dist on :3001
 ```
 
-## Production (split UI + API)
-
-API on one port, Vite preview for the UI on another. **WebSockets must hit the API port** (not the UI port).
+### Split UI + API (optional)
 
 ```bash
-# 1) Root .env (example)
-# VITE_API_URL=http://YOUR_IP:3001
-# VITE_WS_URL=ws://YOUR_IP:3001
-# WEB_PORT=4173
+# .env
+VITE_API_URL=http://YOUR_IP:3001
+VITE_WS_URL=ws://YOUR_IP:3001
+ALLOWED_ORIGINS=http://YOUR_IP:4173
+COOKIE_SECURE=false
 
-# 2) API
-bun run start
-
-# 3) Build once, then start UI (start:web writes dist/config.js from .env)
-bun run build:web
-bun run start:web
+bun run start                 # API :3001
+bun run build:web && bun run start:web   # UI :4173 (writes dist/config.js)
 ```
 
-Open `http://YOUR_IP:4173`. Boards connect to `ws://YOUR_IP:3001/api/sync/...`.
-
-If the browser still tries `ws://…:4173/api/sync`, restart `start:web` so `config.js` is regenerated, then hard-refresh.
-
-| Variable | Used for |
-|---|---|
-| `VITE_API_URL` | Client → API base (runtime `config.js` + build) |
-| `VITE_WS_URL` | Board WebSocket origin (defaults from API URL) |
-| `WEB_PORT` | Port for `start:web` (default 4173) |
-
-
-## Docker (optional)
-
-```bash
-docker compose up --build
-```
-
-Data persists in the `nanocore-data` volume (SQLite + uploaded assets).
+---
 
 ## License
 

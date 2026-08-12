@@ -1,21 +1,46 @@
+# Nanocore — one service serves UI + API + WebSockets on the same port.
+#
+# Quick start:
+#   docker compose up --build
+#   open http://localhost:3001
+#
+# Optional: copy .env.example → .env and set SESSION_SECRET / COOKIE_SECURE / ALLOWED_ORIGINS
+# If SESSION_SECRET is omitted or "auto", a secret is generated into the data volume.
+
 services:
   nanocore:
     build: .
+    image: nanocore:local
     ports:
-      - "3001:3001"
+      - "${PORT:-3001}:3001"
     environment:
+      NODE_ENV: production
       PORT: "3001"
       HOST: "0.0.0.0"
       DATA_DIR: /data
-      NODE_ENV: production
-      # Required: app will refuse to start with a weak/default secret
-      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
-      # Comma-separated UI origins if the SPA is not same-origin, e.g. https://boards.example.com
+      WEB_DIST: /app/web/dist
+      # "auto" (default) → generate/persist secret in the volume; or set a long random string
+      SESSION_SECRET: ${SESSION_SECRET:-auto}
+      # false for plain HTTP; true only when the browser reaches you via HTTPS
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # Leave empty for same-origin Docker. Only set if the SPA is hosted on another origin.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-15728640}
     volumes:
       - nanocore-data:/data
     restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 volumes:
   nanocore-data:

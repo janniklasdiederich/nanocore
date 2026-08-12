@@ -31,23 +31,24 @@ type WsData = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+/**
+ * CORS only matters when the SPA is on a *different origin* than the API.
+ * Docker default is same-origin (one port) → empty ALLOWED_ORIGINS is correct;
+ * same-origin browser requests do not depend on CORS allowlisting.
+ */
 function corsOrigin(origin: string): string | null {
-  // Non-browser / same-origin requests may omit Origin
   if (!origin) return null;
 
   if (env.allowedOrigins.length > 0) {
     return env.allowedOrigins.includes(origin) ? origin : null;
   }
 
-  // Dev convenience: reflect origin when no allowlist is configured.
-  // Production must set ALLOWED_ORIGINS (or run same-origin with no cross-origin UI).
-  if (env.isProd) {
-    console.warn(
-      `[cors] Rejected origin ${origin} — set ALLOWED_ORIGINS for cross-origin UI`,
-    );
-    return null;
-  }
-  return origin;
+  // Dev: reflect any origin for Vite on :5173
+  if (!env.isProd) return origin;
+
+  // Prod + empty allowlist: do not reflect arbitrary origins (cookie theft risk).
+  // Same-origin UI works without CORS; split UI must set ALLOWED_ORIGINS.
+  return null;
 }
 
 app.use(
@@ -70,9 +71,11 @@ app.route("/api/assets", assetRoutes);
 app.route("/api/invites", inviteAdminRoutes);
 app.route("/api/invite", invitePublicRoutes);
 
-// Production: serve Vite build (path-contained)
+// Serve Vite build (Docker + bare-metal production). Same process as API/WS.
 const webDist = env.webDist;
-if (existsSync(webDist)) {
+const webDistReady = existsSync(join(webDist, "index.html"));
+
+if (webDistReady) {
   app.get("*", async (c) => {
     const path = new URL(c.req.url).pathname;
     if (path.startsWith("/api")) {
@@ -80,22 +83,26 @@ if (existsSync(webDist)) {
     }
 
     const candidate =
-      path === "/"
+      path === "/" || path === ""
         ? join(webDist, "index.html")
         : safePathUnderRoot(webDist, path);
 
     if (candidate) {
       const file = Bun.file(candidate);
       if (await file.exists()) {
-        return new Response(file);
+        const headers = staticHeaders(candidate);
+        return new Response(file, { headers });
       }
     }
 
-    // SPA fallback
+    // SPA fallback for client routes (/boards/:id, /users, …)
     const index = Bun.file(join(webDist, "index.html"));
     if (await index.exists()) {
       return new Response(index, {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "no-cache",
+        },
       });
     }
 
@@ -104,9 +111,48 @@ if (existsSync(webDist)) {
 } else {
   app.get("/", (c) =>
     c.text(
-      "Nanocore API is running. Start the web app with: bun run dev:web",
+      "Nanocore API is running (no web UI at WEB_DIST). " +
+        "Dev: bun run dev:web · Prod/Docker: rebuild so web/dist is included.",
     ),
   );
+}
+
+function staticHeaders(filePath: string): Record<string, string> {
+  const lower = filePath.toLowerCase();
+  const headers: Record<string, string> = {
+    "X-Content-Type-Options": "nosniff",
+  };
+
+  if (lower.endsWith(".html")) {
+    headers["Content-Type"] = "text/html; charset=utf-8";
+    headers["Cache-Control"] = "no-cache";
+  } else if (lower.endsWith(".js") || lower.endsWith(".mjs")) {
+    headers["Content-Type"] = "text/javascript; charset=utf-8";
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
+  } else if (lower.endsWith(".css")) {
+    headers["Content-Type"] = "text/css; charset=utf-8";
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
+  } else if (lower.endsWith(".svg")) {
+    headers["Content-Type"] = "image/svg+xml";
+  } else if (lower.endsWith(".json")) {
+    headers["Content-Type"] = "application/json";
+  } else if (lower.endsWith(".map")) {
+    headers["Content-Type"] = "application/json";
+  } else if (lower.endsWith(".woff2")) {
+    headers["Content-Type"] = "font/woff2";
+    headers["Cache-Control"] = "public, max-age=31536000, immutable";
+  } else if (lower.endsWith(".png")) {
+    headers["Content-Type"] = "image/png";
+  } else if (lower.endsWith(".ico")) {
+    headers["Content-Type"] = "image/x-icon";
+  }
+
+  // config.js must not be immutable — may be rewritten for split deploys
+  if (lower.endsWith("config.js")) {
+    headers["Cache-Control"] = "no-cache";
+  }
+
+  return headers;
 }
 
 function parseCookies(header: string | null): Record<string, string> {
@@ -263,12 +309,16 @@ const purgeTimer = setInterval(() => {
 purgeTimer.unref?.();
 
 console.log(`Nanocore listening on http://${env.host}:${server.port}`);
-console.log(`  data: ${env.dataDir}`);
+console.log(`  data:     ${env.dataDir}`);
+console.log(
+  `  web UI:   ${webDistReady ? env.webDist : "(not found — API only)"}`,
+);
+console.log(`  cookies:  Secure=${env.cookieSecure}`);
 if (env.allowedOrigins.length) {
-  console.log(`  cors: ${env.allowedOrigins.join(", ")}`);
-} else if (env.isProd) {
+  console.log(`  cors:     ${env.allowedOrigins.join(", ")}`);
+} else {
   console.log(
-    "  cors: no ALLOWED_ORIGINS (cross-origin browser calls will fail)",
+    `  cors:     same-origin only${env.isProd ? "" : " (dev reflects any origin)"}`,
   );
 }
 
