@@ -1,8 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-// Clipboard API is missing on plain HTTP (Docker/LAN). Install before tldraw.
-import "./clipboardSecureFallback";
 // Patch DefaultColorStyle before any board store loads custom-* shape colors
 import "./tldraw/customColors";
 import { AuthProvider } from "./auth";

@@ -39,8 +39,6 @@ Open **http://localhost:3001** and complete first-run setup.
 | SQLite + uploads | Docker volume `nanocore-data` |
 | Session secret | Auto-generated into the volume if `SESSION_SECRET` is unset/`auto` |
 
-**Copy/paste tip:** Browsers only expose the full Clipboard API on **HTTPS** or **localhost**. Opening the board as `http://<LAN-IP>:3001` used to break element copy/paste; Nanocore includes a fallback for that, but `http://localhost:3001` (or HTTPS behind a reverse proxy) is still the most reliable.
-
 ### Optional `.env` (repo root)
 
 ```bash
