@@ -166,26 +166,22 @@ export function writeCustomPalette(editor: Editor, hexes: string[]): void {
   applyPaletteToTheme(cleaned);
 }
 
+const PLACEHOLDER_HEX = "#888888";
+
 /**
- * Mutate the shared theme palette so custom-* keys resolve to hex colors.
- * Safe to call often; clears previous custom-* keys first.
+ * Mutate the shared theme palette so custom-* keys always resolve.
+ * Always seeds custom-1 … custom-MAX (placeholder if unused) so shapes never
+ * hit theme[color] === undefined and crash with "Cannot read 'solid'/'note'".
  */
 export function applyPaletteToTheme(hexes: string[]): void {
   const cleaned = hexes.map(normalizeHex6).slice(0, MAX_CUSTOM_COLORS);
 
   for (const mode of ["lightMode", "darkMode"] as const) {
-    const theme = DefaultColorThemePalette[mode] as Record<
-      string,
-      unknown
-    >;
-    for (const key of Object.keys(theme)) {
-      if (key.startsWith("custom-")) {
-        delete theme[key];
-      }
-    }
-    cleaned.forEach((hex, i) => {
+    const theme = DefaultColorThemePalette[mode] as Record<string, unknown>;
+    for (let i = 0; i < MAX_CUSTOM_COLORS; i++) {
+      const hex = cleaned[i] ?? PLACEHOLDER_HEX;
       theme[`custom-${i + 1}`] = makeThemeColor(hex);
-    });
+    }
   }
 }
 
@@ -301,3 +297,29 @@ export function syncCustomColorsFromDocument(editor: Editor): void {
   patchColorStyleValidation();
   applyPaletteToTheme(readCustomPalette(editor));
 }
+
+/** Apply palette from a raw store (before Editor exists / first paint). */
+export function syncCustomColorsFromStore(store: {
+  get: (id: typeof TLDOCUMENT_ID) => { meta?: Record<string, unknown> } | undefined;
+}): void {
+  patchColorStyleValidation();
+  const doc = store.get(TLDOCUMENT_ID);
+  applyPaletteToTheme(parseCustomPalette(doc?.meta?.[PALETTE_META_KEY]));
+}
+
+/**
+ * Keep theme in sync when document meta changes (remote collab palette edits).
+ * Returns unsubscribe.
+ */
+export function listenCustomColorPalette(editor: Editor): () => void {
+  syncCustomColorsFromDocument(editor);
+  return editor.store.listen(
+    () => {
+      syncCustomColorsFromDocument(editor);
+    },
+    { source: "all", scope: "document" },
+  );
+}
+
+// Seed placeholder custom-1…N so first paint never crashes
+applyPaletteToTheme([]);

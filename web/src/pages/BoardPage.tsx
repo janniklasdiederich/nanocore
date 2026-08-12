@@ -10,7 +10,11 @@ import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
-import { syncCustomColorsFromDocument } from "../tldraw/customColors";
+import {
+  listenCustomColorPalette,
+  syncCustomColorsFromDocument,
+  syncCustomColorsFromStore,
+} from "../tldraw/customColors";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { boardTextOptions } from "../tldraw/textOptions";
 
@@ -136,6 +140,13 @@ function BoardCanvas({
     userInfo,
   });
 
+  // Apply palette from the synced store *before* Tldraw paints shapes, so
+  // theme.custom-N exists and shapes don't crash on theme[color].solid
+  useEffect(() => {
+    if (store.status !== "synced-remote") return;
+    syncCustomColorsFromStore(store.store);
+  }, [store]);
+
   const onMount = useCallback(
     (editor: Editor) => {
       editor.user.updateUserPreferences({
@@ -143,11 +154,13 @@ function BoardCanvas({
         color: userInfo.color,
         locale: tldrawLocale,
       });
-      // Load custom color palette from document.meta into the live theme
       syncCustomColorsFromDocument(editor);
-      // Convert leftover markdown → rich text when leaving the text editor
-      const stop = registerMarkdownOnEditEnd(editor);
-      return () => stop();
+      const stopPalette = listenCustomColorPalette(editor);
+      const stopMarkdown = registerMarkdownOnEditEnd(editor);
+      return () => {
+        stopPalette();
+        stopMarkdown();
+      };
     },
     [userInfo.name, userInfo.color, tldrawLocale],
   );
@@ -173,6 +186,9 @@ function BoardCanvas({
       </div>
     );
   }
+
+  // status === 'synced-remote' — apply theme on this render before Tldraw mounts
+  syncCustomColorsFromStore(store.store);
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
