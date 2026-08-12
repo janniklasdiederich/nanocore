@@ -13,32 +13,6 @@ import {
   PathBuilder,
   type TLDrawShape,
 } from "tldraw";
-// Same module instance DefaultStylePanelContent uses (not re-exported from "tldraw").
-// @ts-expect-error no types on tldraw's internal styles module
-import { STYLES } from "../../node_modules/tldraw/dist-esm/lib/styles.mjs";
-
-type StyleItem = { value: string; icon: string };
-
-function ensureStyleItem(
-  list: readonly StyleItem[],
-  item: StyleItem,
-): StyleItem[] {
-  if (list.some((i) => i.value === item.value)) return list as StyleItem[];
-  return [...list, item];
-}
-
-const stylesMut = STYLES as unknown as {
-  fill: StyleItem[];
-  dash: StyleItem[];
-};
-stylesMut.fill = ensureStyleItem(stylesMut.fill, {
-  value: "fill",
-  icon: "fill-fill",
-});
-stylesMut.dash = ensureStyleItem(stylesMut.dash, {
-  value: "none",
-  icon: "fill-none",
-});
 
 function wrapDashNone(): void {
   const style = DefaultDashStyle as unknown as {

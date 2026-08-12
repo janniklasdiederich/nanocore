@@ -1,23 +1,203 @@
 import {
   DefaultColorStyle,
+  DefaultDashStyle,
+  DefaultFillStyle,
+  DefaultSizeStyle,
   DefaultStylePanel,
   DefaultStylePanelContent,
+  OpacitySlider,
+  TldrawUiButtonPicker,
+  TldrawUiToolbar,
+  getDefaultColorTheme,
+  kickoutOccludedShapes,
+  useEditor,
+  useIsDarkMode,
   useRelevantStyles,
+  useTranslation,
+  useUiEvents,
+  type StyleProp,
   type TLUiStylePanelProps,
 } from "tldraw";
+import { useCallback, useMemo } from "react";
 import { CustomColorsSection } from "./CustomColorsSection";
 
+const FILL_ITEMS = [
+  { value: "none", icon: "fill-none" },
+  { value: "semi", icon: "fill-semi" },
+  { value: "solid", icon: "fill-solid" },
+  { value: "pattern", icon: "fill-pattern" },
+  { value: "fill", icon: "fill-fill" },
+] as const;
+
+const DASH_ITEMS = [
+  { value: "draw", icon: "dash-draw" },
+  { value: "dashed", icon: "dash-dashed" },
+  { value: "dotted", icon: "dash-dotted" },
+  { value: "solid", icon: "dash-solid" },
+  { value: "none", icon: "fill-none" },
+] as const;
+
+const SIZE_ITEMS = [
+  { value: "s", icon: "size-small" },
+  { value: "m", icon: "size-medium" },
+  { value: "l", icon: "size-large" },
+  { value: "xl", icon: "size-extra-large" },
+] as const;
+
+const COLOR_ITEMS = [
+  { value: "black", icon: "color" },
+  { value: "grey", icon: "color" },
+  { value: "light-violet", icon: "color" },
+  { value: "violet", icon: "color" },
+  { value: "blue", icon: "color" },
+  { value: "light-blue", icon: "color" },
+  { value: "yellow", icon: "color" },
+  { value: "orange", icon: "color" },
+  { value: "green", icon: "color" },
+  { value: "light-green", icon: "color" },
+  { value: "light-red", icon: "color" },
+  { value: "red", icon: "color" },
+] as const;
+
 /**
- * Style panel with stock controls + custom color picker / saved swatches.
+ * Style panel with True solid fill + dash None in the real picker rows.
+ * Stock DefaultStylePanelContent's first section is hidden (duplicate).
  */
 export function BoardStylePanel(props: TLUiStylePanelProps) {
   const styles = useRelevantStyles();
-  const showCustomColors = styles != null && styles.get(DefaultColorStyle) !== undefined;
+  const isDarkMode = useIsDarkMode();
+  const theme = getDefaultColorTheme({ isDarkMode });
+  const showCustomColors =
+    styles != null && styles.get(DefaultColorStyle) !== undefined;
 
   return (
     <DefaultStylePanel {...props}>
-      <DefaultStylePanelContent styles={styles} />
-      {showCustomColors && <CustomColorsSection />}
+      <div className="nc-board-style-panel">
+        {styles && <BoardCommonStylePickerSet styles={styles} theme={theme} />}
+        <DefaultStylePanelContent styles={styles} />
+        {showCustomColors && <CustomColorsSection />}
+      </div>
     </DefaultStylePanel>
+  );
+}
+
+function useStyleChangeCallback() {
+  const editor = useEditor();
+  const trackEvent = useUiEvents();
+
+  return useMemo(
+    () =>
+      function handleStyleChange<T>(style: StyleProp<T>, value: T) {
+        editor.run(() => {
+          if (editor.isIn("select")) {
+            editor.setStyleForSelectedShapes(style, value);
+          }
+          editor.setStyleForNextShapes(style, value);
+          editor.updateInstanceState({ isChangingStyle: true });
+        });
+        trackEvent("set-style", {
+          source: "style-panel",
+          id: style.id,
+          value: value as string,
+        });
+      },
+    [editor, trackEvent],
+  );
+}
+
+function BoardCommonStylePickerSet({
+  styles,
+  theme,
+}: {
+  styles: NonNullable<ReturnType<typeof useRelevantStyles>>;
+  theme: ReturnType<typeof getDefaultColorTheme>;
+}) {
+  const msg = useTranslation();
+  const editor = useEditor();
+  const onHistoryMark = useCallback(
+    (id: string) => editor.markHistoryStoppingPoint(id),
+    [editor],
+  );
+  const handleValueChange = useStyleChangeCallback();
+
+  const color = styles.get(DefaultColorStyle);
+  const fill = styles.get(DefaultFillStyle);
+  const dash = styles.get(DefaultDashStyle);
+  const size = styles.get(DefaultSizeStyle);
+  const showPickers =
+    fill !== undefined || dash !== undefined || size !== undefined;
+
+  return (
+    <>
+      <div className="tlui-style-panel__section__common" data-testid="style.panel">
+        {color === undefined ? null : (
+          <TldrawUiToolbar label={msg("style-panel.color")}>
+            <TldrawUiButtonPicker
+              title={msg("style-panel.color")}
+              uiType="color"
+              style={DefaultColorStyle}
+              items={COLOR_ITEMS}
+              value={color}
+              onValueChange={handleValueChange}
+              theme={theme}
+              onHistoryMark={onHistoryMark}
+            />
+          </TldrawUiToolbar>
+        )}
+        <OpacitySlider />
+      </div>
+      {showPickers && (
+        <div className="tlui-style-panel__section">
+          {fill === undefined ? null : (
+            <TldrawUiToolbar label={msg("style-panel.fill")}>
+              <TldrawUiButtonPicker
+                title={msg("style-panel.fill")}
+                uiType="fill"
+                style={DefaultFillStyle}
+                items={FILL_ITEMS}
+                value={fill}
+                onValueChange={handleValueChange}
+                theme={theme}
+                onHistoryMark={onHistoryMark}
+              />
+            </TldrawUiToolbar>
+          )}
+          {dash === undefined ? null : (
+            <TldrawUiToolbar label={msg("style-panel.dash")}>
+              <TldrawUiButtonPicker
+                title={msg("style-panel.dash")}
+                uiType="dash"
+                style={DefaultDashStyle}
+                items={DASH_ITEMS}
+                value={dash}
+                onValueChange={handleValueChange}
+                theme={theme}
+                onHistoryMark={onHistoryMark}
+              />
+            </TldrawUiToolbar>
+          )}
+          {size === undefined ? null : (
+            <TldrawUiToolbar label={msg("style-panel.size")}>
+              <TldrawUiButtonPicker
+                title={msg("style-panel.size")}
+                uiType="size"
+                style={DefaultSizeStyle}
+                items={SIZE_ITEMS}
+                value={size}
+                onValueChange={(style, value) => {
+                  handleValueChange(style, value);
+                  const selectedShapeIds = editor.getSelectedShapeIds();
+                  if (selectedShapeIds.length > 0) {
+                    kickoutOccludedShapes(editor, selectedShapeIds);
+                  }
+                }}
+                theme={theme}
+                onHistoryMark={onHistoryMark}
+              />
+            </TldrawUiToolbar>
+          )}
+        </div>
+      )}
+    </>
   );
 }

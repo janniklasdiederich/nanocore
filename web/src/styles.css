@@ -1130,3 +1130,15 @@ input {
 .nc-no-dash path[stroke] {
   stroke: none !important;
 }
+
+/* Hide tldraw's duplicate color/fill/dash/size rows (we render extras ourselves). */
+.nc-board-style-panel
+  > .tlui-style-panel__section__common
+  ~ .tlui-style-panel__section__common {
+  display: none;
+}
+.nc-board-style-panel
+  > .tlui-style-panel__section:has([data-testid="style.fill"])
+  ~ .tlui-style-panel__section:has([data-testid="style.fill"]) {
+  display: none;
+}
