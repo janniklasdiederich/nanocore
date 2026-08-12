@@ -121,6 +121,8 @@ export const en = {
   "gifs.notConfigured":
     "GIF search is not set up. Add GIPHY_API_KEY on the server and restart.",
 
+  "reactions.add": "Add reaction",
+
   // Users
   "users.title": "Users",
   "users.subtitle": "Only admins can create accounts.",

@@ -118,6 +118,8 @@ export const de: Messages = {
   "gifs.notConfigured":
     "GIF-Suche ist nicht eingerichtet. GIPHY_API_KEY auf dem Server setzen und neu starten.",
 
+  "reactions.add": "Reaktion hinzufügen",
+
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",
   "users.backToBoards": "← Zurück zu den Boards",

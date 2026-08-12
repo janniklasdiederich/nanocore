@@ -1158,3 +1158,89 @@ input {
   ~ .tlui-style-panel__section:has([data-testid="style.dash"]) {
   display: none;
 }
+
+.nc-reactions-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.nc-reaction-bar {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.nc-reaction-chip,
+.nc-reaction-add,
+.nc-reaction-pick {
+  appearance: none;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  border-radius: 999px;
+  height: 26px;
+  padding: 0 7px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.nc-reaction-chip--mine {
+  background: #e8eefc;
+  border-color: #6c8cff;
+}
+
+.nc-reaction-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #445;
+}
+
+.nc-reaction-add {
+  width: 26px;
+  padding: 0;
+  justify-content: center;
+  font-size: 16px;
+  color: #556;
+}
+
+.nc-reaction-add-wrap {
+  position: relative;
+}
+
+.nc-reaction-picker {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.nc-reaction-pick {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  justify-content: center;
+  font-size: 18px;
+  border-radius: 8px;
+}
+
+.nc-reaction-pick:hover,
+.nc-reaction-chip:hover,
+.nc-reaction-add:hover {
+  background: #f4f6fb;
+}
