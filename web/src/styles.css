@@ -1125,8 +1125,12 @@ input {
 
 .nc-dash-none-icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: none;
 }
 
 /* Draw tool: hide outline when dash is none (geo/line/arrow use PathBuilder). */

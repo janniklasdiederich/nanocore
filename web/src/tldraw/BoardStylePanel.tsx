@@ -30,8 +30,8 @@ const FILL_ITEMS = [
 ] as const;
 
 const DASH_NONE_ICON = (
-  <div className="tlui-icon nc-dash-none-icon" aria-hidden>
-    <svg viewBox="0 0 16 16" width="16" height="16">
+  <div className="nc-dash-none-icon" aria-hidden>
+    <svg viewBox="0 0 16 16" width="18" height="18">
       <circle
         cx="8"
         cy="8"
