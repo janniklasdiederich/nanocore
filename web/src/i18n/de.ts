@@ -119,6 +119,7 @@ export const de: Messages = {
     "GIF-Suche ist nicht eingerichtet. GIPHY_API_KEY auf dem Server setzen und neu starten.",
 
   "reactions.add": "Reaktion hinzufügen",
+  "reactions.search": "Emoji suchen",
 
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",

@@ -1220,26 +1220,23 @@ input {
   position: absolute;
   left: 0;
   bottom: calc(100% + 6px);
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  padding: 6px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
+  z-index: 20;
+  border-radius: 12px;
+  overflow: hidden;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
 
-.nc-reaction-pick {
-  width: 32px;
-  height: 32px;
-  padding: 0;
+.nc-reaction-picker-loading {
+  width: 320px;
+  height: 120px;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  font-size: 18px;
-  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  color: #667;
 }
 
-.nc-reaction-pick:hover,
 .nc-reaction-chip:hover,
 .nc-reaction-add:hover {
   background: #f4f6fb;

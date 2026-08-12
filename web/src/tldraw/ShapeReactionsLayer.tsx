@@ -1,13 +1,11 @@
-import { track, useEditor, type TLShapeId } from "tldraw";
-import { useState } from "react";
+import { track, useEditor, useIsDarkMode, type TLShapeId } from "tldraw";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Theme } from "emoji-picker-react";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
-import {
-  REACTION_EMOJI,
-  readReactions,
-  toggleReaction,
-  type ReactionMap,
-} from "./shapeReactions";
+import { readReactions, toggleReaction, type ReactionMap } from "./shapeReactions";
+
+const EmojiPicker = lazy(() => import("emoji-picker-react"));
 
 /**
  * Screen-space emoji reactions at the bottom-left of shapes.
@@ -132,26 +130,62 @@ function ReactionBar({
             title={t("reactions.add")}
             aria-label={t("reactions.add")}
             aria-expanded={pickerOpen}
-            onClick={onTogglePicker}
+            onClick={() => {
+              if (!pickerOpen) onTogglePicker();
+            }}
           >
             +
           </button>
           {pickerOpen && (
-            <div className="nc-reaction-picker" role="listbox">
-              {REACTION_EMOJI.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  className="nc-reaction-pick"
-                  onClick={() => onPick(emoji)}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+            <ReactionEmojiPicker onPick={onPick} onClose={onTogglePicker} />
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function ReactionEmojiPicker({
+  onPick,
+  onClose,
+}: {
+  onPick: (emoji: string) => void;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const dark = useIsDarkMode();
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onDoc = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("pointerdown", onDoc, true);
+    return () => document.removeEventListener("pointerdown", onDoc, true);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={rootRef}
+      className="nc-reaction-picker"
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <Suspense
+        fallback={
+          <div className="nc-reaction-picker-loading">{t("common.loading")}</div>
+        }
+      >
+        <EmojiPicker
+          theme={dark ? Theme.DARK : Theme.LIGHT}
+          width={320}
+          height={380}
+          searchPlaceHolder={t("reactions.search")}
+          previewConfig={{ showPreview: false }}
+          lazyLoadEmojis
+          skinTonesDisabled
+          onEmojiClick={(item) => onPick(item.emoji)}
+        />
+      </Suspense>
     </div>
   );
 }

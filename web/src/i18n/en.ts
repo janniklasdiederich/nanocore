@@ -122,6 +122,7 @@ export const en = {
     "GIF search is not set up. Add GIPHY_API_KEY on the server and restart.",
 
   "reactions.add": "Add reaction",
+  "reactions.search": "Search emoji",
 
   // Users
   "users.title": "Users",

@@ -2,17 +2,6 @@ import type { Editor, TLShape, TLShapeId } from "tldraw";
 
 export const REACTIONS_META = "nanocoreReactions";
 
-export const REACTION_EMOJI = [
-  "👍",
-  "❤️",
-  "😂",
-  "🎉",
-  "👀",
-  "🔥",
-  "👎",
-  "💯",
-] as const;
-
 export type ReactionMap = Record<string, string[]>;
 
 export function readReactions(shape: TLShape): ReactionMap {
