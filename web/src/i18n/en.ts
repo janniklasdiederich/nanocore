@@ -94,6 +94,9 @@ export const en = {
   "board.apiHint": "Is the API running on port 3001?",
   "board.anonymous": "Anonymous",
   "board.uploadFailed": "Upload failed",
+  "board.background": "Background",
+  "board.backgroundTitle": "Board background color (shared with everyone on this board)",
+  "board.backgroundPreset": "Set background to {color}",
 
   // Users
   "users.title": "Users",

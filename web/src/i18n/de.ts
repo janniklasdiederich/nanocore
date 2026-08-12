@@ -90,6 +90,10 @@ export const de: Messages = {
   "board.apiHint": "Läuft die API auf Port 3001?",
   "board.anonymous": "Anonym",
   "board.uploadFailed": "Upload fehlgeschlagen",
+  "board.background": "Hintergrund",
+  "board.backgroundTitle":
+    "Board-Hintergrundfarbe (wird mit allen auf diesem Board geteilt)",
+  "board.backgroundPreset": "Hintergrund auf {color} setzen",
 
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",
