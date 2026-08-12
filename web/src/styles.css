@@ -1168,8 +1168,8 @@ input {
 
 .nc-reaction-bar {
   position: absolute;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, max-content);
   align-items: center;
   gap: 4px;
   pointer-events: auto;
