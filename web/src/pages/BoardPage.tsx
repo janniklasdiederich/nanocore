@@ -22,6 +22,7 @@ import {
   syncCustomColorsFromStore,
 } from "../tldraw/customColors";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
+import { registerShapeOwnerStamp } from "../tldraw/shapeOwner";
 import { boardTextOptions } from "../tldraw/textOptions";
 
 const boardShapeUtils = [
@@ -170,12 +171,17 @@ function BoardCanvas({
       syncCustomColorsFromDocument(editor);
       const stopPalette = listenCustomColorPalette(editor);
       const stopMarkdown = registerMarkdownOnEditEnd(editor);
+      const stopOwner = registerShapeOwnerStamp(editor, {
+        id: userInfo.id,
+        name: userInfo.name,
+      });
       return () => {
         stopPalette();
         stopMarkdown();
+        stopOwner();
       };
     },
-    [userInfo.name, userInfo.color, tldrawLocale],
+    [userInfo.id, userInfo.name, userInfo.color, tldrawLocale],
   );
 
   if (store.status === "loading") {

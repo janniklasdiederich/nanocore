@@ -121,6 +121,8 @@ export const de: Messages = {
   "reactions.add": "Reaktion hinzufügen",
   "reactions.search": "Emoji suchen",
 
+  "owner.placedBy": "Platziert von {name}",
+
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",
   "users.backToBoards": "← Zurück zu den Boards",

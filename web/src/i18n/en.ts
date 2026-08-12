@@ -124,6 +124,8 @@ export const en = {
   "reactions.add": "Add reaction",
   "reactions.search": "Search emoji",
 
+  "owner.placedBy": "Placed by {name}",
+
   // Users
   "users.title": "Users",
   "users.subtitle": "Only admins can create accounts.",

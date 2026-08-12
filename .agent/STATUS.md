@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: GIF picker in More toolbar
+_Last updated: 2026-08-12 after: shape owner labels + preference
 
 ## What's Been Built
 
@@ -17,12 +17,16 @@ _Last updated: 2026-08-12 after: GIF picker in More toolbar
 - **Page backgrounds** + **custom shape colors** (document.meta palette, validationFn patch, theme seed custom-1…N)
 - **Colorable frames**: `FrameShapeUtil.configure({ showColors: true })`; stock + custom-* colors; frame validator patched on client/server
 - **GIF picker**: More-toolbar button opens Giphy search; server imports a copy as `image/gif` with `isAnimated: true` (autoplay + loop)
+- **Fill/dash extras**: True solid fill + dash none via BoardStylePanel
+- **Sticky arrows**: NanocoreSelectTool + note anchors (center + 4 mid-edges)
+- **Reactions**: shape.meta.nanocoreReactions; InFrontOfTheCanvas overlay (bottom-left)
+- **Owner labels**: shape.meta.nanocoreOwner stamped on local create; top-right overlay; Preferences always / hover / never
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
-- **Arrows**: stock tldraw only
+- **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
 
 ## Current Task / Last Completed
 
-Sticky side handles start arrows (bound to that edge) instead of cloning notes. Precise arrow ends on notes snap to center or the four mid-edge anchors.
+Shape owner labels: each locally created shape (draw/paste/duplicate) stamps `{id,name}` on `shape.meta.nanocoreOwner`. Overlay sits at top-right (reactions occupy bottom-left). Menu ▸ Preferences ▸ Owner labels: always / show on hover (default) / never. Preference is local (`localStorage nanocore_ownerLabel`). Shapes created before this feature have no owner and show no label.
 
 ## Known Issues & TODOs
 
@@ -33,6 +37,7 @@ Sticky side handles start arrows (bound to that edge) instead of cloning notes. 
 - [ ] Orphaned uploads not cleaned when boards deleted
 - [ ] Whitelabel is org name only
 - [ ] Local DB may still contain leftover `bezier-arrow` records from abandoned experiments
+- [ ] Pre-existing shapes have no owner stamp (no backfill)
 
 ## Decisions Pending
 

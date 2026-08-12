@@ -19,7 +19,12 @@ nanocore/
 - `server/src/rooms.ts` — one `TLSocketRoom` per active board; debounced snapshot persist
 - `server/src/routes/*` — setup, auth, users, boards, assets
 - `web/src/pages/*` — Setup, Login, ChangePassword, Boards, Board (tldraw), Users
-- `web/src/pages/BoardPage.tsx` — `useSync` + asset upload to `/api/assets/upload`
+- `web/src/pages/BoardPage.tsx` — `useSync` + asset upload to `/api/assets/upload`; stamps shape owner on local create
+- `web/src/tldraw/shapeOwner.ts` — `nanocoreOwner` meta + local owner-label preference
+- `web/src/tldraw/ShapeOwnerLayer.tsx` — top-right owner name overlay
+- `web/src/tldraw/shapeReactions.ts` / `ShapeReactionsLayer.tsx` — emoji reactions on `nanocoreReactions`
+- `web/src/tldraw/BoardCanvasOverlays.tsx` — composes InFrontOfTheCanvas overlays (reactions + owners)
+- `web/src/tldraw/BoardMainMenu.tsx` — default hamburger + Owner labels submenu in Preferences
 
 ## Data Flow
 
@@ -37,6 +42,8 @@ nanocore/
 - **Board mutations admin-only** (create/rename/delete); all members can list/open/collab
 - **Asset access** via HMAC `sig` query (works in `<img>`) or session cookie; SVG uploads blocked
 - **Production** requires non-default `SESSION_SECRET`; optional `ALLOWED_ORIGINS` for split UI/API
+- **Shape owner** is stamped only on `source === 'user'` creates (not remote sync). Name is a snapshot at place-time. Visibility preference is per-browser (`localStorage`), not synced.
+- **InFrontOfTheCanvas** is a single slot — overlays compose in `BoardCanvasOverlays`
 
 ## Dependencies
 
