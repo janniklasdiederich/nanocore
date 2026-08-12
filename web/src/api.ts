@@ -214,4 +214,34 @@ export const api = {
 
   deleteBoard: (id: string) =>
     request<{ ok: boolean }>(`/api/boards/${id}`, { method: "DELETE" }),
+
+  searchGifs: (q: string, offset = 0) =>
+    request<{
+      configured: boolean;
+      gifs: GifHit[];
+      offset: number;
+      limit: number;
+    }>(`/api/gifs?q=${encodeURIComponent(q)}&offset=${offset}`),
+
+  importGif: (id: string) =>
+    request<ImportedGif>("/api/gifs/import", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    }),
+};
+
+export type GifHit = {
+  id: string;
+  title: string;
+  previewUrl: string;
+  w: number;
+  h: number;
+};
+
+export type ImportedGif = {
+  src: string;
+  w: number;
+  h: number;
+  mimeType: string;
+  name: string;
 };

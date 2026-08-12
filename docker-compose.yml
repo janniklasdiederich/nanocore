@@ -26,6 +26,7 @@ services:
       # Leave empty for same-origin Docker. Only set if the SPA is hosted on another origin.
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-15728640}
+      GIPHY_API_KEY: ${GIPHY_API_KEY:-}
     volumes:
       - nanocore-data:/data
     restart: unless-stopped

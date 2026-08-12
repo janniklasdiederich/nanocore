@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: visible frame body fills_
+_Last updated: 2026-08-12 after: GIF picker in More toolbar
 
 ## What's Been Built
 
@@ -16,12 +16,13 @@ _Last updated: 2026-08-12 after: visible frame body fills_
 - **i18n**: en + de
 - **Page backgrounds** + **custom shape colors** (document.meta palette, validationFn patch, theme seed custom-1…N)
 - **Colorable frames**: `FrameShapeUtil.configure({ showColors: true })`; stock + custom-* colors; frame validator patched on client/server
+- **GIF picker**: More-toolbar button opens Giphy search; server imports a copy as `image/gif` with `isAnimated: true` (autoplay + loop)
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only
 
 ## Current Task / Last Completed
 
-Frames are colorable via `showColors`. Stock theme `frame.fill` is near-white by default; we remap body/heading fill to each color's `semi` wash so the rectangle itself is tinted.
+GIF tool in the toolbar More overflow. Giphy search is proxied (`GIPHY_API_KEY`); pick downloads to `/api/assets` and places an animated image at the viewport center.
 
 ## Known Issues & TODOs
 

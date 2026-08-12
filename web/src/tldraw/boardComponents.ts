@@ -3,6 +3,7 @@ import { boardUiComponents as peopleComponents } from "../components/LockedPeopl
 import { BoardBackground } from "./boardBackground";
 import { BoardPageMenu } from "./BoardPageMenu";
 import { BoardStylePanel } from "./BoardStylePanel";
+import { BoardToolbar } from "./BoardToolbar";
 import { RichTextToolbarWithSize } from "./RichTextToolbarWithSize";
 
 export const boardUiComponents: TLComponents = {
@@ -14,4 +15,5 @@ export const boardUiComponents: TLComponents = {
   PageMenu: BoardPageMenu,
   /** Style panel with custom color picker + saved swatches. */
   StylePanel: BoardStylePanel,
+  Toolbar: BoardToolbar,
 };

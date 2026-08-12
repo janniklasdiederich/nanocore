@@ -75,4 +75,6 @@ export const env = {
   /** Built SPA directory (production Docker / `bun run build`). */
   webDist,
   publicUrl: (process.env.PUBLIC_URL ?? "").replace(/\/$/, ""),
+  /** Giphy API key for the board GIF picker. Empty → search returns not-configured. */
+  giphyApiKey: (process.env.GIPHY_API_KEY ?? "").trim(),
 };

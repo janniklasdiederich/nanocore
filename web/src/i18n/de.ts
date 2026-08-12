@@ -109,6 +109,15 @@ export const de: Messages = {
   "board.customColorActive": "Benutzerdefinierte Farbe aktiv",
   "board.customColorsFull": "Maximal {max} eigene Farben",
 
+  "gifs.title": "GIFs",
+  "gifs.searchPlaceholder": "GIFs suchen",
+  "gifs.empty": "Keine GIFs gefunden.",
+  "gifs.loadFailed": "GIFs konnten nicht geladen werden",
+  "gifs.importFailed": "GIF konnte nicht hinzugefügt werden",
+  "gifs.adding": "Wird hinzugefügt…",
+  "gifs.notConfigured":
+    "GIF-Suche ist nicht eingerichtet. GIPHY_API_KEY auf dem Server setzen und neu starten.",
+
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",
   "users.backToBoards": "← Zurück zu den Boards",

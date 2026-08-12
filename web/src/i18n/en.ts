@@ -112,6 +112,15 @@ export const en = {
   "board.customColorActive": "Using a custom color",
   "board.customColorsFull": "Maximum of {max} custom colors",
 
+  "gifs.title": "GIFs",
+  "gifs.searchPlaceholder": "Search GIFs",
+  "gifs.empty": "No GIFs found.",
+  "gifs.loadFailed": "Could not load GIFs",
+  "gifs.importFailed": "Could not add GIF",
+  "gifs.adding": "Adding…",
+  "gifs.notConfigured":
+    "GIF search is not set up. Add GIPHY_API_KEY on the server and restart.",
+
   // Users
   "users.title": "Users",
   "users.subtitle": "Only admins can create accounts.",

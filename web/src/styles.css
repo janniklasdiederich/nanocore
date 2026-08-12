@@ -1052,3 +1052,73 @@ input {
   user-select: none;
   pointer-events: none;
 }
+
+/* GIF picker (Discord-like grid inside tldraw dialog) */
+.nc-gif-dialog {
+  width: min(520px, 92vw);
+  max-height: min(70vh, 640px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nc-gif-search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--tl-color-low-border, #ddd);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  background: var(--tl-color-panel, #fff);
+  color: var(--tl-color-text, inherit);
+}
+
+.nc-gif-search:focus {
+  outline: 2px solid var(--tl-color-primary, #4465e9);
+  outline-offset: 0;
+}
+
+.nc-gif-status,
+.nc-gif-error {
+  margin: 0;
+  font-size: 13px;
+}
+
+.nc-gif-error {
+  color: var(--tl-color-warn, #c52828);
+}
+
+.nc-gif-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  overflow: auto;
+  min-height: 180px;
+  max-height: 52vh;
+}
+
+.nc-gif-cell {
+  position: relative;
+  padding: 0 !important;
+  height: 110px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.nc-gif-cell img {
+  display: block;
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+}
+
+.nc-gif-cell-busy {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+}

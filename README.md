@@ -53,6 +53,7 @@ docker compose up --build
 | `COOKIE_SECURE` | `false` | Set `true` only if browsers use **HTTPS** |
 | `ALLOWED_ORIGINS` | _(empty)_ | Only if the SPA is on another origin |
 | `PORT` | `3001` | Host port mapping |
+| `GIPHY_API_KEY` | _(empty)_ | Board GIF picker; get a key at [developers.giphy.com](https://developers.giphy.com/) |
 
 ### Behind an HTTPS reverse proxy
 

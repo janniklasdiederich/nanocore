@@ -25,6 +25,7 @@ cp .env.example .env   # optional for local defaults
 | `VITE_API_URL` | API origin baked into web build | No | same-origin `/api` |
 | `VITE_WS_URL` | WebSocket origin override | No | from `VITE_API_URL` / defaults |
 | `WEB_PORT` | `bun run start:web` listen port | No | `4173` |
+| `GIPHY_API_KEY` | Giphy key for the board GIF picker | No | empty (picker disabled) |
 
 ## Running the Project
 

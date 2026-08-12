@@ -19,6 +19,7 @@ import { authRoutes } from "./routes/auth";
 import { userRoutes } from "./routes/users";
 import { boardRoutes } from "./routes/boards";
 import { assetRoutes } from "./routes/assets";
+import { gifRoutes } from "./routes/gifs";
 import {
   inviteAdminRoutes,
   invitePublicRoutes,
@@ -69,6 +70,7 @@ app.route("/api/auth", authRoutes);
 app.route("/api/users", userRoutes);
 app.route("/api/boards", boardRoutes);
 app.route("/api/assets", assetRoutes);
+app.route("/api/gifs", gifRoutes);
 app.route("/api/invites", inviteAdminRoutes);
 app.route("/api/invite", invitePublicRoutes);
 
