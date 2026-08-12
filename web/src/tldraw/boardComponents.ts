@@ -2,6 +2,7 @@ import type { TLComponents } from "tldraw";
 import { boardUiComponents as peopleComponents } from "../components/LockedPeopleMenu";
 import { BoardBackground } from "./boardBackground";
 import { BoardPageMenu } from "./BoardPageMenu";
+import { BoardStylePanel } from "./BoardStylePanel";
 import { RichTextToolbarWithSize } from "./RichTextToolbarWithSize";
 
 export const boardUiComponents: TLComponents = {
@@ -11,4 +12,6 @@ export const boardUiComponents: TLComponents = {
   Background: BoardBackground,
   /** Page list with ⋮ menu including “Change color”. */
   PageMenu: BoardPageMenu,
+  /** Style panel with custom color picker + saved swatches. */
+  StylePanel: BoardStylePanel,
 };

@@ -564,6 +564,161 @@ input {
   transform: scale(1.06);
 }
 
+/* Custom colors in the style panel (top-right) */
+.nc-custom-colors {
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nc-custom-colors__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nc-custom-colors__title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.nc-custom-colors__count {
+  font-size: 11px;
+  opacity: 0.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.nc-custom-colors__empty {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.6;
+  line-height: 1.35;
+}
+
+.nc-custom-colors__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nc-custom-colors__swatch-wrap {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+
+.nc-custom-colors__swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  padding: 0;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.nc-custom-colors__swatch--lg {
+  width: 32px;
+  height: 32px;
+}
+
+.nc-custom-colors__swatch.is-active {
+  outline: 2px solid var(--color-selected, #2f80ed);
+  outline-offset: 1px;
+}
+
+.nc-custom-colors__swatch:hover {
+  transform: scale(1.06);
+}
+
+.nc-custom-colors__remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  background: var(--color-panel, #fff);
+  color: var(--color-text, #333);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.nc-custom-colors__swatch-wrap:hover .nc-custom-colors__remove,
+.nc-custom-colors__swatch-wrap:focus-within .nc-custom-colors__remove {
+  opacity: 1;
+}
+
+.nc-custom-colors__native {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nc-custom-colors__staging {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.nc-custom-colors__hex {
+  font-size: 11px;
+  font-family: ui-monospace, monospace;
+  opacity: 0.75;
+}
+
+.nc-custom-colors__btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-muted-2, rgba(128, 128, 128, 0.35));
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.nc-custom-colors__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nc-custom-colors__btn--primary {
+  background: var(--color-selected, #2f80ed);
+  border-color: transparent;
+  color: #fff;
+}
+
+.nc-custom-colors__btn--block {
+  width: 100%;
+  text-align: center;
+  padding: 6px 8px;
+}
+
+.nc-custom-colors__btn--block:hover:not(:disabled) {
+  background: var(--color-muted-2, rgba(128, 128, 128, 0.12));
+}
+
+.nc-custom-colors__hint {
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.55;
+}
+
 /* People menu (presence) — names are not editable.
    tldraw layout uses pointer-events: none; interactive UI must opt back in. */
 .nc-people-menu {

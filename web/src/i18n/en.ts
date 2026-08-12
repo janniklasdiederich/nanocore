@@ -100,6 +100,15 @@ export const en = {
   "board.pageColorTitle": "Page color",
   "board.pageColorHelp": "Background for “{name}”. Each page can have its own color.",
   "board.pageColorReset": "Reset to default",
+  "board.customColors": "My colors",
+  "board.customColorsEmpty": "Save colors you use often.",
+  "board.customColorAdd": "Add color",
+  "board.customColorSave": "Save",
+  "board.customColorEdit": "Change color",
+  "board.customColorRemove": "Remove color",
+  "board.customColorApply": "Use {color}",
+  "board.customColorActive": "Using a custom color",
+  "board.customColorsFull": "Maximum of {max} custom colors",
 
   // Users
   "users.title": "Users",

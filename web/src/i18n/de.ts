@@ -97,6 +97,15 @@ export const de: Messages = {
   "board.pageColorHelp":
     "Hintergrund für „{name}“. Jede Seite kann eine eigene Farbe haben.",
   "board.pageColorReset": "Standard wiederherstellen",
+  "board.customColors": "Meine Farben",
+  "board.customColorsEmpty": "Speichere Farben, die du oft nutzt.",
+  "board.customColorAdd": "Farbe hinzufügen",
+  "board.customColorSave": "Speichern",
+  "board.customColorEdit": "Farbe ändern",
+  "board.customColorRemove": "Farbe entfernen",
+  "board.customColorApply": "{color} verwenden",
+  "board.customColorActive": "Benutzerdefinierte Farbe aktiv",
+  "board.customColorsFull": "Maximal {max} eigene Farben",
 
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",

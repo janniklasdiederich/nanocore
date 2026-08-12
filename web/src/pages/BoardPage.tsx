@@ -10,6 +10,7 @@ import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
+import { syncCustomColorsFromDocument } from "../tldraw/customColors";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { boardTextOptions } from "../tldraw/textOptions";
 
@@ -142,6 +143,8 @@ function BoardCanvas({
         color: userInfo.color,
         locale: tldrawLocale,
       });
+      // Load custom color palette from document.meta into the live theme
+      syncCustomColorsFromDocument(editor);
       // Convert leftover markdown → rich text when leaving the text editor
       const stop = registerMarkdownOnEditEnd(editor);
       return () => stop();
