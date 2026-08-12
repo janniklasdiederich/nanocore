@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-11 after: security hardening + admin-only board mutations_
+_Last updated: 2026-08-12 after: clipboard fallback for Docker/HTTP copy-paste_
 
 ## What's Been Built
 
@@ -14,12 +14,13 @@ _Last updated: 2026-08-11 after: security hardening + admin-only board mutations
 - **Assets**: signed URLs + session auth; size limit; no SVG; SPA path-contained static serve
 - **Security**: prod refuses weak SESSION_SECRET; CORS allowlist; upload caps
 - **i18n**: en + de
-- **Arrows**: stock tldraw only
-- **Docker**: requires SESSION_SECRET; ALLOWED_ORIGINS / MAX_UPLOAD_BYTES
+- **Page backgrounds** + **custom shape colors** (document.meta palette, validationFn patch, theme seed custom-1…N)
+- **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
+- **Clipboard fallback** (`web/src/clipboardSecureFallback.ts`): polyfills `navigator.clipboard.write`/`writeText` on non-secure HTTP so tldraw copy/paste works when opened via LAN IP (not only localhost)
 
 ## Current Task / Last Completed
 
-Implemented audit fixes: assets, CORS/secrets, SPA path safety, rate limits, session hygiene, board admin permissions, room close on delete, dead code (`tldraw` dep, unused auth helper), Dockerfile lockfile, UI hides board mutation for members.
+Fixed Docker-vs-local copy/paste of stickies/shapes. Root cause: Clipboard API missing outside secure contexts; tldraw throws on `navigator.clipboard.writeText` without optional chaining. Polyfill writes via legacy `copy` + `execCommand` so paste event gets `text/html` with `data-tldraw`.
 
 ## Known Issues & TODOs
 
@@ -29,6 +30,7 @@ Implemented audit fixes: assets, CORS/secrets, SPA path safety, rate limits, ses
 - [ ] Orphaned uploads not cleaned when boards deleted
 - [ ] Whitelabel is org name only
 - [ ] Local DB may still contain leftover `bezier-arrow` records from abandoned experiments
+- [ ] Prefer HTTPS (or http://localhost) for best clipboard interop with other apps
 
 ## Decisions Pending
 

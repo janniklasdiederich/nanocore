@@ -63,3 +63,4 @@ SESSION_SECRET=long-random docker compose up --build
 - **PowerShell `curl`**: use `curl.exe` or Bun fetch — `curl` is aliased to Invoke-WebRequest
 - **WS auth**: session cookie must be present; use same-origin (Vite proxy) or same host in prod
 - **Reset install**: delete `DATA_DIR` (e.g. `./data`) to re-run setup
+- **Copy/paste over LAN HTTP**: browsers hide `navigator.clipboard` off HTTPS/localhost; `web/src/clipboardSecureFallback.ts` polyfills write via `execCommand`. Prefer `http://localhost:3001` or HTTPS if paste still misbehaves
