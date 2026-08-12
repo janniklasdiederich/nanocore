@@ -7,8 +7,8 @@ export const OWNER_LABEL_STORAGE_KEY = "nanocore_ownerLabel";
 export type ShapeOwner = { id: string; name: string };
 export type OwnerLabelMode = "always" | "never" | "hover";
 
-/** Stickies, text, images/GIFs, geo + freehand. Not arrows, frames, lines, etc. */
-const OWNER_LABEL_TYPES = new Set(["note", "text", "image", "geo", "draw"]);
+/** Stickies, text, images/GIFs, geo shapes. Not arrows, pen, frames, lines, etc. */
+const OWNER_LABEL_TYPES = new Set(["note", "text", "image", "geo"]);
 
 export function shapeShowsOwner(shape: TLShape): boolean {
   return OWNER_LABEL_TYPES.has(shape.type);

@@ -42,7 +42,7 @@ nanocore/
 - **Board mutations admin-only** (create/rename/delete); all members can list/open/collab
 - **Asset access** via HMAC `sig` query (works in `<img>`) or session cookie; SVG uploads blocked
 - **Production** requires non-default `SESSION_SECRET`; optional `ALLOWED_ORIGINS` for split UI/API
-- **Shape owner** is stamped only on local (`source === 'user'`) creates of note/text/image/geo/draw. Name is a snapshot at place-time. Visibility preference is per-browser (`localStorage`), not synced.
+- **Shape owner** is stamped only on local (`source === 'user'`) creates of note/text/image/geo. Name is a snapshot at place-time. Visibility preference is per-browser (`localStorage`), not synced.
 - **InFrontOfTheCanvas** is a single slot — overlays compose in `BoardCanvasOverlays`
 
 ## Dependencies
