@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: colorable frames (showColors)_
+_Last updated: 2026-08-12 after: visible frame body fills_
 
 ## What's Been Built
 
@@ -21,7 +21,7 @@ _Last updated: 2026-08-12 after: colorable frames (showColors)_
 
 ## Current Task / Last Completed
 
-Frames are colorable via tldraw 3.15 `showColors`. Style panel + My colors apply to selected frames. Server accepts `custom-*` on `frameShapeProps.color`.
+Frames are colorable via `showColors`. Stock theme `frame.fill` is near-white by default; we remap body/heading fill to each color's `semi` wash so the rectangle itself is tinted.
 
 ## Known Issues & TODOs
 

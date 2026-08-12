@@ -233,6 +233,23 @@ const PLACEHOLDER_HEX = "#888888";
  * Always seeds custom-1 … custom-MAX (placeholder if unused) so shapes never
  * hit theme[color] === undefined and crash with "Cannot read 'solid'/'note'".
  */
+/**
+ * Stock tldraw frame.fill is nearly white (artboard look). Use the color's
+ * `semi` wash so the frame body actually shows the chosen color.
+ */
+function applyVisibleFrameFills(): void {
+  for (const mode of ["lightMode", "darkMode"] as const) {
+    const theme = DefaultColorThemePalette[mode] as Record<string, unknown>;
+    for (const value of Object.values(theme)) {
+      if (!value || typeof value !== "object") continue;
+      const color = value as Partial<TLDefaultColorThemeColor>;
+      if (!color.frame || typeof color.semi !== "string") continue;
+      color.frame.fill = color.semi;
+      color.frame.headingFill = color.semi;
+    }
+  }
+}
+
 export function applyPaletteToTheme(hexes: string[]): void {
   const cleaned = hexes.map(normalizeHex6).slice(0, MAX_CUSTOM_COLORS);
 
@@ -243,6 +260,7 @@ export function applyPaletteToTheme(hexes: string[]): void {
       theme[`custom-${i + 1}`] = makeThemeColor(hex);
     }
   }
+  applyVisibleFrameFills();
 }
 
 export function customKeyForIndex(index: number): CustomColorKey {
