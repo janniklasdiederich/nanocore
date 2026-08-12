@@ -98,10 +98,9 @@ export class NanocoreArrowShapeUtil extends ArrowShapeUtil {
   static override type = "arrow" as const;
 
   override component(shape: TLArrowShape) {
-    if (isRoundedElbow(shape)) {
-      return <RoundedElbowArrow shape={shape} />;
-    }
-    return super.component(shape);
+    // Must return an element — calling super.component() here runs its hooks
+    // inside InnerShape and crashes when this branch changes.
+    return <NanocoreArrowBody shape={shape} util={this} />;
   }
 
   override toSvg(shape: TLArrowShape, ctx: Parameters<ArrowShapeUtil["toSvg"]>[1]) {
@@ -127,4 +126,27 @@ export class NanocoreArrowShapeUtil extends ArrowShapeUtil {
     }
     return result;
   }
+}
+
+function NanocoreArrowBody({
+  shape,
+  util,
+}: {
+  shape: TLArrowShape;
+  util: NanocoreArrowShapeUtil;
+}) {
+  if (isRoundedElbow(shape)) {
+    return <RoundedElbowArrow shape={shape} />;
+  }
+  return <StockArrowBody shape={shape} util={util} />;
+}
+
+function StockArrowBody({
+  shape,
+  util,
+}: {
+  shape: TLArrowShape;
+  util: NanocoreArrowShapeUtil;
+}) {
+  return ArrowShapeUtil.prototype.component.call(util, shape) as never;
 }
