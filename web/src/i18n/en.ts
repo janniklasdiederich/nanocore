@@ -17,6 +17,7 @@ export const en = {
   "common.language": "Language",
   "common.english": "English",
   "common.german": "Deutsch",
+  "common.done": "Done",
 
   // Roles / status
   "role.admin": "admin",
@@ -95,8 +96,10 @@ export const en = {
   "board.anonymous": "Anonymous",
   "board.uploadFailed": "Upload failed",
   "board.background": "Background",
-  "board.backgroundTitle": "Board background color (shared with everyone on this board)",
   "board.backgroundPreset": "Set background to {color}",
+  "board.pageColorTitle": "Page color",
+  "board.pageColorHelp": "Background for “{name}”. Each page can have its own color.",
+  "board.pageColorReset": "Reset to default",
 
   // Users
   "users.title": "Users",

@@ -8,7 +8,6 @@ import { useAuth } from "../auth";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
-import { BoardBackgroundToolbar } from "../tldraw/boardBackground";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
@@ -182,9 +181,7 @@ function BoardCanvas({
         overrides={boardUiOverrides}
         textOptions={boardTextOptions}
         onMount={onMount}
-      >
-        <BoardBackgroundToolbar />
-      </Tldraw>
+      />
     </div>
   );
 }

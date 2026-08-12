@@ -18,6 +18,7 @@ export const de: Messages = {
   "common.language": "Sprache",
   "common.english": "English",
   "common.german": "Deutsch",
+  "common.done": "Fertig",
 
   "role.admin": "Admin",
   "role.member": "Mitglied",
@@ -91,9 +92,11 @@ export const de: Messages = {
   "board.anonymous": "Anonym",
   "board.uploadFailed": "Upload fehlgeschlagen",
   "board.background": "Hintergrund",
-  "board.backgroundTitle":
-    "Board-Hintergrundfarbe (wird mit allen auf diesem Board geteilt)",
   "board.backgroundPreset": "Hintergrund auf {color} setzen",
+  "board.pageColorTitle": "Seitenfarbe",
+  "board.pageColorHelp":
+    "Hintergrund für „{name}“. Jede Seite kann eine eigene Farbe haben.",
+  "board.pageColorReset": "Standard wiederherstellen",
 
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",
