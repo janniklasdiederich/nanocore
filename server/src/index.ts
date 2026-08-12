@@ -11,6 +11,7 @@ import {
 } from "./auth";
 import { env } from "./env";
 import { isSetupComplete } from "./db";
+// rooms imports apply the custom-color validation patch before TLSocketRoom runs
 import { makeOrLoadRoom, getActiveRoom, closeAllRooms } from "./rooms";
 import { safePathUnderRoot } from "./safePath";
 import { setupRoutes } from "./routes/setup";

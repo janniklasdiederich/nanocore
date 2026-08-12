@@ -1,5 +1,9 @@
 import { TLSocketRoom, type RoomSnapshot } from "@tldraw/sync-core";
 import { db } from "./db";
+import { patchColorStylesForSync } from "./patchColorStyles";
+
+// Must run before the first room validates shape records (custom-* colors)
+patchColorStylesForSync();
 
 type RoomEntry = {
   room: TLSocketRoom;
