@@ -2,7 +2,7 @@ import {
   ArrowShapeUtil,
   SelectTool,
   StateNode,
-  getArrowInfo,
+  getArrowBindings,
   type TLArrowShape,
   type TLHandleDragInfo,
   type TLNoteShape,
@@ -10,12 +10,6 @@ import {
   type TLStateNodeConstructor,
 } from "tldraw";
 import { snapNoteArrowBinding, startArrowFromNoteHandle } from "./noteArrowAnchors";
-import { RoundedElbowArrow } from "./RoundedElbowArrow";
-import {
-  elbowDrawPoints,
-  isRoundedElbow,
-  roundedElbowPathD,
-} from "./roundedElbow";
 
 /**
  * Same as tldraw PointingHandle, except note side-handles start arrows
@@ -32,6 +26,21 @@ export class NanocorePointingHandle extends StateNode {
   override onEnter(info: TLPointerEventInfo & { target: "handle" }) {
     this.info = info;
     this.didCtrlOnEnter = info.accelKey;
+
+    const { shape } = info;
+    if (this.editor.isShapeOfType<TLArrowShape>(shape, "arrow")) {
+      const initialBindings = getArrowBindings(this.editor, shape);
+      const currentBinding = initialBindings[info.handle.id as "start" | "end"];
+      const oppositeBinding =
+        initialBindings[info.handle.id === "start" ? "end" : "start"];
+      const arrowTransform = this.editor.getShapePageTransform(shape.id);
+
+      if (currentBinding && arrowTransform) {
+        // Keep default hinting when dragging an existing arrow end
+        void oppositeBinding;
+      }
+    }
+
     this.editor.setCursor({ type: "grabbing", rotation: 0 });
   }
 
@@ -41,6 +50,7 @@ export class NanocorePointingHandle extends StateNode {
   }
 
   override onPointerUp() {
+    // Clicking a note handle no longer creates/opens an adjacent sticky
     this.parent.transition("idle", this.info);
   }
 
@@ -97,24 +107,6 @@ export class NanocoreSelectTool extends SelectTool {
 export class NanocoreArrowShapeUtil extends ArrowShapeUtil {
   static override type = "arrow" as const;
 
-  override component(shape: TLArrowShape) {
-    // Must return an element — calling super.component() here runs its hooks
-    // inside InnerShape and crashes when this branch changes.
-    return <NanocoreArrowBody shape={shape} util={this} />;
-  }
-
-  override toSvg(shape: TLArrowShape, ctx: Parameters<ArrowShapeUtil["toSvg"]>[1]) {
-    if (!isRoundedElbow(shape)) return super.toSvg(shape, ctx);
-    const info = getArrowInfo(this.editor, shape);
-    if (!info?.isValid || info.type !== "elbow") return super.toSvg(shape, ctx);
-    const sw = 3.5 * shape.props.scale;
-    const d = roundedElbowPathD(
-      elbowDrawPoints(info),
-      Math.max(14, sw * 4) * shape.props.scale,
-    );
-    return <path d={d} />;
-  }
-
   override onHandleDrag(
     shape: TLArrowShape,
     info: TLHandleDragInfo<TLArrowShape>,
@@ -126,27 +118,4 @@ export class NanocoreArrowShapeUtil extends ArrowShapeUtil {
     }
     return result;
   }
-}
-
-function NanocoreArrowBody({
-  shape,
-  util,
-}: {
-  shape: TLArrowShape;
-  util: NanocoreArrowShapeUtil;
-}) {
-  if (isRoundedElbow(shape)) {
-    return <RoundedElbowArrow shape={shape} />;
-  }
-  return <StockArrowBody shape={shape} util={util} />;
-}
-
-function StockArrowBody({
-  shape,
-  util,
-}: {
-  shape: TLArrowShape;
-  util: NanocoreArrowShapeUtil;
-}) {
-  return ArrowShapeUtil.prototype.component.call(util, shape) as never;
 }

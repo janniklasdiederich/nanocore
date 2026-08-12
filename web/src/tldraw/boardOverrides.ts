@@ -13,14 +13,12 @@ export const boardUiOverrides: TLUiOverrides = {
       "tool.gif": "GIF",
       "fill-style.fill": "True solid",
       "dash-style.none": "None",
-      "arrow-kind-style.rounded": "Rounded elbow",
     },
     de: {
       "page-menu.submenu.change-color": "Farbe ändern",
       "tool.gif": "GIF",
       "fill-style.fill": "Echt deckend",
       "dash-style.none": "Keine",
-      "arrow-kind-style.rounded": "Abgerundeter Knick",
     },
   },
   tools(_editor, tools, { addDialog }) {

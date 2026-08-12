@@ -1,5 +1,4 @@
 import {
-  ArrowShapeKindStyle,
   DefaultColorStyle,
   DefaultDashStyle,
   DefaultFillStyle,
@@ -9,8 +8,6 @@ import {
   OpacitySlider,
   TldrawUiButtonPicker,
   TldrawUiToolbar,
-  TldrawUiToolbarButton,
-  TldrawUiButtonIcon,
   getDefaultColorTheme,
   kickoutOccludedShapes,
   useEditor,
@@ -18,19 +15,11 @@ import {
   useRelevantStyles,
   useTranslation,
   useUiEvents,
-  useValue,
   type StyleProp,
-  type TLArrowShape,
   type TLUiStylePanelProps,
 } from "tldraw";
 import { useCallback, useMemo } from "react";
 import { CustomColorsSection } from "./CustomColorsSection";
-import {
-  ROUNDED_ELBOW_META,
-  getPreferRoundedElbow,
-  isRoundedElbow,
-  setPreferRoundedElbow,
-} from "./roundedElbow";
 
 const FILL_ITEMS = [
   { value: "none", icon: "fill-none" },
@@ -110,7 +99,6 @@ export function BoardStylePanel(props: TLUiStylePanelProps) {
       <div className="nc-board-style-panel">
         {styles && <BoardCommonStylePickerSet styles={styles} theme={theme} />}
         <DefaultStylePanelContent styles={styles} />
-        {styles && <BoardArrowKindPicker styles={styles} />}
         {showCustomColors && <CustomColorsSection />}
       </div>
     </DefaultStylePanel>
@@ -235,104 +223,5 @@ function BoardCommonStylePickerSet({
         </div>
       )}
     </>
-  );
-}
-
-const ROUNDED_ELBOW_ICON = (
-  <div className="nc-dash-none-icon" aria-hidden>
-    <svg viewBox="0 0 16 16" width="18" height="18">
-      <path
-        d="M3 3h5a5 5 0 0 1 5 5v5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  </div>
-);
-
-function BoardArrowKindPicker({
-  styles,
-}: {
-  styles: NonNullable<ReturnType<typeof useRelevantStyles>>;
-}) {
-  const editor = useEditor();
-  const kind = styles.get(ArrowShapeKindStyle);
-  const selectedRounded = useValue(
-    "roundedElbowSelection",
-    () => {
-      const shapes = editor.getSelectedShapes();
-      const arrows = shapes.filter((s): s is TLArrowShape => s.type === "arrow");
-      if (arrows.length === 0) return getPreferRoundedElbow();
-      return arrows.every((a) => isRoundedElbow(a));
-    },
-    [editor],
-  );
-
-  if (kind === undefined) return null;
-
-  const current: "arc" | "elbow" | "rounded" | "mixed" =
-    kind.type !== "shared"
-      ? "mixed"
-      : kind.value === "arc"
-        ? "arc"
-        : selectedRounded
-          ? "rounded"
-          : "elbow";
-
-  function apply(mode: "arc" | "elbow" | "rounded") {
-    editor.run(() => {
-      setPreferRoundedElbow(mode === "rounded");
-      if (mode === "arc") {
-        editor.setStyleForSelectedShapes(ArrowShapeKindStyle, "arc");
-        editor.setStyleForNextShapes(ArrowShapeKindStyle, "arc");
-      } else {
-        editor.setStyleForSelectedShapes(ArrowShapeKindStyle, "elbow");
-        editor.setStyleForNextShapes(ArrowShapeKindStyle, "elbow");
-      }
-      for (const shape of editor.getSelectedShapes()) {
-        if (shape.type !== "arrow") continue;
-        editor.updateShape({
-          id: shape.id,
-          type: "arrow",
-          meta: {
-            ...shape.meta,
-            [ROUNDED_ELBOW_META]: mode === "rounded",
-          },
-        });
-      }
-    });
-  }
-
-  return (
-    <div className="tlui-style-panel__section nc-arrow-kind">
-      <TldrawUiToolbar label="Line">
-        <TldrawUiToolbarButton
-          type="icon"
-          title="Line — Arc"
-          isActive={current === "arc"}
-          onClick={() => apply("arc")}
-        >
-          <TldrawUiButtonIcon icon="arrow-arc" />
-        </TldrawUiToolbarButton>
-        <TldrawUiToolbarButton
-          type="icon"
-          title="Line — Elbow"
-          isActive={current === "elbow"}
-          onClick={() => apply("elbow")}
-        >
-          <TldrawUiButtonIcon icon="arrow-elbow" />
-        </TldrawUiToolbarButton>
-        <TldrawUiToolbarButton
-          type="icon"
-          title="Line — Rounded elbow"
-          isActive={current === "rounded"}
-          onClick={() => apply("rounded")}
-        >
-          <TldrawUiButtonIcon icon={ROUNDED_ELBOW_ICON} />
-        </TldrawUiToolbarButton>
-      </TldrawUiToolbar>
-    </div>
   );
 }

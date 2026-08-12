@@ -22,7 +22,7 @@ _Last updated: 2026-08-12 after: GIF picker in More toolbar
 
 ## Current Task / Last Completed
 
-Sticky side handles start arrows. Arrow line styles: arc, elbow, and rounded elbow (orthogonal + curved corners via shape.meta).
+Sticky side handles start arrows (bound to that edge) instead of cloning notes. Precise arrow ends on notes snap to center or the four mid-edge anchors.
 
 ## Known Issues & TODOs
 
