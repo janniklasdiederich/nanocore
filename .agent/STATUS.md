@@ -22,7 +22,7 @@ _Last updated: 2026-08-12 after: GIF picker in More toolbar
 
 ## Current Task / Last Completed
 
-Style extras: fill value `fill` (True solid = actual color) shown in the panel; dash `none` accepted on client/server and skips outlines.
+Sticky side handles start arrows (bound to that edge) instead of cloning notes. Precise arrow ends on notes snap to center or the four mid-edge anchors.
 
 ## Known Issues & TODOs
 
