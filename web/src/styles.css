@@ -1158,3 +1158,8 @@ input {
   ~ .tlui-style-panel__section:has([data-testid="style.dash"]) {
   display: none;
 }
+
+/* Replaced by BoardArrowKindPicker (adds rounded elbow). */
+.nc-board-style-panel [data-testid="style.arrow-kind"] {
+  display: none;
+}

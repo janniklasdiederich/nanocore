@@ -22,6 +22,7 @@ import {
   syncCustomColorsFromStore,
 } from "../tldraw/customColors";
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
+import { getPreferRoundedElbow, ROUNDED_ELBOW_META } from "../tldraw/roundedElbow";
 import { boardTextOptions } from "../tldraw/textOptions";
 
 const boardShapeUtils = [
@@ -170,9 +171,21 @@ function BoardCanvas({
       syncCustomColorsFromDocument(editor);
       const stopPalette = listenCustomColorPalette(editor);
       const stopMarkdown = registerMarkdownOnEditEnd(editor);
+      const stopCreate = editor.sideEffects.registerAfterCreateHandler(
+        "shape",
+        (shape) => {
+          if (shape.type !== "arrow" || !getPreferRoundedElbow()) return;
+          editor.updateShape({
+            id: shape.id,
+            type: "arrow",
+            meta: { ...shape.meta, [ROUNDED_ELBOW_META]: true },
+          });
+        },
+      );
       return () => {
         stopPalette();
         stopMarkdown();
+        stopCreate();
       };
     },
     [userInfo.name, userInfo.color, tldrawLocale],
