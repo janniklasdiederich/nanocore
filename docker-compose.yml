@@ -8,7 +8,11 @@ services:
       HOST: "0.0.0.0"
       DATA_DIR: /data
       NODE_ENV: production
-      SESSION_SECRET: ${SESSION_SECRET:-change-me-in-production}
+      # Required: app will refuse to start with a weak/default secret
+      SESSION_SECRET: ${SESSION_SECRET:?Set SESSION_SECRET in .env}
+      # Comma-separated UI origins if the SPA is not same-origin, e.g. https://boards.example.com
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-15728640}
     volumes:
       - nanocore-data:/data
     restart: unless-stopped

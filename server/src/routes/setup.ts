@@ -48,14 +48,31 @@ setupRoutes.post("/", async (c) => {
   const userId = crypto.randomUUID();
   const passwordHash = await hashPassword(password);
 
-  const tx = db.transaction(() => {
-    db.query("INSERT INTO org (id, name) VALUES (1, ?)").run(orgName);
-    db.query(
-      `INSERT INTO users (id, email, password_hash, display_name, role, must_change_password)
-       VALUES (?, ?, ?, ?, 'admin', 0)`,
-    ).run(userId, email.toLowerCase(), passwordHash, displayName);
-  });
-  tx();
+  try {
+    const tx = db.transaction(() => {
+      // Re-check inside the transaction to close the concurrent-setup race
+      const already = db.query("SELECT 1 AS ok FROM org WHERE id = 1").get() as
+        | { ok: number }
+        | null;
+      if (already) {
+        throw Object.assign(new Error("Setup already completed"), {
+          status: 409,
+        });
+      }
+      db.query("INSERT INTO org (id, name) VALUES (1, ?)").run(orgName);
+      db.query(
+        `INSERT INTO users (id, email, password_hash, display_name, role, must_change_password)
+         VALUES (?, ?, ?, ?, 'admin', 0)`,
+      ).run(userId, email.toLowerCase(), passwordHash, displayName);
+    });
+    tx();
+  } catch (err) {
+    const e = err as Error & { status?: number };
+    if (e.status === 409 || /UNIQUE|constraint/i.test(e.message)) {
+      return c.json({ error: "Setup already completed" }, 409);
+    }
+    throw err;
+  }
 
   const token = createSession(userId);
   setSessionCookie(c, token);

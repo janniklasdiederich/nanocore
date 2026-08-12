@@ -14,4 +14,3 @@ web/dist/
 server/dist/
 .vite/
 *.tsbuildinfo
-web/dist/

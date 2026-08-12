@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { getCookie } from "hono/cookie";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
   getUserFromToken,
+  purgeExpiredSessions,
   SESSION_COOKIE,
   verifySyncToken,
   type Variables,
@@ -12,6 +12,7 @@ import {
 import { env } from "./env";
 import { isSetupComplete } from "./db";
 import { makeOrLoadRoom, getActiveRoom, closeAllRooms } from "./rooms";
+import { safePathUnderRoot } from "./safePath";
 import { setupRoutes } from "./routes/setup";
 import { authRoutes } from "./routes/auth";
 import { userRoutes } from "./routes/users";
@@ -30,10 +31,29 @@ type WsData = {
 
 const app = new Hono<{ Variables: Variables }>();
 
+function corsOrigin(origin: string): string | null {
+  // Non-browser / same-origin requests may omit Origin
+  if (!origin) return null;
+
+  if (env.allowedOrigins.length > 0) {
+    return env.allowedOrigins.includes(origin) ? origin : null;
+  }
+
+  // Dev convenience: reflect origin when no allowlist is configured.
+  // Production must set ALLOWED_ORIGINS (or run same-origin with no cross-origin UI).
+  if (env.isProd) {
+    console.warn(
+      `[cors] Rejected origin ${origin} — set ALLOWED_ORIGINS for cross-origin UI`,
+    );
+    return null;
+  }
+  return origin;
+}
+
 app.use(
   "/api/*",
   cors({
-    origin: (origin) => origin || "*",
+    origin: (origin) => corsOrigin(origin) ?? "",
     credentials: true,
   }),
 );
@@ -50,7 +70,7 @@ app.route("/api/assets", assetRoutes);
 app.route("/api/invites", inviteAdminRoutes);
 app.route("/api/invite", invitePublicRoutes);
 
-// Production: serve Vite build
+// Production: serve Vite build (path-contained)
 const webDist = env.webDist;
 if (existsSync(webDist)) {
   app.get("*", async (c) => {
@@ -59,10 +79,16 @@ if (existsSync(webDist)) {
       return c.json({ error: "Not found" }, 404);
     }
 
-    const filePath = join(webDist, path === "/" ? "index.html" : path);
-    const file = Bun.file(filePath);
-    if (await file.exists()) {
-      return new Response(file);
+    const candidate =
+      path === "/"
+        ? join(webDist, "index.html")
+        : safePathUnderRoot(webDist, path);
+
+    if (candidate) {
+      const file = Bun.file(candidate);
+      if (await file.exists()) {
+        return new Response(file);
+      }
     }
 
     // SPA fallback
@@ -111,7 +137,6 @@ const server = Bun.serve<WsData>({
       const boardId = decodeURIComponent(
         url.pathname.slice("/api/sync/".length).split("/")[0] ?? "",
       );
-      // tldraw client always appends sessionId — do not invent it on the client
       const sessionId = url.searchParams.get("sessionId");
       const syncToken = url.searchParams.get("token");
 
@@ -163,7 +188,6 @@ const server = Bun.serve<WsData>({
         console.error("[sync] Bun upgrade failed");
         return new Response("WebSocket upgrade failed", { status: 500 });
       }
-      // Successful upgrade: do not return a Response body
       return undefined as unknown as Response;
     }
 
@@ -173,7 +197,6 @@ const server = Bun.serve<WsData>({
     open(ws) {
       try {
         const room = makeOrLoadRoom(ws.data.boardId);
-        // Bun.serve sockets: use handleSocketMessage/Close instead of event listeners.
         room.handleSocketConnect({
           sessionId: ws.data.sessionId,
           socket: {
@@ -227,17 +250,34 @@ const server = Bun.serve<WsData>({
   },
 });
 
+// Periodic session cleanup
+const SESSION_PURGE_MS = 60 * 60 * 1000;
+const purgeTimer = setInterval(() => {
+  try {
+    const n = purgeExpiredSessions();
+    if (n > 0) console.log(`[auth] purged ${n} expired session(s)`);
+  } catch (err) {
+    console.error("[auth] session purge failed", err);
+  }
+}, SESSION_PURGE_MS);
+purgeTimer.unref?.();
+
 console.log(`Nanocore listening on http://${env.host}:${server.port}`);
 console.log(`  data: ${env.dataDir}`);
+if (env.allowedOrigins.length) {
+  console.log(`  cors: ${env.allowedOrigins.join(", ")}`);
+} else if (env.isProd) {
+  console.log(
+    "  cors: no ALLOWED_ORIGINS (cross-origin browser calls will fail)",
+  );
+}
 
-process.on("SIGINT", () => {
+function shutdown() {
+  clearInterval(purgeTimer);
   closeAllRooms();
   server.stop();
   process.exit(0);
-});
+}
 
-process.on("SIGTERM", () => {
-  closeAllRooms();
-  server.stop();
-  process.exit(0);
-});
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

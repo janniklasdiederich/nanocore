@@ -12,14 +12,9 @@ export const userRoutes = new Hono<{ Variables: Variables }>();
 
 userRoutes.use("*", requireAuth);
 
-userRoutes.get("/", async (c) => {
+userRoutes.get("/", requireAdmin, async (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
-
-  const me = c.get("user");
-  if (me.role !== "admin") {
-    return c.json({ error: "Admin only" }, 403);
-  }
 
   const rows = db
     .query(

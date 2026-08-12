@@ -71,6 +71,8 @@ export const en = {
   "boards.new": "New board",
   "boards.creating": "Creating…",
   "boards.empty": "No boards yet. Create one to start collaborating.",
+  "boards.emptyMember":
+    "No boards yet. Ask an admin to create one for the team.",
   "boards.createFirst": "Create your first board",
   "boards.defaultName": "Untitled board",
   "boards.renamePrompt": "Board name",

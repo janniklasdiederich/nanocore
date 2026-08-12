@@ -52,6 +52,19 @@ export function destroySession(token: string | undefined): void {
   db.query("DELETE FROM sessions WHERE token_hash = ?").run(hashToken(token));
 }
 
+/** Invalidate every session for a user (e.g. after password change). */
+export function destroyAllSessionsForUser(userId: string): void {
+  db.query("DELETE FROM sessions WHERE user_id = ?").run(userId);
+}
+
+/** Drop expired session rows. Safe to call often. */
+export function purgeExpiredSessions(): number {
+  const result = db
+    .query(`DELETE FROM sessions WHERE expires_at <= datetime('now')`)
+    .run();
+  return Number(result.changes ?? 0);
+}
+
 export function getUserFromToken(token: string | undefined): UserRow | null {
   if (!token) return null;
 
@@ -97,11 +110,6 @@ export async function requireAdmin(c: Context, next: Next) {
     return c.json({ error: "Admin only" }, 403);
   }
   await next();
-}
-
-/** Allow password-change flow even when mustChangePassword is true. */
-export async function requireAuthAllowPasswordChange(c: Context, next: Next) {
-  return requireAuth(c, next);
 }
 
 export function requirePasswordOk(c: Context) {
@@ -157,4 +165,26 @@ export function verifySyncToken(
   if (!user || user.must_change_password) return null;
 
   return { userId: user.id };
+}
+
+/** Permanent (secret-bound) signature so asset URLs work in <img> without cookies. */
+export function signAssetFilename(filename: string): string {
+  return createHmac("sha256", env.sessionSecret)
+    .update(`asset:${filename}`)
+    .digest("base64url");
+}
+
+export function verifyAssetSignature(
+  filename: string,
+  sig: string | undefined,
+): boolean {
+  if (!sig) return false;
+  const expected = signAssetFilename(filename);
+  try {
+    const a = Buffer.from(sig);
+    const b = Buffer.from(expected);
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }

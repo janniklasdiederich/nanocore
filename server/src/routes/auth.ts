@@ -3,9 +3,11 @@ import { getCookie } from "hono/cookie";
 import {
   clearSessionCookie,
   createSession,
+  destroyAllSessionsForUser,
   destroySession,
   getUserFromToken,
   hashPassword,
+  purgeExpiredSessions,
   requireAuth,
   SESSION_COOKIE,
   setSessionCookie,
@@ -13,6 +15,7 @@ import {
   type Variables,
 } from "../auth";
 import { db, getOrg, publicUser, type UserRow } from "../db";
+import { clientIp, rateLimit } from "../rateLimit";
 
 export const authRoutes = new Hono<{ Variables: Variables }>();
 
@@ -32,6 +35,11 @@ authRoutes.get("/me", (c) => {
 });
 
 authRoutes.post("/login", async (c) => {
+  const ip = clientIp(c.req);
+  if (!rateLimit(`login:${ip}`, 20, 15 * 60 * 1000)) {
+    return c.json({ error: "Too many login attempts. Try again later." }, 429);
+  }
+
   const body = await c.req.json().catch(() => null);
   if (!body || typeof body !== "object") {
     return c.json({ error: "Invalid body" }, 400);
@@ -43,6 +51,9 @@ authRoutes.post("/login", async (c) => {
   if (!email || !password) {
     return c.json({ error: "Email and password required" }, 400);
   }
+
+  // Opportunistic cleanup
+  purgeExpiredSessions();
 
   const user = db
     .query("SELECT * FROM users WHERE email = ? COLLATE NOCASE")
@@ -85,8 +96,6 @@ authRoutes.post("/change-password", requireAuth, async (c) => {
     return c.json({ error: "New password must be at least 8 characters" }, 400);
   }
 
-  // Admins setting their own password after temp: still verify current unless
-  // we only allow skip when must_change_password — always verify current.
   if (!(await verifyPassword(currentPassword, userRow.password_hash))) {
     return c.json({ error: "Current password is incorrect" }, 400);
   }
@@ -95,6 +104,11 @@ authRoutes.post("/change-password", requireAuth, async (c) => {
   db.query(
     `UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?`,
   ).run(passwordHash, userRow.id);
+
+  // Invalidate all sessions (including this one), then mint a fresh session
+  destroyAllSessionsForUser(userRow.id);
+  const token = createSession(userRow.id);
+  setSessionCookie(c, token);
 
   const updated = db
     .query("SELECT * FROM users WHERE id = ?")

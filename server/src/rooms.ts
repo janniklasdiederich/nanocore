@@ -109,22 +109,40 @@ export function makeOrLoadRoom(boardId: string): TLSocketRoom {
   return room;
 }
 
-export function closeAllRooms(): void {
-  for (const entry of rooms.values()) {
-    if (entry.saveTimer) {
-      clearTimeout(entry.saveTimer);
-      entry.saveTimer = null;
-    }
+/** Persist + close a single board room (e.g. board deleted). */
+export function closeRoom(boardId: string, opts?: { persist?: boolean }): void {
+  const entry = rooms.get(boardId);
+  if (!entry) return;
+
+  if (entry.saveTimer) {
+    clearTimeout(entry.saveTimer);
+    entry.saveTimer = null;
+  }
+
+  if (opts?.persist !== false) {
     try {
-      persistSnapshot(entry.boardId, entry.room);
-    } catch {
-      // ignore
-    }
-    try {
-      entry.room.close();
+      // Only persist if the board row still exists
+      const board = db
+        .query("SELECT id FROM boards WHERE id = ?")
+        .get(boardId) as { id: string } | null;
+      if (board) {
+        persistSnapshot(boardId, entry.room);
+      }
     } catch {
       // ignore
     }
   }
-  rooms.clear();
+
+  try {
+    entry.room.close();
+  } catch {
+    // ignore
+  }
+  rooms.delete(boardId);
+}
+
+export function closeAllRooms(): void {
+  for (const boardId of [...rooms.keys()]) {
+    closeRoom(boardId);
+  }
 }

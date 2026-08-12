@@ -11,6 +11,7 @@ import {
 } from "../auth";
 import { db, getOrg, isSetupComplete, publicUser, type UserRow } from "../db";
 import { env } from "../env";
+import { clientIp, rateLimit } from "../rateLimit";
 
 export type InviteRow = {
   id: string;
@@ -246,6 +247,11 @@ invitePublicRoutes.get("/:token", (c) => {
 invitePublicRoutes.post("/:token/accept", async (c) => {
   if (!isSetupComplete()) {
     return c.json({ error: "App is not set up yet" }, 503);
+  }
+
+  const ip = clientIp(c.req);
+  if (!rateLimit(`invite-accept:${ip}`, 10, 60 * 60 * 1000)) {
+    return c.json({ error: "Too many attempts. Try again later." }, 429);
   }
 
   const token = c.req.param("token");

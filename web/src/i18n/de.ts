@@ -67,6 +67,8 @@ export const de: Messages = {
   "boards.creating": "Wird erstellt…",
   "boards.empty":
     "Noch keine Boards. Erstelle eines, um zusammenzuarbeiten.",
+  "boards.emptyMember":
+    "Noch keine Boards. Bitte einen Admin, eines für das Team anzulegen.",
   "boards.createFirst": "Erstes Board erstellen",
   "boards.defaultName": "Unbenanntes Board",
   "boards.renamePrompt": "Boardname",

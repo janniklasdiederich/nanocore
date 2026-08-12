@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import {
   createSyncToken,
+  requireAdmin,
   requireAuth,
   requirePasswordOk,
   type Variables,
 } from "../auth";
 import { db, type BoardRow } from "../db";
+import { closeRoom } from "../rooms";
 
 export const boardRoutes = new Hono<{ Variables: Variables }>();
 
@@ -21,6 +23,7 @@ function mapBoard(row: BoardRow) {
   };
 }
 
+/** Any authenticated member can list and open boards. */
 boardRoutes.get("/", (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
@@ -32,7 +35,41 @@ boardRoutes.get("/", (c) => {
   return c.json({ boards: rows.map(mapBoard) });
 });
 
-boardRoutes.post("/", async (c) => {
+boardRoutes.get("/:id", (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const id = c.req.param("id");
+  if (!id) return c.json({ error: "Board id required" }, 400);
+
+  const row = db
+    .query("SELECT * FROM boards WHERE id = ?")
+    .get(id) as BoardRow | null;
+
+  if (!row) return c.json({ error: "Board not found" }, 404);
+  return c.json({ board: mapBoard(row) });
+});
+
+/** Short-lived token for WebSocket upgrade. */
+boardRoutes.post("/:id/sync-token", (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const id = c.req.param("id");
+  if (!id) return c.json({ error: "Board id required" }, 400);
+
+  const row = db.query("SELECT id FROM boards WHERE id = ?").get(id) as
+    | { id: string }
+    | null;
+  if (!row) return c.json({ error: "Board not found" }, 404);
+
+  const user = c.get("user");
+  const token = createSyncToken(user.id, row.id);
+  return c.json({ token, expiresInSec: 120 });
+});
+
+/** Create / rename / delete: admin only. */
+boardRoutes.post("/", requireAdmin, async (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
 
@@ -59,39 +96,13 @@ boardRoutes.post("/", async (c) => {
   return c.json({ board: mapBoard(row) }, 201);
 });
 
-boardRoutes.get("/:id", (c) => {
-  const blocked = requirePasswordOk(c);
-  if (blocked) return blocked;
-
-  const row = db
-    .query("SELECT * FROM boards WHERE id = ?")
-    .get(c.req.param("id")) as BoardRow | null;
-
-  if (!row) return c.json({ error: "Board not found" }, 404);
-  return c.json({ board: mapBoard(row) });
-});
-
-/** Short-lived token for WebSocket upgrade (avoids cookie/proxy issues in dev). */
-boardRoutes.post("/:id/sync-token", (c) => {
+boardRoutes.patch("/:id", requireAdmin, async (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
 
   const id = c.req.param("id");
-  const row = db.query("SELECT id FROM boards WHERE id = ?").get(id) as
-    | { id: string }
-    | null;
-  if (!row) return c.json({ error: "Board not found" }, 404);
+  if (!id) return c.json({ error: "Board id required" }, 400);
 
-  const user = c.get("user");
-  const token = createSyncToken(user.id, row.id);
-  return c.json({ token, expiresInSec: 120 });
-});
-
-boardRoutes.patch("/:id", async (c) => {
-  const blocked = requirePasswordOk(c);
-  if (blocked) return blocked;
-
-  const id = c.req.param("id");
   const existing = db
     .query("SELECT * FROM boards WHERE id = ?")
     .get(id) as BoardRow | null;
@@ -112,14 +123,18 @@ boardRoutes.patch("/:id", async (c) => {
   return c.json({ board: mapBoard(row) });
 });
 
-boardRoutes.delete("/:id", (c) => {
+boardRoutes.delete("/:id", requireAdmin, (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
 
   const id = c.req.param("id");
+  if (!id) return c.json({ error: "Board id required" }, 400);
+
   const existing = db.query("SELECT id FROM boards WHERE id = ?").get(id);
   if (!existing) return c.json({ error: "Board not found" }, 404);
 
+  // Tear down live collab room before deleting the row (no re-persist after delete)
+  closeRoom(id, { persist: false });
   db.query("DELETE FROM boards WHERE id = ?").run(id);
   return c.json({ ok: true });
 });

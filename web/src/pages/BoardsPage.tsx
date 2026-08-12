@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError, type Board } from "../api";
+import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
 import { useI18n, useT } from "../i18n";
 
@@ -8,6 +9,8 @@ export function BoardsPage() {
   const navigate = useNavigate();
   const t = useT();
   const { locale } = useI18n();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [boards, setBoards] = useState<Board[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +35,7 @@ export function BoardsPage() {
   }, [load]);
 
   async function createBoard() {
+    if (!isAdmin) return;
     setCreating(true);
     try {
       const res = await api.createBoard(t("boards.defaultName"));
@@ -45,6 +49,7 @@ export function BoardsPage() {
   }
 
   async function renameBoard(board: Board) {
+    if (!isAdmin) return;
     const name = window.prompt(t("boards.renamePrompt"), board.name);
     if (!name || name.trim() === board.name) return;
     try {
@@ -60,6 +65,7 @@ export function BoardsPage() {
   }
 
   async function removeBoard(board: Board) {
+    if (!isAdmin) return;
     if (
       !window.confirm(t("boards.deleteConfirm", { name: board.name }))
     ) {
@@ -82,15 +88,17 @@ export function BoardsPage() {
           <h1>{t("boards.title")}</h1>
           <p>{t("boards.subtitle")}</p>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          style={{ width: "auto" }}
-          disabled={creating}
-          onClick={() => void createBoard()}
-        >
-          {creating ? t("boards.creating") : t("boards.new")}
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: "auto" }}
+            disabled={creating}
+            onClick={() => void createBoard()}
+          >
+            {creating ? t("boards.creating") : t("boards.new")}
+          </button>
+        )}
       </div>
 
       {error && <div className="error-banner">{error}</div>}
@@ -101,15 +109,17 @@ export function BoardsPage() {
         </div>
       ) : boards.length === 0 ? (
         <div className="empty-state">
-          <p>{t("boards.empty")}</p>
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: "auto", marginTop: 12 }}
-            onClick={() => void createBoard()}
-          >
-            {t("boards.createFirst")}
-          </button>
+          <p>{isAdmin ? t("boards.empty") : t("boards.emptyMember")}</p>
+          {isAdmin && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "auto", marginTop: 12 }}
+              onClick={() => void createBoard()}
+            >
+              {t("boards.createFirst")}
+            </button>
+          )}
         </div>
       ) : (
         <div className="board-grid">
@@ -131,20 +141,24 @@ export function BoardsPage() {
                 >
                   {t("common.open")}
                 </Link>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => void renameBoard(board)}
-                >
-                  {t("common.rename")}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => void removeBoard(board)}
-                >
-                  {t("common.delete")}
-                </button>
+                {isAdmin && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => void renameBoard(board)}
+                    >
+                      {t("common.rename")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => void removeBoard(board)}
+                    >
+                      {t("common.delete")}
+                    </button>
+                  </>
+                )}
               </div>
             </article>
           ))}

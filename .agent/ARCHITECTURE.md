@@ -34,6 +34,9 @@ nanocore/
 - **tldraw v3.x sync** with snapshot persistence (not Cloudflare / not SQLiteSyncStorage — that API is newer than pinned 3.15)
 - **Admin-provisioned users** only; temp password + `must_change_password`
 - **Single-tenant org** row (`id = 1`) for whitelabel display name
+- **Board mutations admin-only** (create/rename/delete); all members can list/open/collab
+- **Asset access** via HMAC `sig` query (works in `<img>`) or session cookie; SVG uploads blocked
+- **Production** requires non-default `SESSION_SECRET`; optional `ALLOWED_ORIGINS` for split UI/API
 
 ## Dependencies
 

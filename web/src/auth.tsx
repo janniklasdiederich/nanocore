@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearSession = useCallback(() => {
     setUser(null);
+    setOrg(null);
   }, []);
 
   const value = useMemo(
