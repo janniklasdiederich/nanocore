@@ -59,6 +59,12 @@ WEB_PORT=4173 bun run start:web        # UI :4173
 SESSION_SECRET=long-random docker compose up --build
 ```
 
+Data backup (SQLite + uploads + session secret) to `../backups/YYYY-MM-DD`:
+
+```bash
+sh docker/backup.sh
+```
+
 ## Common Issues
 
 - **PowerShell `curl`**: use `curl.exe` or Bun fetch — `curl` is aliased to Invoke-WebRequest
