@@ -141,7 +141,6 @@ export function BoardsPage() {
               <div className="actions">
                 <Link
                   className="btn btn-primary btn-sm"
-                  style={{ width: "auto" }}
                   to={`/boards/${board.id}`}
                 >
                   {t("common.open")}

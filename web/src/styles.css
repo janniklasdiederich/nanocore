@@ -205,7 +205,13 @@ input {
   padding: 10px 14px;
   cursor: pointer;
   font-weight: 600;
+  line-height: 1.25;
   transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s;
+}
+
+/* Links styled as buttons must not pick up `a` hover color / tighter metrics */
+a.btn:hover {
+  color: inherit;
 }
 
 .btn:disabled {
@@ -222,6 +228,11 @@ input {
 
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
+}
+
+a.btn-primary,
+a.btn-primary:hover {
+  color: #0b1020;
 }
 
 .btn-secondary {
@@ -369,8 +380,15 @@ input {
 .board-card .actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin-top: auto;
+}
+
+.board-card .actions .btn {
+  width: auto;
+  margin-top: 0;
+  min-height: 32px;
 }
 
 .empty-state {
