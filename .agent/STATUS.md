@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: per-page document titles
+_Last updated: 2026-08-12 after: per-board member access
 
 ## What's Been Built
 
@@ -9,7 +9,7 @@ _Last updated: 2026-08-12 after: per-page document titles
 - **Auth**: cookie sessions, login/logout, force password change; rate-limited login; session purge; password change kills all sessions
 - **Users (admin)**: create with temp password, list, delete; role promote/demote
 - **Invites**: magic links with expiry + max uses; rate-limited accept
-- **Boards**: members list/open; **admins only** create/rename/delete; delete closes live room
+- **Boards**: **admins only** create/rename/delete + assign access; members list/open only assigned boards; delete closes live room
 - **Collab canvas**: **tldraw 3.15.x** + `@tldraw/sync`; `TLSocketRoom` + SQLite snapshots
 - **Assets**: signed URLs + session auth; size limit; no SVG; SPA path-contained static serve
 - **Security**: prod refuses weak SESSION_SECRET; CORS allowlist; upload caps
@@ -26,9 +26,9 @@ _Last updated: 2026-08-12 after: per-page document titles
 
 ## Current Task / Last Completed
 
-Browser tab titles: `<org> | Boards`, `<org> | Users`, `<org> | <board name>` via `useDocumentTitle`.
+Per-board access: admin **Access** on each board card. Checkbox dialog of org users. Admins always have access (locked). Members must be assigned. Existing boards were not backfilled — members lose access until assigned. New boards start admin-only. New users get no boards. Revoke drops live WebSocket sessions.
 
-Previous: shape owner labels on note/text/image/geo only (not arrows, pen, frames). Preferences always/hover/never.
+Previous: browser tab titles; shape owner labels on note/text/image/geo.
 
 ## Known Issues & TODOs
 

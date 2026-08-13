@@ -5,6 +5,7 @@ import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
 import { useI18n, useT } from "../i18n";
 import { useDocumentTitle } from "../useDocumentTitle";
+import { BoardAccessDialog } from "./BoardAccessDialog";
 
 export function BoardsPage() {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ export function BoardsPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [accessFor, setAccessFor] = useState<Board | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -149,6 +151,13 @@ export function BoardsPage() {
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
+                      onClick={() => setAccessFor(board)}
+                    >
+                      {t("boards.access")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
                       onClick={() => void renameBoard(board)}
                     >
                       {t("common.rename")}
@@ -166,6 +175,12 @@ export function BoardsPage() {
             </article>
           ))}
         </div>
+      )}
+      {accessFor && (
+        <BoardAccessDialog
+          board={accessFor}
+          onClose={() => setAccessFor(null)}
+        />
       )}
     </AppShell>
   );

@@ -6,8 +6,15 @@ import {
   requirePasswordOk,
   type Variables,
 } from "../auth";
+import {
+  listBoardAccess,
+  listBoardsForUser,
+  setBoardMembers,
+  userCanAccessBoard,
+} from "../boardAccess";
 import { db, type BoardRow } from "../db";
 import { closeRoom } from "../rooms";
+import { kickUsersFromBoard } from "../wsConnections";
 
 export const boardRoutes = new Hono<{ Variables: Variables }>();
 
@@ -23,16 +30,52 @@ function mapBoard(row: BoardRow) {
   };
 }
 
-/** Any authenticated member can list and open boards. */
+/** List boards the caller can open. Admins see all; members see assigned only. */
 boardRoutes.get("/", (c) => {
   const blocked = requirePasswordOk(c);
   if (blocked) return blocked;
 
-  const rows = db
-    .query(`SELECT * FROM boards ORDER BY updated_at DESC`)
-    .all() as BoardRow[];
-
+  const user = c.get("user");
+  const rows = listBoardsForUser(user.id, user.role);
   return c.json({ boards: rows.map(mapBoard) });
+});
+
+boardRoutes.get("/:id/members", requireAdmin, (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const id = c.req.param("id");
+  if (!id) return c.json({ error: "Board id required" }, 400);
+
+  const existing = db.query("SELECT id FROM boards WHERE id = ?").get(id);
+  if (!existing) return c.json({ error: "Board not found" }, 404);
+
+  return c.json({ users: listBoardAccess(id) });
+});
+
+boardRoutes.put("/:id/members", requireAdmin, async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const id = c.req.param("id");
+  if (!id) return c.json({ error: "Board id required" }, 400);
+
+  const existing = db.query("SELECT id FROM boards WHERE id = ?").get(id);
+  if (!existing) return c.json({ error: "Board not found" }, 404);
+
+  const body = await c.req.json().catch(() => null);
+  const userIds = Array.isArray(body?.userIds)
+    ? body.userIds.filter((v: unknown): v is string => typeof v === "string")
+    : null;
+  if (!userIds) {
+    return c.json({ error: "userIds array required" }, 400);
+  }
+
+  const granter = c.get("user");
+  const { removedUserIds } = setBoardMembers(id, userIds, granter.id);
+  kickUsersFromBoard(id, removedUserIds);
+
+  return c.json({ users: listBoardAccess(id) });
 });
 
 boardRoutes.get("/:id", (c) => {
@@ -41,6 +84,11 @@ boardRoutes.get("/:id", (c) => {
 
   const id = c.req.param("id");
   if (!id) return c.json({ error: "Board id required" }, 400);
+
+  const user = c.get("user");
+  if (!userCanAccessBoard(user.id, id)) {
+    return c.json({ error: "Board not found" }, 404);
+  }
 
   const row = db
     .query("SELECT * FROM boards WHERE id = ?")
@@ -64,6 +112,10 @@ boardRoutes.post("/:id/sync-token", (c) => {
   if (!row) return c.json({ error: "Board not found" }, 404);
 
   const user = c.get("user");
+  if (!userCanAccessBoard(user.id, id)) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+
   const token = createSyncToken(user.id, row.id);
   return c.json({ token, expiresInSec: 120 });
 });

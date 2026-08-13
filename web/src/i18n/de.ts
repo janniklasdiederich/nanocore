@@ -69,7 +69,7 @@ export const de: Messages = {
   "boards.empty":
     "Noch keine Boards. Erstelle eines, um zusammenzuarbeiten.",
   "boards.emptyMember":
-    "Noch keine Boards. Bitte einen Admin, eines für das Team anzulegen.",
+    "Dir sind noch keine Boards zugewiesen. Bitte einen Admin um Zugriff.",
   "boards.createFirst": "Erstes Board erstellen",
   "boards.defaultName": "Unbenanntes Board",
   "boards.renamePrompt": "Boardname",
@@ -80,6 +80,16 @@ export const de: Messages = {
   "boards.createFailed": "Board konnte nicht erstellt werden",
   "boards.renameFailed": "Umbenennen fehlgeschlagen",
   "boards.deleteFailed": "Löschen fehlgeschlagen",
+  "boards.access": "Zugriff",
+  "boards.accessTitle": "Wer darf „{name}“ öffnen?",
+  "boards.accessHelp":
+    "Admins haben immer Zugriff. Mitglieder sehen nur zugewiesene Boards.",
+  "boards.accessSave": "Speichern",
+  "boards.accessSaving": "Wird gespeichert…",
+  "boards.accessFailed": "Zugriff konnte nicht geändert werden",
+  "boards.accessLoadFailed": "Zugriff konnte nicht geladen werden",
+  "boards.accessAlways": "Immer (Admin)",
+  "boards.accessEmpty": "Noch keine Mitglieder zum Zuweisen.",
 
   "board.missingId": "Board-ID fehlt",
   "board.openFailed": "Board konnte nicht geöffnet werden",

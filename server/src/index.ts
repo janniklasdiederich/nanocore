@@ -12,7 +12,9 @@ import {
 import { env } from "./env";
 import { isSetupComplete } from "./db";
 // rooms imports apply the custom-color validation patch before TLSocketRoom runs
+import { userCanAccessBoard } from "./boardAccess";
 import { makeOrLoadRoom, getActiveRoom, closeAllRooms } from "./rooms";
+import { trackWs, untrackWs } from "./wsConnections";
 import { safePathUnderRoot } from "./safePath";
 import { setupRoutes } from "./routes/setup";
 import { authRoutes } from "./routes/auth";
@@ -226,6 +228,10 @@ const server = Bun.serve<WsData>({
         return new Response("Board not found", { status: 404 });
       }
 
+      if (!userId || !userCanAccessBoard(userId, boardId)) {
+        return new Response("Forbidden", { status: 403 });
+      }
+
       const ok = srv.upgrade(req, {
         data: {
           sessionId,
@@ -245,6 +251,18 @@ const server = Bun.serve<WsData>({
   websocket: {
     open(ws) {
       try {
+        trackWs({
+          boardId: ws.data.boardId,
+          userId: ws.data.userId,
+          sessionId: ws.data.sessionId,
+          close: () => {
+            try {
+              ws.close(4403, "Access revoked");
+            } catch {
+              // ignore
+            }
+          },
+        });
         const room = makeOrLoadRoom(ws.data.boardId);
         room.handleSocketConnect({
           sessionId: ws.data.sessionId,
@@ -291,6 +309,7 @@ const server = Bun.serve<WsData>({
       }
     },
     close(ws) {
+      untrackWs(ws.data.boardId, ws.data.sessionId);
       const room = getActiveRoom(ws.data.boardId);
       if (room) {
         room.handleSocketClose(ws.data.sessionId);

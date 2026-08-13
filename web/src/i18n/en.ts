@@ -73,7 +73,7 @@ export const en = {
   "boards.creating": "Creating…",
   "boards.empty": "No boards yet. Create one to start collaborating.",
   "boards.emptyMember":
-    "No boards yet. Ask an admin to create one for the team.",
+    "No boards assigned to you yet. Ask an admin to give you access.",
   "boards.createFirst": "Create your first board",
   "boards.defaultName": "Untitled board",
   "boards.renamePrompt": "Board name",
@@ -83,6 +83,16 @@ export const en = {
   "boards.createFailed": "Could not create board",
   "boards.renameFailed": "Rename failed",
   "boards.deleteFailed": "Delete failed",
+  "boards.access": "Access",
+  "boards.accessTitle": "Who can open “{name}”?",
+  "boards.accessHelp":
+    "Admins always have access. Members only see boards you assign.",
+  "boards.accessSave": "Save",
+  "boards.accessSaving": "Saving…",
+  "boards.accessFailed": "Could not update access",
+  "boards.accessLoadFailed": "Could not load access",
+  "boards.accessAlways": "Always (admin)",
+  "boards.accessEmpty": "No members to assign yet.",
 
   // Board canvas
   "board.missingId": "Missing board id",

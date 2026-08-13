@@ -60,9 +60,18 @@ db.exec(`
     CHECK (max_uses IS NULL OR max_uses >= 1)
   );
 
+  CREATE TABLE IF NOT EXISTS board_members (
+    board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    granted_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    granted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (board_id, user_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
   CREATE INDEX IF NOT EXISTS idx_invite_token ON invite_links(token_hash);
+  CREATE INDEX IF NOT EXISTS idx_board_members_user ON board_members(user_id);
 `);
 
 export type UserRole = "admin" | "member";

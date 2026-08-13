@@ -18,6 +18,14 @@ export type Board = {
   updatedAt: string;
 };
 
+export type BoardAccessUser = {
+  id: string;
+  email: string;
+  displayName: string;
+  role: "admin" | "member";
+  assigned: boolean;
+};
+
 export type Invite = {
   id: string;
   expiresAt: string;
@@ -214,6 +222,15 @@ export const api = {
 
   deleteBoard: (id: string) =>
     request<{ ok: boolean }>(`/api/boards/${id}`, { method: "DELETE" }),
+
+  getBoardMembers: (id: string) =>
+    request<{ users: BoardAccessUser[] }>(`/api/boards/${id}/members`),
+
+  setBoardMembers: (id: string, userIds: string[]) =>
+    request<{ users: BoardAccessUser[] }>(`/api/boards/${id}/members`, {
+      method: "PUT",
+      body: JSON.stringify({ userIds }),
+    }),
 
   searchGifs: (q: string, offset = 0) =>
     request<{
