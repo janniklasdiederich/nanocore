@@ -38,7 +38,7 @@ Open **http://localhost:3001** and complete first-run setup.
 | UI + API + WS | `http://localhost:3001` |
 | SQLite + uploads | Docker volume `nanocore-data` |
 | Session secret | Auto-generated into the volume if `SESSION_SECRET` is unset/`auto` |
-| Backup | `sh docker/backup.sh` → `../backups/YYYY-MM-DD` (stops briefly, then restarts) |
+| Backup | `sh docker/backup.sh` → `../backups/backup-YYYY-MM-DD.tar.gz` (stops briefly, then restarts) |
 
 ### Optional `.env` (repo root)
 

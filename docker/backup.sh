@@ -1,5 +1,6 @@
 #!/bin/sh
-# Copy the nanocore Docker data volume to ../backups/YYYY-MM-DD
+# Archive the nanocore Docker data volume to
+#   ../backups/backup-YYYY-MM-DD.tar.gz
 # (sibling of the repo). Stops the container briefly so SQLite is consistent.
 # Usage (from anywhere):
 #   sh docker/backup.sh
@@ -7,7 +8,8 @@ set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 DATE=$(date +%Y-%m-%d)
-DEST=$(CDPATH= cd -- "$ROOT/.." && pwd)/backups/$DATE
+BACKUP_DIR=$(CDPATH= cd -- "$ROOT/.." && pwd)/backups
+ARCHIVE="$BACKUP_DIR/backup-$DATE.tar.gz"
 SERVICE=nanocore
 
 cd "$ROOT"
@@ -28,6 +30,13 @@ if ! docker compose ps -a --services 2>/dev/null | grep -qx "$SERVICE"; then
   exit 1
 fi
 
+CID=$(docker compose ps -aq "$SERVICE")
+if [ -z "$CID" ]; then
+  echo "No container for '$SERVICE'. Start the stack once:" >&2
+  echo "  docker compose up -d" >&2
+  exit 1
+fi
+
 was_running=0
 if docker compose ps --status running --services 2>/dev/null | grep -qx "$SERVICE"; then
   was_running=1
@@ -41,15 +50,17 @@ restore() {
 }
 trap restore EXIT
 
-mkdir -p "$DEST"
+mkdir -p "$BACKUP_DIR"
 
 if [ "$was_running" = 1 ]; then
   echo "Stopping $SERVICE for a consistent copy..."
   docker compose stop "$SERVICE"
 fi
 
-echo "Copying $SERVICE:/data -> $DEST"
-docker compose cp "$SERVICE:/data/." "$DEST"
+echo "Archiving $SERVICE:/data -> $ARCHIVE"
+# --volumes-from works on a stopped container; alpine tar lists files (czvf).
+docker run --rm --volumes-from "$CID" -v "$BACKUP_DIR:/backup" alpine \
+  tar czvf "/backup/backup-$DATE.tar.gz" -C /data .
 
-echo "Backup written to $DEST"
-ls -la "$DEST"
+echo "Backup written to $ARCHIVE"
+ls -lh "$ARCHIVE"

@@ -59,7 +59,7 @@ WEB_PORT=4173 bun run start:web        # UI :4173
 SESSION_SECRET=long-random docker compose up --build
 ```
 
-Data backup (SQLite + uploads + session secret) to `../backups/YYYY-MM-DD`:
+Data backup (SQLite + uploads + session secret) to `../backups/backup-YYYY-MM-DD.tar.gz`:
 
 ```bash
 sh docker/backup.sh
