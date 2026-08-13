@@ -24,6 +24,7 @@ import {
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { registerShapeOwnerStamp } from "../tldraw/shapeOwner";
 import { boardTextOptions } from "../tldraw/textOptions";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 const boardShapeUtils = [
   ColorableFrameShapeUtil,
@@ -69,6 +70,8 @@ export function BoardPage() {
       .then((res) => setBoard(res.board))
       .catch((err: Error) => setError(err.message));
   }, [id]);
+
+  useDocumentTitle(board?.name ?? t("board.loadingName"));
 
   const userInfo = useMemo(
     () => ({

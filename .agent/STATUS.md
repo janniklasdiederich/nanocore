@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: Docker data backup script
+_Last updated: 2026-08-12 after: per-page document titles
 
 ## What's Been Built
 
@@ -26,7 +26,9 @@ _Last updated: 2026-08-12 after: Docker data backup script
 
 ## Current Task / Last Completed
 
-Shape owner labels: each locally created **note / text / image / geo** stamps `{id,name}` on `shape.meta.nanocoreOwner`. Overlay sits at top-right (reactions occupy bottom-left). Not shown on arrows, pen/draw, frames, lines, etc. Menu ▸ Preferences ▸ Owner labels: always / show on hover (default) / never. Preference is local (`localStorage nanocore_ownerLabel`). Shapes created before this feature have no owner and show no label.
+Browser tab titles: `<org> | Boards`, `<org> | Users`, `<org> | <board name>` via `useDocumentTitle`.
+
+Previous: shape owner labels on note/text/image/geo only (not arrows, pen, frames). Preferences always/hover/never.
 
 ## Known Issues & TODOs
 

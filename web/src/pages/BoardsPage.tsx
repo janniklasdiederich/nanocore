@@ -4,6 +4,7 @@ import { api, ApiError, type Board } from "../api";
 import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
 import { useI18n, useT } from "../i18n";
+import { useDocumentTitle } from "../useDocumentTitle";
 
 export function BoardsPage() {
   const navigate = useNavigate();
@@ -33,6 +34,8 @@ export function BoardsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useDocumentTitle(t("boards.title"));
 
   async function createBoard() {
     if (!isAdmin) return;

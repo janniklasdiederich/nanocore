@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
+import { useDocumentTitle } from "../useDocumentTitle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export function AppShell({
@@ -15,6 +16,7 @@ export function AppShell({
   const { user, org, clearSession } = useAuth();
   const navigate = useNavigate();
   const t = useT();
+  useDocumentTitle(title);
 
   async function logout() {
     await api.logout();
