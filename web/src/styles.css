@@ -1334,6 +1334,17 @@ a.btn-primary:hover {
   z-index: 2;
 }
 
+.nc-note-box,
+.nc-note-box .tl-note__container {
+  box-sizing: border-box;
+}
+
+.nc-note-box .tl-note__container .tl-text-label,
+.nc-note-box .tl-note__container .tl-rich-text {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
 .nc-owner-label {
   position: absolute;
   transform: translate(-100%, -100%);

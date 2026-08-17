@@ -11,6 +11,7 @@ import { useI18n, useT } from "../i18n";
 import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
 import { ColorableFrameShapeUtil } from "../tldraw/colorableFrame";
+import { NanocoreNoteShapeUtil } from "../tldraw/resizableNote";
 import {
   NanocoreArrowShapeUtil,
   NanocoreSelectTool,
@@ -28,6 +29,7 @@ import { useDocumentTitle } from "../useDocumentTitle";
 
 const boardShapeUtils = [
   ColorableFrameShapeUtil,
+  NanocoreNoteShapeUtil,
   NanocoreDrawShapeUtil,
   NanocoreArrowShapeUtil,
 ];

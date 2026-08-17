@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: solid fills on frames and stickies
+_Last updated: 2026-08-12 after: resizable stickies
 
 ## What's Been Built
 
