@@ -129,15 +129,11 @@ export class NanocoreNoteShapeUtil extends NoteShapeUtil {
     const scale = shape.props.scale;
 
     useLayoutEffect(() => {
+      if (!stored) return;
       const el = rootRef.current?.querySelector(
         ".tl-note__container",
       ) as HTMLElement | null;
       if (!el) return;
-      if (!stored) {
-        el.style.width = "";
-        el.style.height = "";
-        return;
-      }
       el.style.width = `${stored.w * scale}px`;
       el.style.height = `${stored.h * scale}px`;
     });
