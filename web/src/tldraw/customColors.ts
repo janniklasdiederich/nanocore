@@ -172,10 +172,21 @@ export function normalizeHex6(hex: string): string {
   return "#888888";
 }
 
+/** Dark text on light fills, light text on dark fills. */
+function contrastOn(hex: string): string {
+  const h = normalizeHex6(hex);
+  const r = parseInt(h.slice(1, 3), 16);
+  const g = parseInt(h.slice(3, 5), 16);
+  const b = parseInt(h.slice(5, 7), 16);
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return luminance > 0.55 ? "#1a1a1a" : "#ffffff";
+}
+
 function makeThemeColor(hex: string): TLDefaultColorThemeColor {
   const solid = normalizeHex6(hex);
-  // ~50% alpha for semi fills
+  // ~50% alpha for geo "Solid" fill — not used for frames/notes
   const semi = solid.length === 7 ? `${solid}80` : solid;
+  const onSolid = contrastOn(solid);
   return {
     solid,
     semi,
@@ -183,14 +194,14 @@ function makeThemeColor(hex: string): TLDefaultColorThemeColor {
     fill: solid,
     frame: {
       headingStroke: solid,
-      headingFill: semi,
+      headingFill: solid,
       stroke: solid,
-      fill: semi,
-      text: solid,
+      fill: solid,
+      text: onSolid,
     },
     note: {
-      fill: semi,
-      text: solid,
+      fill: solid,
+      text: onSolid,
     },
     highlight: {
       srgb: solid,
@@ -234,18 +245,26 @@ const PLACEHOLDER_HEX = "#888888";
  * hit theme[color] === undefined and crash with "Cannot read 'solid'/'note'".
  */
 /**
- * Stock tldraw frame.fill is nearly white (artboard look). Use the color's
- * `semi` wash so the frame body actually shows the chosen color.
+ * Stock tldraw paints frames near-white and notes as pastels / 50% wash.
+ * Use the picked `solid` so frames and stickies match the color swatch.
  */
-function applyVisibleFrameFills(): void {
+function applyTrueColorFills(): void {
   for (const mode of ["lightMode", "darkMode"] as const) {
     const theme = DefaultColorThemePalette[mode] as Record<string, unknown>;
     for (const value of Object.values(theme)) {
       if (!value || typeof value !== "object") continue;
       const color = value as Partial<TLDefaultColorThemeColor>;
-      if (!color.frame || typeof color.semi !== "string") continue;
-      color.frame.fill = color.semi;
-      color.frame.headingFill = color.semi;
+      if (typeof color.solid !== "string") continue;
+      const onSolid = contrastOn(color.solid);
+      if (color.frame) {
+        color.frame.fill = color.solid;
+        color.frame.headingFill = color.solid;
+        color.frame.text = onSolid;
+      }
+      if (color.note) {
+        color.note.fill = color.solid;
+        color.note.text = onSolid;
+      }
     }
   }
 }
@@ -260,7 +279,7 @@ export function applyPaletteToTheme(hexes: string[]): void {
       theme[`custom-${i + 1}`] = makeThemeColor(hex);
     }
   }
-  applyVisibleFrameFills();
+  applyTrueColorFills();
 }
 
 export function customKeyForIndex(index: number): CustomColorKey {
