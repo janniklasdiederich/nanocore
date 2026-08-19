@@ -1219,11 +1219,6 @@ a.btn-primary:hover {
 }
 
 /* GIF picker (Discord-like grid inside tldraw dialog) */
-.nc-gif-tool-icon {
-  display: block;
-  flex-shrink: 0;
-}
-
 .nc-gif-dialog {
   width: min(520px, 92vw);
   max-height: min(70vh, 640px);

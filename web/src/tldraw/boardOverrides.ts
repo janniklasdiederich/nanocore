@@ -1,6 +1,6 @@
 import type { TLAssetId, TLUiOverrides } from "tldraw";
 import { GifPickerDialog } from "./GifPickerDialog";
-import { gifToolIcon } from "./gifToolIcon";
+import { GIF_TOOL_ICON_ID } from "./gifToolIcon";
 
 /**
  * Open media originals in a new tab instead of navigating the board tab away
@@ -36,7 +36,7 @@ export const boardUiOverrides: TLUiOverrides = {
       gif: {
         id: "gif",
         label: "tool.gif" as never,
-        icon: gifToolIcon,
+        icon: GIF_TOOL_ICON_ID as never,
         kbd: "g",
         onSelect() {
           addDialog({ component: GifPickerDialog });

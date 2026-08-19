@@ -26,6 +26,7 @@ import {
 import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { registerShapeOwnerStamp } from "../tldraw/shapeOwner";
 import { boardTextOptions } from "../tldraw/textOptions";
+import { GIF_TOOL_ICON_ID, GIF_TOOL_ICON_URL } from "../tldraw/gifToolIcon";
 import { useDocumentTitle } from "../useDocumentTitle";
 
 const boardShapeUtils = [
@@ -227,6 +228,7 @@ function BoardCanvas({
         tools={boardTools}
         components={boardUiComponents}
         overrides={boardUiOverrides}
+        assetUrls={{ icons: { [GIF_TOOL_ICON_ID]: GIF_TOOL_ICON_URL } }}
         textOptions={boardTextOptions}
         onMount={onMount}
       />
