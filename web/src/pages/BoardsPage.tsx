@@ -130,6 +130,17 @@ export function BoardsPage() {
         <div className="board-grid">
           {boards.map((board) => (
             <article key={board.id} className="board-card">
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="board-card-delete"
+                  title={t("common.delete")}
+                  aria-label={t("common.delete")}
+                  onClick={() => void removeBoard(board)}
+                >
+                  ×
+                </button>
+              )}
               <div>
                 <h3>{board.name}</h3>
                 <div className="meta">
@@ -160,13 +171,6 @@ export function BoardsPage() {
                       onClick={() => void renameBoard(board)}
                     >
                       {t("common.rename")}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-danger btn-sm"
-                      onClick={() => void removeBoard(board)}
-                    >
-                      {t("common.delete")}
                     </button>
                   </>
                 )}

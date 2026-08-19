@@ -351,6 +351,7 @@ a.btn-primary:hover {
 }
 
 .board-card {
+  position: relative;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -361,6 +362,28 @@ a.btn-primary:hover {
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
+.board-card-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.board-card-delete:hover {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+
 .board-card:hover {
   border-color: #3d4a63;
   transform: translateY(-1px);
@@ -368,6 +391,7 @@ a.btn-primary:hover {
 
 .board-card h3 {
   margin: 0;
+  padding-right: 28px;
   font-size: 1.05rem;
   letter-spacing: -0.01em;
 }
