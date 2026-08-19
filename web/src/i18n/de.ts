@@ -11,6 +11,7 @@ export const de: Messages = {
   "common.open": "Öffnen",
   "common.rename": "Umbenennen",
   "common.delete": "Löschen",
+  "common.deleting": "Wird gelöscht…",
   "common.remove": "Entfernen",
   "common.signOut": "Abmelden",
   "common.admin": "Admin",
@@ -76,6 +77,10 @@ export const de: Messages = {
   "boards.renamePrompt": "Boardname",
   "boards.deleteConfirm":
     "„{name}“ löschen? Das kann nicht rückgängig gemacht werden.",
+  "boards.deleteTitle": "„{name}“ löschen?",
+  "boards.deleteHelp":
+    "Das kann nicht rückgängig gemacht werden. Tippe den Boardnamen zur Bestätigung.",
+  "boards.deleteTypeName": "Boardname",
   "boards.updated": "Aktualisiert {date}",
   "boards.loadFailed": "Boards konnten nicht geladen werden",
   "boards.createFailed": "Board konnte nicht erstellt werden",

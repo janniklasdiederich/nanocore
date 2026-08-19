@@ -10,6 +10,7 @@ export const en = {
   "common.open": "Open",
   "common.rename": "Rename",
   "common.delete": "Delete",
+  "common.deleting": "Deleting…",
   "common.remove": "Remove",
   "common.signOut": "Sign out",
   "common.admin": "admin",
@@ -79,6 +80,10 @@ export const en = {
   "boards.defaultName": "Untitled board",
   "boards.renamePrompt": "Board name",
   "boards.deleteConfirm": "Delete “{name}”? This cannot be undone.",
+  "boards.deleteTitle": "Delete “{name}”?",
+  "boards.deleteHelp":
+    "This cannot be undone. Type the board name to confirm.",
+  "boards.deleteTypeName": "Board name",
   "boards.updated": "Updated {date}",
   "boards.loadFailed": "Failed to load boards",
   "boards.createFailed": "Could not create board",
