@@ -5,17 +5,19 @@ import {
   ApiError,
   type AccessGroup,
   type Invite,
+  type Org,
   type User,
 } from "../api";
 import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
+import { apiUrl } from "../config";
 import { useI18n, useT } from "../i18n";
 import { GroupMembersDialog } from "./GroupMembersDialog";
 
-type AdminTab = "people" | "groups" | "invites";
+type AdminTab = "people" | "groups" | "invites" | "branding";
 
 export function UsersPage() {
-  const { user: me } = useAuth();
+  const { user: me, org, setSession } = useAuth();
   const t = useT();
   const { locale } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
@@ -283,6 +285,7 @@ export function UsersPage() {
             ["people", t("admin.tabPeople")],
             ["groups", t("admin.tabGroups")],
             ["invites", t("admin.tabInvites")],
+            ["branding", t("admin.tabBranding")],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -497,6 +500,16 @@ export function UsersPage() {
       </section>
       )}
 
+      {tab === "branding" && (
+        <BrandingSection
+          logoSrc={org?.logoSrc ?? null}
+          onOrg={(next) => {
+            if (me) setSession(me, next);
+          }}
+          onError={setError}
+        />
+      )}
+
       {tab === "people" && (
       <section className="admin-section">
         <h2 className="admin-section__title">{t("admin.tabPeople")}</h2>
@@ -686,5 +699,95 @@ function CreateUserModal({
         </div>
       </form>
     </div>
+  );
+}
+
+function BrandingSection({
+  logoSrc,
+  onOrg,
+  onError,
+}: {
+  logoSrc: string | null;
+  onOrg: (org: Org) => void;
+  onError: (message: string | null) => void;
+}) {
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+
+  async function onFile(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    onError(null);
+    try {
+      const res = await api.uploadOrgLogo(file);
+      if (res.org) onOrg(res.org);
+    } catch (err) {
+      onError(
+        err instanceof ApiError ? err.message : t("branding.uploadFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    setBusy(true);
+    onError(null);
+    try {
+      const res = await api.deleteOrgLogo();
+      if (res.org) onOrg(res.org);
+    } catch (err) {
+      onError(
+        err instanceof ApiError ? err.message : t("branding.removeFailed"),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="admin-section">
+      <h2 className="admin-section__title">{t("branding.title")}</h2>
+      <p className="admin-section__sub">{t("branding.help")}</p>
+      <div className="branding-row">
+        <div className="branding-preview">
+          {logoSrc ? (
+            <img
+              src={apiUrl(logoSrc)}
+              alt=""
+              className="brand-mark brand-mark--img"
+            />
+          ) : (
+            <span className="brand-mark" aria-hidden />
+          )}
+        </div>
+        <div className="branding-actions">
+          <label className="btn btn-primary btn-sm" style={{ width: "auto" }}>
+            {busy ? t("common.saving") : t("branding.upload")}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              hidden
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                void onFile(file);
+              }}
+            />
+          </label>
+          {logoSrc && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={busy}
+              onClick={() => void remove()}
+            >
+              {t("branding.remove")}
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

@@ -5,6 +5,7 @@ import { useSync } from "@tldraw/sync";
 import "tldraw/tldraw.css";
 import { api, type Board } from "../api";
 import { useAuth } from "../auth";
+import { BrandMark } from "../components/BrandMark";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { apiOrigin, apiUrl, syncWsBase } from "../config";
 import { useI18n, useT } from "../i18n";
@@ -109,7 +110,7 @@ export function BoardPage() {
       <header className="topbar">
         <div className="topbar-left">
           <Link to="/" className="brand" style={{ margin: 0 }}>
-            <span className="brand-mark" aria-hidden />
+            <BrandMark />
             <span className="topbar-title">
               {org?.name || t("app.name")}
             </span>

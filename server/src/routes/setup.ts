@@ -4,7 +4,7 @@ import {
   hashPassword,
   setSessionCookie,
 } from "../auth";
-import { db, getOrg, isSetupComplete, publicUser } from "../db";
+import { db, getOrg, isSetupComplete, publicOrg, publicUser } from "../db";
 
 export const setupRoutes = new Hono();
 
@@ -12,7 +12,7 @@ setupRoutes.get("/status", (c) => {
   const org = getOrg();
   return c.json({
     setupComplete: isSetupComplete(),
-    org: org ? { name: org.name } : null,
+    org: publicOrg(org),
   });
 });
 
@@ -82,7 +82,7 @@ setupRoutes.post("/", async (c) => {
     .get(userId) as import("../db").UserRow;
 
   return c.json({
-    org: { name: orgName },
+    org: publicOrg(getOrg()) ?? { name: orgName, logoSrc: null },
     user: publicUser(user),
   });
 });

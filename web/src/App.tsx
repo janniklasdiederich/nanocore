@@ -7,6 +7,7 @@ import { BoardsPage } from "./pages/BoardsPage";
 import { BoardPage } from "./pages/BoardPage";
 import { UsersPage } from "./pages/UsersPage";
 import { InvitePage } from "./pages/InvitePage";
+import { useOrgFavicon } from "./components/BrandMark";
 
 function Guard({
   children,
@@ -50,6 +51,7 @@ function Guard({
 
 export function App() {
   const { loading, setupComplete, user } = useAuth();
+  useOrgFavicon();
 
   if (loading) {
     return (

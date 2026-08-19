@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
+import { BrandMark } from "../components/BrandMark";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 
 export function ChangePasswordPage() {
@@ -49,7 +50,7 @@ export function ChangePasswordPage() {
           <LanguageSwitcher compact />
         </div>
         <div className="brand">
-          <span className="brand-mark" aria-hidden />
+          <BrandMark />
           {org?.name || t("app.name")}
         </div>
         <h1>{t("password.title")}</h1>

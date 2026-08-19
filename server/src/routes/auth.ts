@@ -14,7 +14,7 @@ import {
   verifyPassword,
   type Variables,
 } from "../auth";
-import { db, getOrg, publicUser, type UserRow } from "../db";
+import { db, getOrg, publicOrg, publicUser, type UserRow } from "../db";
 import { clientIp, rateLimit } from "../rateLimit";
 
 export const authRoutes = new Hono<{ Variables: Variables }>();
@@ -25,12 +25,12 @@ authRoutes.get("/me", (c) => {
   const org = getOrg();
 
   if (!userRow) {
-    return c.json({ user: null, org: org ? { name: org.name } : null });
+    return c.json({ user: null, org: publicOrg(org) });
   }
 
   return c.json({
     user: publicUser(userRow),
-    org: org ? { name: org.name } : null,
+    org: publicOrg(org),
   });
 });
 
@@ -69,7 +69,7 @@ authRoutes.post("/login", async (c) => {
   const org = getOrg();
   return c.json({
     user: publicUser(user),
-    org: org ? { name: org.name } : null,
+    org: publicOrg(org),
   });
 });
 

@@ -9,7 +9,7 @@ import {
   setSessionCookie,
   type Variables,
 } from "../auth";
-import { db, getOrg, isSetupComplete, publicUser, type UserRow } from "../db";
+import { db, getOrg, isSetupComplete, publicOrg, publicUser, type UserRow } from "../db";
 import { env } from "../env";
 import { clientIp, rateLimit } from "../rateLimit";
 
@@ -227,7 +227,7 @@ invitePublicRoutes.get("/:token", (c) => {
         valid: false,
         error: check.error,
         code: check.code,
-        org: org ? { name: org.name } : null,
+        org: publicOrg(org),
       },
       410,
     );
@@ -235,7 +235,7 @@ invitePublicRoutes.get("/:token", (c) => {
 
   return c.json({
     valid: true,
-    org: org ? { name: org.name } : null,
+    org: publicOrg(org),
     expiresAt: row.expires_at,
     maxUses: row.max_uses,
     useCount: row.use_count,
@@ -342,7 +342,7 @@ invitePublicRoutes.post("/:token/accept", async (c) => {
   return c.json(
     {
       user: publicUser(createdUser),
-      org: org ? { name: org.name } : null,
+      org: publicOrg(org),
     },
     201,
   );

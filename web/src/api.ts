@@ -8,7 +8,7 @@ export type User = {
   mustChangePassword: boolean;
 };
 
-export type Org = { name: string };
+export type Org = { name: string; logoSrc: string | null };
 
 export type Board = {
   id: string;
@@ -155,6 +155,27 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ role }),
     }),
+
+  uploadOrgLogo: async (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(apiUrl("/api/org/logo"), {
+      method: "POST",
+      body: form,
+      credentials: "include",
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new ApiError(
+        (data as { error?: string }).error || res.statusText,
+        res.status,
+      );
+    }
+    return data as { org: Org };
+  },
+
+  deleteOrgLogo: () =>
+    request<{ org: Org }>("/api/org/logo", { method: "DELETE" }),
 
   listGroups: () => request<{ groups: AccessGroup[] }>("/api/groups"),
 

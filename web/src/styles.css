@@ -165,6 +165,32 @@ input {
   border-radius: 8px;
   background: linear-gradient(135deg, #6c8cff, #5ddea0);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  object-fit: cover;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.brand-mark--img {
+  background: var(--bg-soft);
+}
+
+.branding-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.branding-preview .brand-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+}
+
+.branding-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .field {

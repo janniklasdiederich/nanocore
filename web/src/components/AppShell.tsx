@@ -4,6 +4,7 @@ import { api } from "../api";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
 import { useDocumentTitle } from "../useDocumentTitle";
+import { BrandMark } from "./BrandMark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 export function AppShell({
@@ -29,7 +30,7 @@ export function AppShell({
       <header className="topbar">
         <div className="topbar-left">
           <Link to="/" className="brand" style={{ margin: 0 }}>
-            <span className="brand-mark" aria-hidden />
+            <BrandMark />
             <span className="topbar-title">
               {org?.name || t("app.name")}
             </span>

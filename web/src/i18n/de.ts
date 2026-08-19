@@ -145,10 +145,19 @@ export const de: Messages = {
   "owner.placedBy": "Platziert von {name}",
 
   "admin.title": "Verwaltung",
-  "admin.subtitle": "Personen, Gruppen und Einladungslinks.",
+  "admin.subtitle": "Personen, Gruppen, Einladungen und Erscheinungsbild.",
   "admin.tabPeople": "Personen",
   "admin.tabGroups": "Gruppen",
   "admin.tabInvites": "Einladungen",
+  "admin.tabBranding": "Erscheinungsbild",
+
+  "branding.title": "Logo & Favicon",
+  "branding.help":
+    "Lade ein Bild hoch. Es ersetzt das Markenzeichen oben links und das Browser-Tab-Icon.",
+  "branding.upload": "Bild hochladen",
+  "branding.remove": "Entfernen",
+  "branding.uploadFailed": "Logo konnte nicht hochgeladen werden",
+  "branding.removeFailed": "Logo konnte nicht entfernt werden",
 
   "groups.title": "Gruppen",
   "groups.subtitle":

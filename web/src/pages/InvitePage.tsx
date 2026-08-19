@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, type InvitePreview } from "../api";
 import { useAuth } from "../auth";
+import { BrandMark } from "../components/BrandMark";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { useI18n, useT } from "../i18n";
 
@@ -100,7 +101,7 @@ export function InvitePage() {
             <LanguageSwitcher compact />
           </div>
           <div className="brand">
-            <span className="brand-mark" aria-hidden />
+            <BrandMark />
             {preview?.org?.name || t("app.name")}
           </div>
           <h1>{t("invite.invalidTitle")}</h1>
@@ -128,7 +129,7 @@ export function InvitePage() {
           <LanguageSwitcher compact />
         </div>
         <div className="brand">
-          <span className="brand-mark" aria-hidden />
+          <BrandMark />
           {orgName}
         </div>
         <h1>{t("invite.joinTitle", { org: orgName })}</h1>

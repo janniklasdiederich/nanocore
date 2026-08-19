@@ -148,10 +148,19 @@ export const en = {
   "owner.placedBy": "Placed by {name}",
 
   "admin.title": "Administration",
-  "admin.subtitle": "People, groups, and invite links.",
+  "admin.subtitle": "People, groups, invites, and branding.",
   "admin.tabPeople": "People",
   "admin.tabGroups": "Groups",
   "admin.tabInvites": "Invites",
+  "admin.tabBranding": "Branding",
+
+  "branding.title": "Logo & favicon",
+  "branding.help":
+    "Upload one image. It replaces the top-left mark and the browser tab icon.",
+  "branding.upload": "Upload image",
+  "branding.remove": "Remove",
+  "branding.uploadFailed": "Could not upload logo",
+  "branding.removeFailed": "Could not remove logo",
 
   "groups.title": "Groups",
   "groups.subtitle":

@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: access groups + Administration page
+_Last updated: 2026-08-12 after: org logo/favicon upload
 
 ## What's Been Built
 

@@ -114,7 +114,14 @@ export type OrgRow = {
   id: number;
   name: string;
   created_at: string;
+  logo_filename: string | null;
 };
+
+try {
+  db.exec(`ALTER TABLE org ADD COLUMN logo_filename TEXT`);
+} catch {
+  // already exists
+}
 
 export type BoardRow = {
   id: string;
@@ -133,6 +140,19 @@ export function isSetupComplete(): boolean {
 
 export function getOrg(): OrgRow | null {
   return db.query("SELECT * FROM org WHERE id = 1").get() as OrgRow | null;
+}
+
+export function publicOrg(org: OrgRow | null): {
+  name: string;
+  logoSrc: string | null;
+} | null {
+  if (!org) return null;
+  return {
+    name: org.name,
+    logoSrc: org.logo_filename
+      ? `/api/org/logo?v=${encodeURIComponent(org.logo_filename)}`
+      : null,
+  };
 }
 
 export function publicUser(user: UserRow) {
