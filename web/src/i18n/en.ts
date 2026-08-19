@@ -90,6 +90,8 @@ export const en = {
     "Admins always have access. Assign groups and/or individual members.",
   "boards.accessGroups": "Groups",
   "boards.accessPeople": "People",
+  "boards.accessSearch": "Search groups and people",
+  "boards.accessNoResults": "No matching groups or people.",
   "boards.accessViaGroup": "Via {name}",
   "boards.accessSave": "Save",
   "boards.accessSaving": "Saving…",

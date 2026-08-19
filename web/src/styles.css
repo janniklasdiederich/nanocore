@@ -1041,6 +1041,24 @@ a.btn-primary:hover {
   border-bottom-color: var(--accent);
 }
 
+.access-search {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--text);
+  font: inherit;
+  margin-bottom: 6px;
+}
+
+.access-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(108, 140, 255, 0.2);
+}
+
 .access-heading {
   font-size: 0.75rem;
   font-weight: 700;

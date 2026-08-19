@@ -87,6 +87,8 @@ export const de: Messages = {
     "Admins haben immer Zugriff. Weise Gruppen und/oder einzelne Mitglieder zu.",
   "boards.accessGroups": "Gruppen",
   "boards.accessPeople": "Personen",
+  "boards.accessSearch": "Gruppen und Personen suchen",
+  "boards.accessNoResults": "Keine passenden Gruppen oder Personen.",
   "boards.accessViaGroup": "Über {name}",
   "boards.accessSave": "Speichern",
   "boards.accessSaving": "Wird gespeichert…",

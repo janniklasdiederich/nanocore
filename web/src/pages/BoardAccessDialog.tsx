@@ -23,6 +23,7 @@ export function BoardAccessDialog({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -66,8 +67,26 @@ export function BoardAccessDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const members = users.filter((u) => u.role === "member");
-  const admins = users.filter((u) => u.role === "admin");
+  const q = query.trim().toLowerCase();
+  function matches(...parts: string[]) {
+    if (!q) return true;
+    return parts.some((p) => p.toLowerCase().includes(q));
+  }
+
+  const visibleGroups = groups.filter((g) => matches(g.name));
+  const members = users.filter(
+    (u) =>
+      u.role === "member" && matches(u.displayName, u.email),
+  );
+  const admins = users.filter(
+    (u) => u.role === "admin" && matches(u.displayName, u.email),
+  );
+  const noHits =
+    !loading &&
+    q.length > 0 &&
+    visibleGroups.length === 0 &&
+    members.length === 0 &&
+    admins.length === 0;
 
   function toggleUser(id: string) {
     setSelectedUsers((prev) => {
@@ -125,10 +144,22 @@ export function BoardAccessDialog({
           </div>
         ) : (
           <div className="access-list">
-            {groups.length > 0 && (
+            <input
+              type="search"
+              className="access-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("boards.accessSearch")}
+              aria-label={t("boards.accessSearch")}
+              autoFocus
+            />
+            {noHits && (
+              <p className="access-empty">{t("boards.accessNoResults")}</p>
+            )}
+            {visibleGroups.length > 0 && (
               <>
                 <div className="access-heading">{t("boards.accessGroups")}</div>
-                {groups.map((g) => (
+                {visibleGroups.map((g) => (
                   <label key={g.id} className="access-row">
                     <input
                       type="checkbox"
@@ -145,7 +176,9 @@ export function BoardAccessDialog({
                 ))}
               </>
             )}
-            <div className="access-heading">{t("boards.accessPeople")}</div>
+            {(admins.length > 0 || members.length > 0) && (
+              <div className="access-heading">{t("boards.accessPeople")}</div>
+            )}
             {admins.map((u) => (
               <label key={u.id} className="access-row access-row--locked">
                 <input type="checkbox" checked disabled />
@@ -180,7 +213,10 @@ export function BoardAccessDialog({
                 </label>
               );
             })}
-            {members.length === 0 && (
+            {members.length === 0 &&
+              admins.length === 0 &&
+              groups.length === 0 &&
+              !q && (
               <p className="access-empty">{t("boards.accessEmpty")}</p>
             )}
           </div>
