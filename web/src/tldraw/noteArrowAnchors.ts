@@ -129,3 +129,22 @@ export function startArrowFromNoteHandle(
     onInteractionEnd: "select",
   });
 }
+
+/**
+ * When a sticky is deleted, also delete arrows bound to it (either end).
+ * Local user deletes only — the extra arrow deletes sync to peers.
+ */
+export function registerDeleteArrowsOnNoteDelete(editor: Editor): () => void {
+  return editor.sideEffects.registerBeforeDeleteHandler(
+    "shape",
+    (shape, source) => {
+      if (source !== "user") return;
+      if (shape.type !== "note") return;
+      const bindings = editor.getBindingsToShape(shape.id, "arrow");
+      const arrowIds = [
+        ...new Set(bindings.map((b) => b.fromId)),
+      ].filter((id) => editor.getShape(id));
+      if (arrowIds.length) editor.deleteShapes(arrowIds);
+    },
+  );
+}

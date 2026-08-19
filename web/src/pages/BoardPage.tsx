@@ -12,6 +12,7 @@ import { boardUiComponents } from "../tldraw/boardComponents";
 import { boardUiOverrides } from "../tldraw/boardOverrides";
 import { ColorableFrameShapeUtil } from "../tldraw/colorableFrame";
 import { NanocoreNoteShapeUtil } from "../tldraw/resizableNote";
+import { registerDeleteArrowsOnNoteDelete } from "../tldraw/noteArrowAnchors";
 import {
   NanocoreArrowShapeUtil,
   NanocoreSelectTool,
@@ -180,10 +181,12 @@ function BoardCanvas({
         id: userInfo.id,
         name: userInfo.name,
       });
+      const stopNoteArrows = registerDeleteArrowsOnNoteDelete(editor);
       return () => {
         stopPalette();
         stopMarkdown();
         stopOwner();
+        stopNoteArrows();
       };
     },
     [userInfo.id, userInfo.name, userInfo.color, tldrawLocale],
