@@ -132,19 +132,34 @@ export function startArrowFromNoteHandle(
 
 /**
  * When a sticky is deleted, also delete arrows bound to it (either end).
- * Local user deletes only — the extra arrow deletes sync to peers.
+ *
+ * tldraw's own beforeDelete already strips arrow bindings, so a delete
+ * handler never sees them. Intercept deleteShapes while bindings still exist.
  */
 export function registerDeleteArrowsOnNoteDelete(editor: Editor): () => void {
-  return editor.sideEffects.registerBeforeDeleteHandler(
-    "shape",
-    (shape, source) => {
-      if (source !== "user") return;
-      if (shape.type !== "note") return;
-      const bindings = editor.getBindingsToShape(shape.id, "arrow");
-      const arrowIds = [
-        ...new Set(bindings.map((b) => b.fromId)),
-      ].filter((id) => editor.getShape(id));
-      if (arrowIds.length) editor.deleteShapes(arrowIds);
-    },
-  );
+  const original = editor.deleteShapes.bind(editor) as Editor["deleteShapes"];
+  editor.deleteShapes = ((ids: Parameters<Editor["deleteShapes"]>[0]) => {
+    const extra: TLShapeId[] = [];
+    for (const item of ids) {
+      const id = typeof item === "string" ? item : item.id;
+      const shape = editor.getShape(id);
+      if (!shape || shape.type !== "note") continue;
+      for (const binding of editor.getBindingsToShape(shape.id, "arrow")) {
+        extra.push(binding.fromId);
+      }
+    }
+    if (!extra.length) return original(ids);
+    const seen = new Set(
+      ids.map((item) => (typeof item === "string" ? item : item.id)),
+    );
+    const merged = [
+      ...ids.map((item) => (typeof item === "string" ? item : item.id)),
+      ...extra.filter((id) => !seen.has(id) && editor.getShape(id)),
+    ];
+    return original(merged);
+  }) as Editor["deleteShapes"];
+
+  return () => {
+    editor.deleteShapes = original;
+  };
 }
