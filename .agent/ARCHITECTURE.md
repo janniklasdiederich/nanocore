@@ -21,7 +21,9 @@ nanocore/
 - `web/src/pages/*` — Setup, Login, ChangePassword, Boards, Board (tldraw), Users
 - `web/src/pages/BoardPage.tsx` — `useSync` + asset upload to `/api/assets/upload`; stamps shape owner on local create
 - `server/src/boardAccess.ts` — admins always access; members only via `board_members`
-- `web/src/pages/BoardAccessDialog.tsx` — admin Access dialog on board cards
+- `web/src/pages/BoardAccessDialog.tsx` — admin Access dialog (groups + people)
+- `server/src/groups.ts` / `routes/groups.ts` — org groups + membership
+- `web/src/pages/UsersPage.tsx` — Administration (people, groups, invites)
 - `web/src/tldraw/shapeOwner.ts` — `nanocoreOwner` meta + local owner-label preference
 - `web/src/tldraw/ShapeOwnerLayer.tsx` — top-right owner name overlay
 - `web/src/tldraw/shapeReactions.ts` / `ShapeReactionsLayer.tsx` — emoji reactions on `nanocoreReactions`
@@ -41,7 +43,7 @@ nanocore/
 - **tldraw v3.x sync** with snapshot persistence (not Cloudflare / not SQLiteSyncStorage — that API is newer than pinned 3.15)
 - **Admin-provisioned users** only; temp password + `must_change_password`
 - **Single-tenant org** row (`id = 1`) for whitelabel display name
-- **Board mutations admin-only** (create/rename/delete). **Access is assigned**: admins always see every board; members only see boards in `board_members`. Existing/new boards start with no members. WS upgrade re-checks access; revoke kicks live sockets.
+- **Board mutations admin-only** (create/rename/delete). **Access is assigned**: admins always see every board; members see a board if they are in `board_members` **or** in a group listed in `board_groups`. Existing/new boards start with no members. WS upgrade re-checks access; revoke kicks live sockets.
 - **Asset access** via HMAC `sig` query (works in `<img>`) or session cookie; SVG uploads blocked
 - **Production** requires non-default `SESSION_SECRET`; optional `ALLOWED_ORIGINS` for split UI/API
 - **Shape owner** is stamped only on local (`source === 'user'`) creates of note/text/image/geo. Name is a snapshot at place-time. Visibility preference is per-browser (`localStorage`), not synced.

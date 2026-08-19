@@ -9,7 +9,7 @@ import {
 import {
   listBoardAccess,
   listBoardsForUser,
-  setBoardMembers,
+  setBoardAccess,
   userCanAccessBoard,
 } from "../boardAccess";
 import { db, type BoardRow } from "../db";
@@ -50,7 +50,7 @@ boardRoutes.get("/:id/members", requireAdmin, (c) => {
   const existing = db.query("SELECT id FROM boards WHERE id = ?").get(id);
   if (!existing) return c.json({ error: "Board not found" }, 404);
 
-  return c.json({ users: listBoardAccess(id) });
+  return c.json(listBoardAccess(id));
 });
 
 boardRoutes.put("/:id/members", requireAdmin, async (c) => {
@@ -70,12 +70,20 @@ boardRoutes.put("/:id/members", requireAdmin, async (c) => {
   if (!userIds) {
     return c.json({ error: "userIds array required" }, 400);
   }
+  const groupIds = Array.isArray(body?.groupIds)
+    ? body.groupIds.filter((v: unknown): v is string => typeof v === "string")
+    : null;
 
   const granter = c.get("user");
-  const { removedUserIds } = setBoardMembers(id, userIds, granter.id);
+  const { removedUserIds } = setBoardAccess(
+    id,
+    userIds,
+    groupIds,
+    granter.id,
+  );
   kickUsersFromBoard(id, removedUserIds);
 
-  return c.json({ users: listBoardAccess(id) });
+  return c.json(listBoardAccess(id));
 });
 
 boardRoutes.get("/:id", (c) => {

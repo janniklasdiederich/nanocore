@@ -19,6 +19,7 @@ import { safePathUnderRoot } from "./safePath";
 import { setupRoutes } from "./routes/setup";
 import { authRoutes } from "./routes/auth";
 import { userRoutes } from "./routes/users";
+import { groupRoutes } from "./routes/groups";
 import { boardRoutes } from "./routes/boards";
 import { assetRoutes } from "./routes/assets";
 import { gifRoutes } from "./routes/gifs";
@@ -70,6 +71,7 @@ app.get("/api/health", (c) =>
 app.route("/api/setup", setupRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/api/users", userRoutes);
+app.route("/api/groups", groupRoutes);
 app.route("/api/boards", boardRoutes);
 app.route("/api/assets", assetRoutes);
 app.route("/api/gifs", gifRoutes);

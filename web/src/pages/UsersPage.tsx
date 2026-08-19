@@ -3,21 +3,28 @@ import { Link } from "react-router-dom";
 import {
   api,
   ApiError,
+  type AccessGroup,
   type Invite,
   type User,
 } from "../api";
 import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
 import { useI18n, useT } from "../i18n";
+import { GroupMembersDialog } from "./GroupMembersDialog";
+
+type AdminTab = "people" | "groups" | "invites";
 
 export function UsersPage() {
   const { user: me } = useAuth();
   const t = useT();
   const { locale } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
+  const [groups, setGroups] = useState<AccessGroup[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<AdminTab>("people");
   const [showCreate, setShowCreate] = useState(false);
+  const [membersFor, setMembersFor] = useState<AccessGroup | null>(null);
   const [freshInvite, setFreshInvite] = useState<Invite | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -31,11 +38,13 @@ export function UsersPage() {
 
   const load = useCallback(async () => {
     try {
-      const [u, inv] = await Promise.all([
+      const [u, g, inv] = await Promise.all([
         api.listUsers(),
+        api.listGroups(),
         api.listInvites(),
       ]);
       setUsers(u.users);
+      setGroups(g.groups);
       setInvites(inv.invites);
       setError(null);
     } catch (err) {
@@ -188,28 +197,110 @@ export function UsersPage() {
   // datetime-local default for custom: +7 days
   const customMin = new Date(Date.now() + 60_000).toISOString().slice(0, 16);
 
+  async function createGroup() {
+    const name = window.prompt(t("groups.namePrompt"), "");
+    if (!name?.trim()) return;
+    try {
+      const res = await api.createGroup(name.trim());
+      setGroups((prev) =>
+        [...prev, res.group].sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("groups.createFailed"),
+      );
+    }
+  }
+
+  async function renameGroup(group: AccessGroup) {
+    const name = window.prompt(t("groups.namePrompt"), group.name);
+    if (!name?.trim() || name.trim() === group.name) return;
+    try {
+      const res = await api.renameGroup(group.id, name.trim());
+      setGroups((prev) =>
+        prev
+          .map((g) => (g.id === group.id ? res.group : g))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("groups.renameFailed"),
+      );
+    }
+  }
+
+  async function removeGroup(group: AccessGroup) {
+    if (!window.confirm(t("groups.deleteConfirm", { name: group.name }))) {
+      return;
+    }
+    try {
+      await api.deleteGroup(group.id);
+      setGroups((prev) => prev.filter((g) => g.id !== group.id));
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("groups.deleteFailed"),
+      );
+    }
+  }
+
   return (
-    <AppShell title={t("users.title")}>
+    <AppShell title={t("admin.title")}>
       <div className="page-header">
         <div>
-          <h1>{t("users.title")}</h1>
+          <h1>{t("admin.title")}</h1>
           <p>
-            {t("users.subtitle")}{" "}
+            {t("admin.subtitle")}{" "}
             <Link to="/">{t("users.backToBoards")}</Link>
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          style={{ width: "auto" }}
-          onClick={() => setShowCreate(true)}
-        >
-          {t("users.add")}
-        </button>
+        {tab === "people" && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: "auto" }}
+            onClick={() => setShowCreate(true)}
+          >
+            {t("users.add")}
+          </button>
+        )}
+        {tab === "groups" && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: "auto" }}
+            onClick={() => void createGroup()}
+          >
+            {t("groups.add")}
+          </button>
+        )}
       </div>
 
       {error && <div className="error-banner">{error}</div>}
 
+      <div className="admin-tabs" role="tablist">
+        {(
+          [
+            ["people", t("admin.tabPeople")],
+            ["groups", t("admin.tabGroups")],
+            ["invites", t("admin.tabInvites")],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={
+              tab === id ? "admin-tab admin-tab--active" : "admin-tab"
+            }
+            onClick={() => setTab(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "invites" && (
       <section className="admin-section">
         <h2 className="admin-section__title">{t("invites.title")}</h2>
         <p className="admin-section__sub">{t("invites.subtitle")}</p>
@@ -347,9 +438,68 @@ export function UsersPage() {
           </table>
         )}
       </section>
+      )}
 
-      <section className="admin-section" style={{ marginTop: 36 }}>
-        <h2 className="admin-section__title">{t("users.title")}</h2>
+      {tab === "groups" && (
+      <section className="admin-section">
+        <h2 className="admin-section__title">{t("groups.title")}</h2>
+        <p className="admin-section__sub">{t("groups.subtitle")}</p>
+        {groups.length === 0 ? (
+          <div className="empty-state">
+            <p>{t("groups.empty")}</p>
+          </div>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t("groups.colName")}</th>
+                <th>{t("groups.colMembers")}</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {groups.map((group) => (
+                <tr key={group.id}>
+                  <td>{group.name}</td>
+                  <td>
+                    {t("groups.memberCount", { count: group.memberCount })}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setMembersFor(group)}
+                      >
+                        {t("groups.manage")}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => void renameGroup(group)}
+                      >
+                        {t("common.rename")}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => void removeGroup(group)}
+                      >
+                        {t("common.delete")}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+      )}
+
+      {tab === "people" && (
+      <section className="admin-section">
+        <h2 className="admin-section__title">{t("admin.tabPeople")}</h2>
         <table className="table">
           <thead>
             <tr>
@@ -419,12 +569,27 @@ export function UsersPage() {
         </table>
       </section>
 
+      )}
+
       {showCreate && (
         <CreateUserModal
           onClose={() => setShowCreate(false)}
           onCreated={(user) => {
             setUsers((prev) => [...prev, user]);
             setShowCreate(false);
+          }}
+        />
+      )}
+      {membersFor && (
+        <GroupMembersDialog
+          group={membersFor}
+          onClose={() => setMembersFor(null)}
+          onSaved={(memberCount) => {
+            setGroups((prev) =>
+              prev.map((g) =>
+                g.id === membersFor.id ? { ...g, memberCount } : g,
+              ),
+            );
           }}
         />
       )}

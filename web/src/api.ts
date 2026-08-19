@@ -24,6 +24,21 @@ export type BoardAccessUser = {
   displayName: string;
   role: "admin" | "member";
   assigned: boolean;
+  viaGroups?: string[];
+};
+
+export type BoardAccessGroup = {
+  id: string;
+  name: string;
+  memberCount: number;
+  assigned: boolean;
+};
+
+export type AccessGroup = {
+  id: string;
+  name: string;
+  createdAt: string;
+  memberCount: number;
 };
 
 export type Invite = {
@@ -141,6 +156,32 @@ export const api = {
       body: JSON.stringify({ role }),
     }),
 
+  listGroups: () => request<{ groups: AccessGroup[] }>("/api/groups"),
+
+  createGroup: (name: string) =>
+    request<{ group: AccessGroup }>("/api/groups", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+
+  renameGroup: (id: string, name: string) =>
+    request<{ group: AccessGroup }>(`/api/groups/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteGroup: (id: string) =>
+    request<{ ok: boolean }>(`/api/groups/${id}`, { method: "DELETE" }),
+
+  getGroupMembers: (id: string) =>
+    request<{ users: BoardAccessUser[] }>(`/api/groups/${id}/members`),
+
+  setGroupMembers: (id: string, userIds: string[]) =>
+    request<{ users: BoardAccessUser[] }>(`/api/groups/${id}/members`, {
+      method: "PUT",
+      body: JSON.stringify({ userIds }),
+    }),
+
   listInvites: () => request<{ invites: Invite[] }>("/api/invites"),
 
   createInvite: (body: { expiresAt: string; maxUses?: number | null }) =>
@@ -224,13 +265,22 @@ export const api = {
     request<{ ok: boolean }>(`/api/boards/${id}`, { method: "DELETE" }),
 
   getBoardMembers: (id: string) =>
-    request<{ users: BoardAccessUser[] }>(`/api/boards/${id}/members`),
+    request<{ users: BoardAccessUser[]; groups: BoardAccessGroup[] }>(
+      `/api/boards/${id}/members`,
+    ),
 
-  setBoardMembers: (id: string, userIds: string[]) =>
-    request<{ users: BoardAccessUser[] }>(`/api/boards/${id}/members`, {
-      method: "PUT",
-      body: JSON.stringify({ userIds }),
-    }),
+  setBoardMembers: (
+    id: string,
+    userIds: string[],
+    groupIds?: string[],
+  ) =>
+    request<{ users: BoardAccessUser[]; groups: BoardAccessGroup[] }>(
+      `/api/boards/${id}/members`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ userIds, groupIds }),
+      },
+    ),
 
   searchGifs: (q: string, offset = 0) =>
     request<{

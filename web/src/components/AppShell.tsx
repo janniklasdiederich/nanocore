@@ -43,8 +43,8 @@ export function AppShell({
             {user?.role === "admin" ? ` · ${t("common.admin")}` : ""}
           </span>
           {user?.role === "admin" && (
-            <Link className="btn btn-secondary btn-sm" to="/users">
-              {t("nav.users")}
+            <Link className="btn btn-secondary btn-sm" to="/admin">
+              {t("nav.admin")}
             </Link>
           )}
           <button

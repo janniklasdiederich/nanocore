@@ -106,13 +106,14 @@ export function App() {
         }
       />
       <Route
-        path="/users"
+        path="/admin"
         element={
           <Guard adminOnly>
             <UsersPage />
           </Guard>
         }
       />
+      <Route path="/users" element={<Navigate to="/admin" replace />} />
       <Route
         path="/invite/:token"
         element={

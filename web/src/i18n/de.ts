@@ -59,6 +59,7 @@ export const de: Messages = {
   "password.failed": "Passwort konnte nicht geändert werden",
 
   "nav.users": "Benutzer",
+  "nav.admin": "Verwaltung",
   "nav.boards": "Boards",
   "nav.allBoards": "Alle Boards",
 
@@ -83,7 +84,10 @@ export const de: Messages = {
   "boards.access": "Zugriff",
   "boards.accessTitle": "Wer darf „{name}“ öffnen?",
   "boards.accessHelp":
-    "Admins haben immer Zugriff. Mitglieder sehen nur zugewiesene Boards.",
+    "Admins haben immer Zugriff. Weise Gruppen und/oder einzelne Mitglieder zu.",
+  "boards.accessGroups": "Gruppen",
+  "boards.accessPeople": "Personen",
+  "boards.accessViaGroup": "Über {name}",
   "boards.accessSave": "Speichern",
   "boards.accessSaving": "Wird gespeichert…",
   "boards.accessFailed": "Zugriff konnte nicht geändert werden",
@@ -132,6 +136,35 @@ export const de: Messages = {
   "reactions.search": "Emoji suchen",
 
   "owner.placedBy": "Platziert von {name}",
+
+  "admin.title": "Verwaltung",
+  "admin.subtitle": "Personen, Gruppen und Einladungslinks.",
+  "admin.tabPeople": "Personen",
+  "admin.tabGroups": "Gruppen",
+  "admin.tabInvites": "Einladungen",
+
+  "groups.title": "Gruppen",
+  "groups.subtitle":
+    "Füge Mitglieder einer Gruppe hinzu und gib der Gruppe dann Zugriff auf Boards.",
+  "groups.add": "Neue Gruppe",
+  "groups.empty":
+    "Noch keine Gruppen. Erstelle eine, um mehrere Personen auf einmal zuzuweisen.",
+  "groups.colName": "Name",
+  "groups.colMembers": "Mitglieder",
+  "groups.memberCount": "{count} Mitglieder",
+  "groups.manage": "Mitglieder",
+  "groups.namePrompt": "Gruppenname",
+  "groups.deleteConfirm":
+    "Gruppe „{name}“ löschen? Individuell vergebener Zugriff bleibt erhalten.",
+  "groups.createFailed": "Gruppe konnte nicht erstellt werden",
+  "groups.renameFailed": "Umbenennen fehlgeschlagen",
+  "groups.deleteFailed": "Löschen fehlgeschlagen",
+  "groups.membersTitle": "Mitglieder von „{name}“",
+  "groups.membersHelp":
+    "Mitglieder dieser Gruppe erhalten Zugriff auf Boards, denen die Gruppe zugewiesen ist.",
+  "groups.membersEmpty": "Keine Mitglieder. Lege zuerst Personen an.",
+  "groups.membersLoadFailed": "Gruppenmitglieder konnten nicht geladen werden",
+  "groups.membersFailed": "Gruppenmitglieder konnten nicht geändert werden",
 
   "users.title": "Benutzer",
   "users.subtitle": "Nur Admins können Konten anlegen.",

@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: resizable stickies
+_Last updated: 2026-08-12 after: access groups + Administration page
 
 ## What's Been Built
 
@@ -25,6 +25,12 @@ _Last updated: 2026-08-12 after: resizable stickies
 - **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
 
 ## Current Task / Last Completed
+
+Access groups: Administration page (`/admin`, `/users` redirects) with People / Groups / Invites. Groups have members; boards can be granted to groups and/or individuals. Access is the union. Admins always allowed. Board Access dialog lists groups then people, with a “Via {group}” hint.
+
+Previous: resizable stickies; solid frame/note fills.
+
+## Current Task / Last Completed (previous)
 
 Per-board access: admin **Access** on each board card. Checkbox dialog of org users. Admins always have access (locked). Members must be assigned. Existing boards were not backfilled — members lose access until assigned. New boards start admin-only. New users get no boards. Revoke drops live WebSocket sessions.
 

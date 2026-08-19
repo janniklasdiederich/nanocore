@@ -63,6 +63,7 @@ export const en = {
 
   // Shell
   "nav.users": "Users",
+  "nav.admin": "Administration",
   "nav.boards": "Boards",
   "nav.allBoards": "All boards",
 
@@ -86,7 +87,10 @@ export const en = {
   "boards.access": "Access",
   "boards.accessTitle": "Who can open “{name}”?",
   "boards.accessHelp":
-    "Admins always have access. Members only see boards you assign.",
+    "Admins always have access. Assign groups and/or individual members.",
+  "boards.accessGroups": "Groups",
+  "boards.accessPeople": "People",
+  "boards.accessViaGroup": "Via {name}",
   "boards.accessSave": "Save",
   "boards.accessSaving": "Saving…",
   "boards.accessFailed": "Could not update access",
@@ -135,6 +139,33 @@ export const en = {
   "reactions.search": "Search emoji",
 
   "owner.placedBy": "Placed by {name}",
+
+  "admin.title": "Administration",
+  "admin.subtitle": "People, groups, and invite links.",
+  "admin.tabPeople": "People",
+  "admin.tabGroups": "Groups",
+  "admin.tabInvites": "Invites",
+
+  "groups.title": "Groups",
+  "groups.subtitle":
+    "Put members in a group, then grant that group access to boards.",
+  "groups.add": "New group",
+  "groups.empty": "No groups yet. Create one to assign several people at once.",
+  "groups.colName": "Name",
+  "groups.colMembers": "Members",
+  "groups.memberCount": "{count} members",
+  "groups.manage": "Members",
+  "groups.namePrompt": "Group name",
+  "groups.deleteConfirm":
+    "Delete group “{name}”? People keep any access they were given individually.",
+  "groups.createFailed": "Could not create group",
+  "groups.renameFailed": "Rename failed",
+  "groups.deleteFailed": "Delete failed",
+  "groups.membersTitle": "Members of “{name}”",
+  "groups.membersHelp": "Members in this group get access to boards the group is on.",
+  "groups.membersEmpty": "No members to add. Create people first.",
+  "groups.membersLoadFailed": "Could not load group members",
+  "groups.membersFailed": "Could not update group members",
 
   // Users
   "users.title": "Users",
