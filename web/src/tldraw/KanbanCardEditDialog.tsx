@@ -59,33 +59,31 @@ export function KanbanCardEditDialog({
         <TldrawUiDialogCloseButton />
       </TldrawUiDialogHeader>
       <TldrawUiDialogBody className="nc-kb-edit-dialog">
-        {error && <p className="nc-gif-error">{error}</p>}
-        <form
-          id="nc-kb-edit-form"
-          onSubmit={(e) => void save(e)}
-        >
-          <div className="field">
-            <label htmlFor="nc-kb-edit-title">{t("kanban.cardTitle")}</label>
+        {error && <p className="nc-kb-picker-error">{error}</p>}
+        <form id="nc-kb-edit-form" onSubmit={(e) => void save(e)}>
+          <label className="nc-kb-tl-field" htmlFor="nc-kb-edit-title">
+            <span className="nc-kb-tl-label">{t("kanban.cardTitle")}</span>
             <input
               id="nc-kb-edit-title"
+              className="nc-kb-tl-input"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
               maxLength={200}
               autoFocus
             />
-          </div>
-          <div className="field">
-            <label htmlFor="nc-kb-edit-desc">{t("kanban.cardDescription")}</label>
+          </label>
+          <label className="nc-kb-tl-field" htmlFor="nc-kb-edit-desc">
+            <span className="nc-kb-tl-label">{t("kanban.cardDescription")}</span>
             <textarea
               id="nc-kb-edit-desc"
-              className="kb-textarea"
+              className="nc-kb-tl-input nc-kb-tl-input--area"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={4000}
               rows={5}
             />
-          </div>
+          </label>
         </form>
       </TldrawUiDialogBody>
       <TldrawUiDialogFooter className="tlui-dialog__footer__actions">

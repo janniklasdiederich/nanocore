@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: edit kanban cards via tldraw dialogs
+_Last updated: 2026-08-20 after: tldraw-themed kanban picker/embeds/editor
 
 ## What's Been Built
 

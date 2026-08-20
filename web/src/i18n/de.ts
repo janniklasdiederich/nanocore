@@ -313,7 +313,12 @@ export const de: Messages = {
   "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
   "kanbanEmbed.pickHelp":
     "Wähle ein Board, dann eine Spalte oder Karte. Sie bleibt verknüpft und aktualisiert sich live.",
+  "kanbanEmbed.searchBoards": "Boards suchen",
+  "kanbanEmbed.searchCards": "Karten und Spalten suchen",
+  "kanbanEmbed.backToBoards": "Boards",
   "kanbanEmbed.placeColumn": "Spalte platzieren",
+  "kanbanEmbed.cardCount": "{count} Karten",
+  "kanbanEmbed.noMatches": "Nichts passt zur Suche.",
   "kanbanEmbed.noBoards": "Keine Kanban-Boards, die du öffnen kannst.",
   "kanbanEmbed.loadFailed": "Kanban-Boards konnten nicht geladen werden",
   "kanbanEmbed.loading": "Laden…",

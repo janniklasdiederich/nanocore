@@ -72,6 +72,16 @@ export function beginKanbanDrag(drag: KanbanDragSource, x: number, y: number) {
   ghost.querySelector(".nc-kb-embed-card-title")!.textContent = drag.card.title;
   const desc = ghost.querySelector(".nc-kb-embed-card-desc");
   if (desc) desc.textContent = drag.card.description;
+  const theme = document.querySelector(
+    ".tl-theme__dark, .tl-theme__light, .tl-container",
+  );
+  if (theme) {
+    const cs = getComputedStyle(theme);
+    ghost.style.background = cs.getPropertyValue("--color-panel").trim() || "#fff";
+    ghost.style.color = cs.getPropertyValue("--color-text-1").trim() || "#111";
+    ghost.style.borderColor =
+      cs.getPropertyValue("--color-selected").trim() || "#2f80ed";
+  }
   document.body.appendChild(ghost);
   placeGhost(x, y);
 }

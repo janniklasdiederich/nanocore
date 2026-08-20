@@ -312,8 +312,13 @@ export const en = {
 
   "kanbanEmbed.pickTitle": "Place from Kanban",
   "kanbanEmbed.pickHelp":
-    "Pick a board, then a column or a card. It stays linked and updates live.",
+    "Choose a board, then place a column or a card. It stays linked and updates live.",
+  "kanbanEmbed.searchBoards": "Search boards",
+  "kanbanEmbed.searchCards": "Search cards and columns",
+  "kanbanEmbed.backToBoards": "Boards",
   "kanbanEmbed.placeColumn": "Place column",
+  "kanbanEmbed.cardCount": "{count} cards",
+  "kanbanEmbed.noMatches": "Nothing matches that search.",
   "kanbanEmbed.noBoards": "No kanban boards you can open.",
   "kanbanEmbed.loadFailed": "Could not load kanban boards",
   "kanbanEmbed.loading": "Loading…",
