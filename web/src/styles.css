@@ -1800,6 +1800,15 @@ a.btn-primary:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  border-radius: 8px;
+}
+
+.nc-kb-embed-col-list[data-nc-kb-drop-over] {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .nc-kb-embed-card {
@@ -1811,8 +1820,25 @@ a.btn-primary:hover {
   border-radius: 10px;
   padding: 10px 12px;
   color: var(--text);
-  cursor: pointer;
+  cursor: grab;
   font: inherit;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.nc-kb-embed-ghost {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  width: 240px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  transform: rotate(3deg);
+  font-family: "DM Sans", system-ui, sans-serif;
 }
 
 .nc-kb-embed-card:hover {

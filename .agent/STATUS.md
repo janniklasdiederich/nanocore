@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: fix CLIENT_TOO_OLD (useSync needs default shapes + kanban)
+_Last updated: 2026-08-20 after: drag/edit cards inside whiteboard kanban columns
 
 ## What's Been Built
 

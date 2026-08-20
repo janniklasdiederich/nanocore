@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import {
   BaseBoxShapeUtil,
   HTMLContainer,
@@ -10,6 +10,14 @@ import {
 import { api, type KanbanCard } from "../api";
 import { useT } from "../i18n";
 import { KanbanCardEditor } from "../pages/KanbanCardEditor";
+import {
+  DRAG_THRESHOLD,
+  beginKanbanDrag,
+  cancelKanbanDrag,
+  endKanbanDrag,
+  isKanbanDragging,
+  moveKanbanDrag,
+} from "./kanbanCardDrag";
 import { useKanbanLive, type KanbanLive } from "./kanbanLive";
 
 export const KANBAN_CARD_TYPE = "kanban-card" as const;
@@ -41,6 +49,10 @@ export class KanbanCardShapeUtil extends BaseBoxShapeUtil<TLKanbanCardShape> {
 
   override canEdit() {
     return false;
+  }
+
+  override hideSelectionBoundsBg() {
+    return true;
   }
 
   override hideSelectionBoundsFg() {
@@ -83,6 +95,10 @@ export class KanbanColumnShapeUtil extends BaseBoxShapeUtil<TLKanbanColumnShape>
 
   override canEdit() {
     return false;
+  }
+
+  override hideSelectionBoundsBg() {
+    return true;
   }
 
   override hideSelectionBoundsFg() {
@@ -129,17 +145,11 @@ function KanbanCardShape({ shape }: { shape: TLKanbanCardShape }) {
     >
       <StatusBody live={live} missing={!card && live.status === "ok"}>
         {card && (
-          <button
-            type="button"
-            className="nc-kb-embed-card"
-            onPointerDown={stopEventPropagation}
-            onClick={() => setEditing(true)}
-          >
-            <div className="nc-kb-embed-card-title">{card.title}</div>
-            {card.description ? (
-              <div className="nc-kb-embed-card-desc">{card.description}</div>
-            ) : null}
-          </button>
+          <EmbedCard
+            boardId={shape.props.boardId}
+            card={card}
+            onEdit={() => setEditing(true)}
+          />
         )}
         {live.status === "ok" && !card && (
           <div className="nc-kb-embed-status">{t("kanbanEmbed.missingCard")}</div>
@@ -195,25 +205,25 @@ function KanbanColumnShape({ shape }: { shape: TLKanbanColumnShape }) {
               <span className="nc-kb-embed-count">{cards.length}</span>
             </div>
             <div className="nc-kb-embed-col-board">{live.state.board.name}</div>
-            <div className="nc-kb-embed-col-list">
+            <div
+              className="nc-kb-embed-col-list"
+              data-nc-kb-drop=""
+              data-nc-kb-board={shape.props.boardId}
+              data-nc-kb-column={column.id}
+              onWheel={stopEventPropagation}
+            >
               {cards.length === 0 && (
                 <div className="nc-kb-embed-status">
                   {t("kanbanEmbed.emptyColumn")}
                 </div>
               )}
               {cards.map((card) => (
-                <button
+                <EmbedCard
                   key={card.id}
-                  type="button"
-                  className="nc-kb-embed-card"
-                  onPointerDown={stopEventPropagation}
-                  onClick={() => setEditing(card)}
-                >
-                  <div className="nc-kb-embed-card-title">{card.title}</div>
-                  {card.description ? (
-                    <div className="nc-kb-embed-card-desc">{card.description}</div>
-                  ) : null}
-                </button>
+                  boardId={shape.props.boardId}
+                  card={card}
+                  onEdit={() => setEditing(card)}
+                />
               ))}
             </div>
           </>
@@ -243,6 +253,71 @@ function KanbanColumnShape({ shape }: { shape: TLKanbanColumnShape }) {
         />
       )}
     </HTMLContainer>
+  );
+}
+
+function EmbedCard({
+  boardId,
+  card,
+  onEdit,
+}: {
+  boardId: string;
+  card: KanbanCard;
+  onEdit: () => void;
+}) {
+  const origin = useRef<{ x: number; y: number } | null>(null);
+
+  return (
+    <button
+      type="button"
+      className="nc-kb-embed-card"
+      data-nc-kb-card={card.id}
+      onPointerDown={(e) => {
+        stopEventPropagation(e);
+        if (e.button !== 0) return;
+        origin.current = { x: e.clientX, y: e.clientY };
+        const start = origin.current;
+        const onMove = (ev: PointerEvent) => {
+          const dist = Math.hypot(ev.clientX - start.x, ev.clientY - start.y);
+          if (!isKanbanDragging()) {
+            if (dist < DRAG_THRESHOLD) return;
+            beginKanbanDrag({ boardId, card }, ev.clientX, ev.clientY);
+          }
+          moveKanbanDrag(ev.clientX, ev.clientY);
+        };
+        const onUp = (ev: PointerEvent) => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          window.removeEventListener("pointercancel", onCancel);
+          origin.current = null;
+          if (!isKanbanDragging()) {
+            onEdit();
+            return;
+          }
+          const drop = endKanbanDrag(ev.clientX, ev.clientY);
+          if (!drop) return;
+          void api.moveKanbanCard(drop.boardId, card.id, {
+            columnId: drop.columnId,
+            index: drop.index,
+          });
+        };
+        const onCancel = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          window.removeEventListener("pointercancel", onCancel);
+          origin.current = null;
+          cancelKanbanDrag();
+        };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onCancel);
+      }}
+    >
+      <div className="nc-kb-embed-card-title">{card.title}</div>
+      {card.description ? (
+        <div className="nc-kb-embed-card-desc">{card.description}</div>
+      ) : null}
+    </button>
   );
 }
 
