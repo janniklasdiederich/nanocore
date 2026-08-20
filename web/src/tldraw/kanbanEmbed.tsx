@@ -1,15 +1,16 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import {
   BaseBoxShapeUtil,
   HTMLContainer,
   T,
   stopEventPropagation,
   toDomPrecision,
+  useDialogs,
   type TLBaseShape,
 } from "tldraw";
 import { api, type KanbanCard } from "../api";
 import { useT } from "../i18n";
-import { KanbanCardEditor } from "../pages/KanbanCardEditor";
+import { KanbanCardEditDialog } from "./KanbanCardEditDialog";
 import {
   DRAG_THRESHOLD,
   beginKanbanDrag,
@@ -133,7 +134,6 @@ export class KanbanColumnShapeUtil extends BaseBoxShapeUtil<TLKanbanColumnShape>
 function KanbanCardShape({ shape }: { shape: TLKanbanCardShape }) {
   const t = useT();
   const live = useKanbanLive(shape.props.boardId);
-  const [editing, setEditing] = useState(false);
   const card = live.status === "ok"
     ? live.state.cards.find((c) => c.id === shape.props.cardId)
     : undefined;
@@ -145,34 +145,12 @@ function KanbanCardShape({ shape }: { shape: TLKanbanCardShape }) {
     >
       <StatusBody live={live} missing={!card && live.status === "ok"}>
         {card && (
-          <EmbedCard
-            boardId={shape.props.boardId}
-            card={card}
-            onEdit={() => setEditing(true)}
-          />
+          <EmbedCard boardId={shape.props.boardId} card={card} />
         )}
         {live.status === "ok" && !card && (
           <div className="nc-kb-embed-status">{t("kanbanEmbed.missingCard")}</div>
         )}
       </StatusBody>
-      {editing && card && (
-        <KanbanCardEditor
-          card={card}
-          overCanvas
-          onClose={() => setEditing(false)}
-          onSave={async (title, description) => {
-            await api.updateKanbanCard(shape.props.boardId, card.id, {
-              title,
-              description,
-            });
-            setEditing(false);
-          }}
-          onDelete={async () => {
-            await api.deleteKanbanCard(shape.props.boardId, card.id);
-            setEditing(false);
-          }}
-        />
-      )}
     </HTMLContainer>
   );
 }
@@ -180,7 +158,6 @@ function KanbanCardShape({ shape }: { shape: TLKanbanCardShape }) {
 function KanbanColumnShape({ shape }: { shape: TLKanbanColumnShape }) {
   const t = useT();
   const live = useKanbanLive(shape.props.boardId);
-  const [editing, setEditing] = useState<KanbanCard | null>(null);
   const column =
     live.status === "ok"
       ? live.state.columns.find((c) => c.id === shape.props.columnId)
@@ -222,7 +199,6 @@ function KanbanColumnShape({ shape }: { shape: TLKanbanColumnShape }) {
                   key={card.id}
                   boardId={shape.props.boardId}
                   card={card}
-                  onEdit={() => setEditing(card)}
                 />
               ))}
             </div>
@@ -234,24 +210,6 @@ function KanbanColumnShape({ shape }: { shape: TLKanbanColumnShape }) {
           </div>
         )}
       </StatusBody>
-      {editing && (
-        <KanbanCardEditor
-          card={editing}
-          overCanvas
-          onClose={() => setEditing(null)}
-          onSave={async (title, description) => {
-            await api.updateKanbanCard(shape.props.boardId, editing.id, {
-              title,
-              description,
-            });
-            setEditing(null);
-          }}
-          onDelete={async () => {
-            await api.deleteKanbanCard(shape.props.boardId, editing.id);
-            setEditing(null);
-          }}
-        />
-      )}
     </HTMLContainer>
   );
 }
@@ -259,13 +217,20 @@ function KanbanColumnShape({ shape }: { shape: TLKanbanColumnShape }) {
 function EmbedCard({
   boardId,
   card,
-  onEdit,
 }: {
   boardId: string;
   card: KanbanCard;
-  onEdit: () => void;
 }) {
+  const { addDialog } = useDialogs();
   const origin = useRef<{ x: number; y: number } | null>(null);
+
+  function openEdit() {
+    addDialog({
+      component: (props) => (
+        <KanbanCardEditDialog {...props} boardId={boardId} card={card} />
+      ),
+    });
+  }
 
   return (
     <button
@@ -291,7 +256,7 @@ function EmbedCard({
           window.removeEventListener("pointercancel", onCancel);
           origin.current = null;
           if (!isKanbanDragging()) {
-            onEdit();
+            openEdit();
             return;
           }
           const drop = endKanbanDrag(ev.clientX, ev.clientY);

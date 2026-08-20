@@ -1863,6 +1863,14 @@ a.btn-primary:hover {
   white-space: pre-wrap;
 }
 
+.nc-kb-edit-dialog {
+  width: min(400px, 92vw);
+}
+
+.nc-kb-edit-dialog .field:last-child {
+  margin-bottom: 0;
+}
+
 .nc-kb-picker {
   width: min(420px, 92vw);
   max-height: min(70vh, 640px);

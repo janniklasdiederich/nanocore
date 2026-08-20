@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: portal kanban card editor out of tldraw shapes
+_Last updated: 2026-08-20 after: edit kanban cards via tldraw dialogs
 
 ## What's Been Built
 
