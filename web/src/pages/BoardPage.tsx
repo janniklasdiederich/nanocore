@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Tldraw, type Editor, type TLAssetStore } from "tldraw";
+import {
+  Tldraw,
+  defaultShapeUtils,
+  type Editor,
+  type TLAssetStore,
+} from "tldraw";
 import { useSync } from "@tldraw/sync";
 import "tldraw/tldraw.css";
 import { api, type Board } from "../api";
@@ -43,6 +48,15 @@ const boardShapeUtils = [
   NanocoreNoteShapeUtil,
   NanocoreDrawShapeUtil,
   NanocoreArrowShapeUtil,
+  KanbanCardShapeUtil,
+  KanbanColumnShapeUtil,
+];
+
+/** Store schema must include every default shape plus kanban embeds.
+ *  Passing only boardShapeUtils drops geo/image/text and the server
+ *  rejects the client as CLIENT_TOO_OLD. */
+const syncShapeUtils = [
+  ...defaultShapeUtils,
   KanbanCardShapeUtil,
   KanbanColumnShapeUtil,
 ];
@@ -170,7 +184,7 @@ function BoardCanvas({
     uri,
     assets: multiplayerAssets,
     userInfo,
-    shapeUtils: boardShapeUtils,
+    shapeUtils: syncShapeUtils,
   });
 
   // Apply palette from the synced store *before* Tldraw paints shapes, so

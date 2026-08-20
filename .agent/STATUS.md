@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: fix TLSocketRoom schema (keep default tldraw shapes)
+_Last updated: 2026-08-20 after: fix CLIENT_TOO_OLD (useSync needs default shapes + kanban)
 
 ## What's Been Built
 
