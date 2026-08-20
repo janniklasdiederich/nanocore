@@ -593,7 +593,8 @@ a.btn-primary:hover {
 }
 
 .modal-backdrop--over-canvas {
-  z-index: 500;
+  z-index: 20000;
+  pointer-events: auto;
 }
 
 .modal {

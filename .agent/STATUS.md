@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: drag/edit cards inside whiteboard kanban columns
+_Last updated: 2026-08-20 after: portal kanban card editor out of tldraw shapes
 
 ## What's Been Built
 

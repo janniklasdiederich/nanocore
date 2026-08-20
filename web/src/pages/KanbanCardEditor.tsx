@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { ApiError, type KanbanCard } from "../api";
 import { useT } from "../i18n";
+import { stopEventPropagation } from "tldraw";
 
 export function KanbanCardEditor({
   card,
@@ -42,7 +44,7 @@ export function KanbanCardEditor({
     }
   }
 
-  return (
+  const dialog = (
     <div
       className={
         overCanvas
@@ -51,6 +53,7 @@ export function KanbanCardEditor({
       }
       role="dialog"
       aria-modal="true"
+      onPointerDown={overCanvas ? stopEventPropagation : undefined}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -115,4 +118,6 @@ export function KanbanCardEditor({
       </form>
     </div>
   );
+
+  return createPortal(dialog, document.body);
 }
