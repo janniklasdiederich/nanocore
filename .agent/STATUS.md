@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: live kanban card/column embeds on whiteboards
+_Last updated: 2026-08-20 after: fix TLSocketRoom schema (keep default tldraw shapes)
 
 ## What's Been Built
 

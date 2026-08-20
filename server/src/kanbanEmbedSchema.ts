@@ -1,4 +1,4 @@
-import { createTLSchema } from "@tldraw/tlschema";
+import { createTLSchema, defaultShapeSchemas } from "@tldraw/tlschema";
 import { T } from "@tldraw/validate";
 
 /** Extra tldraw shape types for live Kanban embeds. Must match the client ShapeUtils. */
@@ -11,6 +11,7 @@ export function createKanbanAwareSchema() {
 
   return createTLSchema({
     shapes: {
+      ...defaultShapeSchemas,
       "kanban-card": {
         props: {
           ...box,
