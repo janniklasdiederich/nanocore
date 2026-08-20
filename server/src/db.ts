@@ -96,6 +96,55 @@ db.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members(user_id);
   CREATE INDEX IF NOT EXISTS idx_board_groups_group ON board_groups(group_id);
+
+  CREATE TABLE IF NOT EXISTS kanban_boards (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS kanban_members (
+    board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    granted_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    granted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (board_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS kanban_groups (
+    board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
+    group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    granted_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    granted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (board_id, group_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS kanban_columns (
+    id TEXT PRIMARY KEY,
+    board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS kanban_cards (
+    id TEXT PRIMARY KEY,
+    board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
+    column_id TEXT NOT NULL REFERENCES kanban_columns(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL,
+    created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_kanban_members_user ON kanban_members(user_id);
+  CREATE INDEX IF NOT EXISTS idx_kanban_groups_group ON kanban_groups(group_id);
+  CREATE INDEX IF NOT EXISTS idx_kanban_columns_board ON kanban_columns(board_id, sort_order);
+  CREATE INDEX IF NOT EXISTS idx_kanban_cards_col ON kanban_cards(column_id, sort_order);
 `);
 
 export type UserRole = "admin" | "member";

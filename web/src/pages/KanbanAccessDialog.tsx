@@ -2,17 +2,17 @@ import { useCallback } from "react";
 import { api, type Board } from "../api";
 import { AccessDialog } from "./AccessDialog";
 
-export function BoardAccessDialog({
+export function KanbanAccessDialog({
   board,
   onClose,
 }: {
   board: Board;
   onClose: () => void;
 }) {
-  const load = useCallback(() => api.getBoardMembers(board.id), [board.id]);
+  const load = useCallback(() => api.getKanbanMembers(board.id), [board.id]);
   const save = useCallback(
     (userIds: string[], groupIds: string[]) =>
-      api.setBoardMembers(board.id, userIds, groupIds),
+      api.setKanbanMembers(board.id, userIds, groupIds),
     [board.id],
   );
   return (

@@ -18,6 +18,7 @@
     "emoji-picker-react": "^4.19.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-kanban-kit": "^0.0.2-beta.7",
     "react-router-dom": "^7.6.0",
     "tldraw": "^3.15.1"
   },

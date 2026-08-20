@@ -20,6 +20,7 @@ export const de: Messages = {
   "common.english": "English",
   "common.german": "Deutsch",
   "common.done": "Fertig",
+  "common.save": "Speichern",
 
   "role.admin": "Admin",
   "role.member": "Mitglied",
@@ -59,12 +60,15 @@ export const de: Messages = {
   "password.mismatch": "Die neuen Passwörter stimmen nicht überein",
   "password.failed": "Passwort konnte nicht geändert werden",
 
+  "nav.main": "Hauptnavigation",
   "nav.users": "Benutzer",
   "nav.admin": "Verwaltung",
   "nav.boards": "Boards",
+  "nav.whiteboards": "Whiteboards",
+  "nav.kanban": "Kanban",
   "nav.allBoards": "Alle Boards",
 
-  "boards.title": "Boards",
+  "boards.title": "Whiteboards",
   "boards.subtitle": "Geteilte unendliche Leinwände für dein Team.",
   "boards.new": "Neues Board",
   "boards.creating": "Wird erstellt…",
@@ -266,4 +270,43 @@ export const de: Messages = {
   "people.follow": "Folgen",
   "people.following": "Folgend",
   "people.stopFollowing": "Nicht mehr folgen",
+
+  "kanban.title": "Kanban",
+  "kanban.subtitle":
+    "Aufgabenboards mit Spalten und Karten — getrennt von den Whiteboards.",
+  "kanban.new": "Neues Board",
+  "kanban.creating": "Wird erstellt…",
+  "kanban.empty":
+    "Noch keine Kanban-Boards. Erstelle eines, um Arbeit zu verfolgen.",
+  "kanban.emptyMember":
+    "Dir sind noch keine Kanban-Boards zugewiesen. Bitte einen Admin um Zugriff.",
+  "kanban.createFirst": "Erstes Board erstellen",
+  "kanban.defaultName": "Unbenanntes Kanban",
+  "kanban.renamePrompt": "Boardname",
+  "kanban.deleteTitle": "„{name}“ löschen?",
+  "kanban.deleteHelp":
+    "Das kann nicht rückgängig gemacht werden. Tippe den Boardnamen zur Bestätigung.",
+  "kanban.deleteTypeName": "Boardname",
+  "kanban.loadFailed": "Kanban-Boards konnten nicht geladen werden",
+  "kanban.createFailed": "Board konnte nicht erstellt werden",
+  "kanban.renameFailed": "Umbenennen fehlgeschlagen",
+  "kanban.deleteFailed": "Löschen fehlgeschlagen",
+  "kanban.openFailed": "Board konnte nicht geöffnet werden",
+  "kanban.back": "Zurück zu Kanban",
+  "kanban.loadingName": "Laden…",
+  "kanban.colTodo": "To Do",
+  "kanban.colDoing": "In Arbeit",
+  "kanban.colDone": "Fertig",
+  "kanban.addCard": "+ Karte hinzufügen",
+  "kanban.addColumn": "+ Spalte hinzufügen",
+  "kanban.newColumn": "Spaltenname",
+  "kanban.renameColumn": "Spaltenname",
+  "kanban.deleteColumn":
+    "Spalte „{name}“ und alle Karten darin löschen?",
+  "kanban.newCard": "Neue Karte",
+  "kanban.editCard": "Karte bearbeiten",
+  "kanban.cardTitle": "Titel",
+  "kanban.cardDescription": "Beschreibung",
+  "kanban.deleteCard": "Diese Karte löschen?",
+  "kanban.saveFailed": "Karte konnte nicht gespeichert werden",
 };

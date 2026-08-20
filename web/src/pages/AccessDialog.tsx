@@ -1,0 +1,247 @@
+import { useEffect, useState } from "react";
+import {
+  ApiError,
+  type BoardAccessGroup,
+  type BoardAccessUser,
+} from "../api";
+import { useT } from "../i18n";
+
+export function AccessDialog({
+  name,
+  onClose,
+  load,
+  save,
+}: {
+  name: string;
+  onClose: () => void;
+  load: () => Promise<{
+    users: BoardAccessUser[];
+    groups?: BoardAccessGroup[];
+  }>;
+  save: (userIds: string[], groupIds: string[]) => Promise<unknown>;
+}) {
+  const t = useT();
+  const [users, setUsers] = useState<BoardAccessUser[]>([]);
+  const [groups, setGroups] = useState<BoardAccessGroup[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void load()
+      .then((res) => {
+        if (cancelled) return;
+        setUsers(res.users);
+        setGroups(res.groups ?? []);
+        setSelectedUsers(
+          new Set(
+            res.users
+              .filter((u) => u.role === "member" && u.assigned)
+              .map((u) => u.id),
+          ),
+        );
+        setSelectedGroups(
+          new Set((res.groups ?? []).filter((g) => g.assigned).map((g) => g.id)),
+        );
+        setError(null);
+      })
+      .catch((err: Error) => {
+        if (cancelled) return;
+        setError(
+          err instanceof ApiError ? err.message : t("boards.accessLoadFailed"),
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [load, t]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const q = query.trim().toLowerCase();
+  function matches(...parts: string[]) {
+    if (!q) return true;
+    return parts.some((p) => p.toLowerCase().includes(q));
+  }
+
+  const visibleGroups = groups.filter((g) => matches(g.name));
+  const members = users.filter(
+    (u) =>
+      u.role === "member" && matches(u.displayName, u.email),
+  );
+  const admins = users.filter(
+    (u) => u.role === "admin" && matches(u.displayName, u.email),
+  );
+  const noHits =
+    !loading &&
+    q.length > 0 &&
+    visibleGroups.length === 0 &&
+    members.length === 0 &&
+    admins.length === 0;
+
+  function toggleUser(id: string) {
+    setSelectedUsers((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleGroup(id: string) {
+    setSelectedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function submit() {
+    setSaving(true);
+    setError(null);
+    try {
+      await save([...selectedUsers], [...selectedGroups]);
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : t("boards.accessFailed"),
+      );
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="board-access-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal access-modal">
+        <h2 id="board-access-title">
+          {t("boards.accessTitle", { name })}
+        </h2>
+        <p>{t("boards.accessHelp")}</p>
+        {error && <div className="error-banner">{error}</div>}
+        {loading ? (
+          <div className="center-screen" style={{ minHeight: 120 }}>
+            <div className="spinner" />
+          </div>
+        ) : (
+          <div className="access-list">
+            <input
+              type="search"
+              className="access-search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t("boards.accessSearch")}
+              aria-label={t("boards.accessSearch")}
+              autoFocus
+            />
+            {noHits && (
+              <p className="access-empty">{t("boards.accessNoResults")}</p>
+            )}
+            {visibleGroups.length > 0 && (
+              <>
+                <div className="access-heading">{t("boards.accessGroups")}</div>
+                {visibleGroups.map((g) => (
+                  <label key={g.id} className="access-row">
+                    <input
+                      type="checkbox"
+                      checked={selectedGroups.has(g.id)}
+                      onChange={() => toggleGroup(g.id)}
+                    />
+                    <span className="access-row-text">
+                      <span className="access-row-name">{g.name}</span>
+                      <span className="access-row-email">
+                        {t("groups.memberCount", { count: g.memberCount })}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </>
+            )}
+            {(admins.length > 0 || members.length > 0) && (
+              <div className="access-heading">{t("boards.accessPeople")}</div>
+            )}
+            {admins.map((u) => (
+              <label key={u.id} className="access-row access-row--locked">
+                <input type="checkbox" checked disabled />
+                <span className="access-row-text">
+                  <span className="access-row-name">{u.displayName}</span>
+                  <span className="access-row-email">{u.email}</span>
+                </span>
+                <span className="badge badge-admin">
+                  {t("boards.accessAlways")}
+                </span>
+              </label>
+            ))}
+            {members.map((u) => {
+              const via = (u.viaGroups ?? []).filter(Boolean);
+              const onlyViaGroup = !selectedUsers.has(u.id) && via.length > 0;
+              return (
+                <label key={u.id} className="access-row">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.has(u.id)}
+                    onChange={() => toggleUser(u.id)}
+                  />
+                  <span className="access-row-text">
+                    <span className="access-row-name">{u.displayName}</span>
+                    <span className="access-row-email">{u.email}</span>
+                  </span>
+                  {onlyViaGroup && (
+                    <span className="badge">
+                      {t("boards.accessViaGroup", { name: via[0]! })}
+                    </span>
+                  )}
+                </label>
+              );
+            })}
+            {members.length === 0 &&
+              admins.length === 0 &&
+              groups.length === 0 &&
+              !q && (
+              <p className="access-empty">{t("boards.accessEmpty")}</p>
+            )}
+          </div>
+        )}
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onClose}
+          >
+            {t("common.cancel")}
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            style={{ width: "auto" }}
+            disabled={loading || saving}
+            onClick={() => void submit()}
+          >
+            {saving ? t("boards.accessSaving") : t("boards.accessSave")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

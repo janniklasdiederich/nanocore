@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-12 after: org logo/favicon upload
+_Last updated: 2026-08-20 after: sidebar + kanban boards on feature/kanban
 
 ## What's Been Built
 
@@ -23,18 +23,14 @@ _Last updated: 2026-08-12 after: org logo/favicon upload
 - **Owner labels**: shape.meta.nanocoreOwner stamped on local create; top-right overlay; Preferences always / hover / never
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
+- **Sidebar shell** on list/admin pages: Whiteboards / Kanban / Administration. Tldraw canvas stays full-bleed.
+- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards are title + description. Default columns To Do / In Progress / Done.
 
 ## Current Task / Last Completed
 
-Access groups: Administration page (`/admin`, `/users` redirects) with People / Groups / Invites. Groups have members; boards can be granted to groups and/or individuals. Access is the union. Admins always allowed. Board Access dialog lists groups then people, with a “Via {group}” hint.
+Sidebar + Kanban on `feature/kanban` (cut from current `main`). List page matches whiteboard cards (access, rename, type-name delete). Board UI is `react-kanban-kit` restyled to Nanocore dark tokens. Live updates over `/api/kanban-sync/:id`.
 
-Previous: resizable stickies; solid frame/note fills.
-
-## Current Task / Last Completed (previous)
-
-Per-board access: admin **Access** on each board card. Checkbox dialog of org users. Admins always have access (locked). Members must be assigned. Existing boards were not backfilled — members lose access until assigned. New boards start admin-only. New users get no boards. Revoke drops live WebSocket sessions.
-
-Previous: browser tab titles; shape owner labels on note/text/image/geo.
+Previous: org logo/favicon; access groups; resizable stickies.
 
 ## Known Issues & TODOs
 
@@ -43,7 +39,7 @@ Previous: browser tab titles; shape owner labels on note/text/image/geo.
 - [ ] Bookmark unfurl not implemented
 - [ ] Board snapshot size not capped
 - [ ] Orphaned uploads not cleaned when boards deleted
-- [ ] Whitelabel is org name only
+- [ ] Kanban groups/access not yet on `main` (this is the feature branch)
 - [ ] Local DB may still contain leftover `bezier-arrow` records from abandoned experiments
 - [ ] Pre-existing shapes have no owner stamp (no backfill)
 

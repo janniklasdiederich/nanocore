@@ -11,12 +11,13 @@ Nanocore is an open-source, self-hosted Miro-style collaborative whiteboard. It 
 - First-run setup: organization display name + admin account
 - Admin-created users (email + temporary password; force change on first login)
 - Boards list + collaborative canvas with tldraw defaults (shapes, notes, text, images, live cursors)
+- Kanban boards (separate from tldraw) on `feature/kanban`
 - Optional Docker / docker-compose
 
 **Out of scope for now:**
 - Multi-tenant SaaS
 - Public self-registration / email verification
-- Board-level permissions beyond “any logged-in user”
+- Multi-product beyond whiteboards + kanban
 - Comments, voting, templates, SSO
 
 ## Key Users / Consumers

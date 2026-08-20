@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
 import {
   api,
   ApiError,
@@ -250,10 +249,7 @@ export function UsersPage() {
       <div className="page-header">
         <div>
           <h1>{t("admin.title")}</h1>
-          <p>
-            {t("admin.subtitle")}{" "}
-            <Link to="/">{t("users.backToBoards")}</Link>
-          </p>
+          <p>{t("admin.subtitle")}</p>
         </div>
         {tab === "people" && (
           <button

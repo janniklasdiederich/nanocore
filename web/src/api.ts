@@ -34,6 +34,31 @@ export type BoardAccessGroup = {
   assigned: boolean;
 };
 
+export type KanbanColumn = {
+  id: string;
+  boardId: string;
+  title: string;
+  sortOrder: number;
+};
+
+export type KanbanCard = {
+  id: string;
+  boardId: string;
+  columnId: string;
+  title: string;
+  description: string;
+  sortOrder: number;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type KanbanState = {
+  board: Board;
+  columns: KanbanColumn[];
+  cards: KanbanCard[];
+};
+
 export type AccessGroup = {
   id: string;
   name: string;
@@ -302,6 +327,106 @@ export const api = {
         body: JSON.stringify({ userIds, groupIds }),
       },
     ),
+
+  listKanban: () => request<{ boards: Board[] }>("/api/kanban"),
+
+  createKanban: (name?: string, columns?: string[]) =>
+    request<KanbanState>("/api/kanban", {
+      method: "POST",
+      body: JSON.stringify({ name, columns }),
+    }),
+
+  getKanban: (id: string) => request<KanbanState>(`/api/kanban/${id}`),
+
+  getKanbanSyncToken: (id: string) =>
+    request<{ token: string; expiresInSec: number }>(
+      `/api/kanban/${id}/sync-token`,
+      { method: "POST" },
+    ),
+
+  renameKanban: (id: string, name: string) =>
+    request<{ board: Board }>(`/api/kanban/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteKanban: (id: string) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}`, { method: "DELETE" }),
+
+  getKanbanMembers: (id: string) =>
+    request<{ users: BoardAccessUser[]; groups: BoardAccessGroup[] }>(
+      `/api/kanban/${id}/members`,
+    ),
+
+  setKanbanMembers: (
+    id: string,
+    userIds: string[],
+    groupIds?: string[],
+  ) =>
+    request<{ users: BoardAccessUser[]; groups: BoardAccessGroup[] }>(
+      `/api/kanban/${id}/members`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ userIds, groupIds }),
+      },
+    ),
+
+  addKanbanColumn: (id: string, title: string) =>
+    request<{ column: KanbanColumn }>(`/api/kanban/${id}/columns`, {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+
+  renameKanbanColumn: (id: string, colId: string, title: string) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/columns/${colId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    }),
+
+  reorderKanbanColumns: (id: string, columnIds: string[]) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/column-order`, {
+      method: "PUT",
+      body: JSON.stringify({ columnIds }),
+    }),
+
+  deleteKanbanColumn: (id: string, colId: string) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/columns/${colId}`, {
+      method: "DELETE",
+    }),
+
+  addKanbanCard: (
+    id: string,
+    body: { columnId: string; title: string; description?: string },
+  ) =>
+    request<{ card: KanbanCard }>(`/api/kanban/${id}/cards`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateKanbanCard: (
+    id: string,
+    cardId: string,
+    body: { title?: string; description?: string },
+  ) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/cards/${cardId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  moveKanbanCard: (
+    id: string,
+    cardId: string,
+    body: { columnId: string; index: number },
+  ) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/cards/${cardId}/move`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  deleteKanbanCard: (id: string, cardId: string) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/cards/${cardId}`, {
+      method: "DELETE",
+    }),
 
   searchGifs: (q: string, offset = 0) =>
     request<{

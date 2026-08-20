@@ -19,6 +19,7 @@ export const en = {
   "common.english": "English",
   "common.german": "Deutsch",
   "common.done": "Done",
+  "common.save": "Save",
 
   // Roles / status
   "role.admin": "admin",
@@ -63,13 +64,16 @@ export const en = {
   "password.failed": "Could not change password",
 
   // Shell
+  "nav.main": "Main navigation",
   "nav.users": "Users",
   "nav.admin": "Administration",
   "nav.boards": "Boards",
+  "nav.whiteboards": "Whiteboards",
+  "nav.kanban": "Kanban",
   "nav.allBoards": "All boards",
 
   // Boards
-  "boards.title": "Boards",
+  "boards.title": "Whiteboards",
   "boards.subtitle": "Shared infinite canvases for your team.",
   "boards.new": "New board",
   "boards.creating": "Creating…",
@@ -266,6 +270,45 @@ export const en = {
   "people.follow": "Follow",
   "people.following": "Following",
   "people.stopFollowing": "Stop following",
+
+  // Kanban
+  "kanban.title": "Kanban",
+  "kanban.subtitle":
+    "Task boards with columns and cards, separate from whiteboards.",
+  "kanban.new": "New board",
+  "kanban.creating": "Creating…",
+  "kanban.empty": "No kanban boards yet. Create one to start tracking work.",
+  "kanban.emptyMember":
+    "No kanban boards assigned to you yet. Ask an admin to give you access.",
+  "kanban.createFirst": "Create your first board",
+  "kanban.defaultName": "Untitled kanban",
+  "kanban.renamePrompt": "Board name",
+  "kanban.deleteTitle": "Delete “{name}”?",
+  "kanban.deleteHelp":
+    "This cannot be undone. Type the board name to confirm.",
+  "kanban.deleteTypeName": "Board name",
+  "kanban.loadFailed": "Failed to load kanban boards",
+  "kanban.createFailed": "Could not create board",
+  "kanban.renameFailed": "Rename failed",
+  "kanban.deleteFailed": "Delete failed",
+  "kanban.openFailed": "Could not open board",
+  "kanban.back": "Back to kanban",
+  "kanban.loadingName": "Loading…",
+  "kanban.colTodo": "To Do",
+  "kanban.colDoing": "In Progress",
+  "kanban.colDone": "Done",
+  "kanban.addCard": "+ Add card",
+  "kanban.addColumn": "+ Add column",
+  "kanban.newColumn": "Column name",
+  "kanban.renameColumn": "Column name",
+  "kanban.deleteColumn":
+    "Delete column “{name}” and all cards in it?",
+  "kanban.newCard": "New card",
+  "kanban.editCard": "Edit card",
+  "kanban.cardTitle": "Title",
+  "kanban.cardDescription": "Description",
+  "kanban.deleteCard": "Delete this card?",
+  "kanban.saveFailed": "Could not save card",
 } as const;
 
 export type MessageKey = keyof typeof en;

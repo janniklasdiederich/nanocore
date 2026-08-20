@@ -13,8 +13,8 @@ nanocore/
 
 ## Key Components
 
-- `server/src/index.ts` — Bun.serve: HTTP via Hono + WS upgrade at `/api/sync/:boardId`
-- `server/src/db.ts` — bun:sqlite schema (org, users, sessions, boards, board_snapshots)
+- `server/src/index.ts` — Bun.serve: HTTP via Hono + WS upgrade at `/api/sync/:boardId` and `/api/kanban-sync/:boardId`
+- `server/src/db.ts` — bun:sqlite schema (org, users, sessions, boards, board_snapshots, groups, kanban_*)
 - `server/src/auth.ts` — bcrypt passwords, session cookies, requireAuth / requireAdmin
 - `server/src/rooms.ts` — one `TLSocketRoom` per active board; debounced snapshot persist
 - `server/src/routes/*` — setup, auth, users, boards, assets
@@ -23,7 +23,10 @@ nanocore/
 - `server/src/boardAccess.ts` — admins always access; members only via `board_members`
 - `web/src/pages/BoardAccessDialog.tsx` — admin Access dialog (groups + people)
 - `server/src/groups.ts` / `routes/groups.ts` — org groups + membership
-- `web/src/pages/UsersPage.tsx` — Administration (people, groups, invites)
+- `web/src/pages/UsersPage.tsx` — Administration (people, groups, invites, branding)
+- `web/src/components/AppShell.tsx` — sidebar on list/admin pages (not tldraw)
+- `server/src/kanbanAccess.ts` / `kanbanState.ts` / `kanbanRooms.ts` / `routes/kanban.ts` — kanban access, mutations, live rooms
+- `web/src/pages/KanbanListPage.tsx` / `KanbanBoardPage.tsx` — kanban UI (`react-kanban-kit`)
 - `web/src/tldraw/shapeOwner.ts` — `nanocoreOwner` meta + local owner-label preference
 - `web/src/tldraw/ShapeOwnerLayer.tsx` — top-right owner name overlay
 - `web/src/tldraw/shapeReactions.ts` / `ShapeReactionsLayer.tsx` — emoji reactions on `nanocoreReactions`
@@ -49,10 +52,13 @@ nanocore/
 - **Shape owner** is stamped only on local (`source === 'user'`) creates of note/text/image/geo. Name is a snapshot at place-time. Visibility preference is per-browser (`localStorage`), not synced.
 - **InFrontOfTheCanvas** is a single slot — overlays compose in `BoardCanvasOverlays`
 - **Resizable notes**: `NanocoreNoteShapeUtil` stores `{w,h}` on `shape.meta.nanocoreNoteSize` (stock schema unchanged). Resize handles are unlocked; text wraps to the new box.
+- **Kanban is not tldraw.** Own tables (`kanban_boards/columns/cards/members/groups`), REST mutations, WebSocket `/api/kanban-sync/:id` broadcasts full state after each change. Access matches whiteboards (admins always; members via people + groups).
+- **Shell**: sidebar for product areas (Whiteboards / Kanban / Administration). Tldraw canvas stays full-bleed with its own top bar.
 
 ## Dependencies
 
 - tldraw / @tldraw/sync / @tldraw/sync-core
+- react-kanban-kit (kanban UI; restyled with Nanocore CSS tokens)
 - hono
 - bun (runtime + bun:sqlite + Bun.password)
 - react, react-router-dom, vite

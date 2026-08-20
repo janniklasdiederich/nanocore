@@ -7,6 +7,8 @@ import { BoardsPage } from "./pages/BoardsPage";
 import { BoardPage } from "./pages/BoardPage";
 import { UsersPage } from "./pages/UsersPage";
 import { InvitePage } from "./pages/InvitePage";
+import { KanbanListPage } from "./pages/KanbanListPage";
+import { KanbanBoardPage } from "./pages/KanbanBoardPage";
 import { useOrgFavicon } from "./components/BrandMark";
 
 function Guard({
@@ -104,6 +106,22 @@ export function App() {
         element={
           <Guard>
             <BoardPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/kanban"
+        element={
+          <Guard>
+            <KanbanListPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/kanban/:id"
+        element={
+          <Guard>
+            <KanbanBoardPage />
           </Guard>
         }
       />

@@ -13,6 +13,9 @@ import { env } from "./env";
 import { isSetupComplete } from "./db";
 // rooms imports apply the custom-color validation patch before TLSocketRoom runs
 import { userCanAccessBoard } from "./boardAccess";
+import { userCanAccessKanban } from "./kanbanAccess";
+import { joinKanbanRoom, closeAllKanbanRooms } from "./kanbanRooms";
+import { loadKanbanState } from "./kanbanState";
 import { makeOrLoadRoom, getActiveRoom, closeAllRooms } from "./rooms";
 import { trackWs, untrackWs } from "./wsConnections";
 import { safePathUnderRoot } from "./safePath";
@@ -22,6 +25,7 @@ import { userRoutes } from "./routes/users";
 import { groupRoutes } from "./routes/groups";
 import { orgRoutes } from "./routes/org";
 import { boardRoutes } from "./routes/boards";
+import { kanbanRoutes } from "./routes/kanban";
 import { assetRoutes } from "./routes/assets";
 import { gifRoutes } from "./routes/gifs";
 import {
@@ -30,10 +34,13 @@ import {
 } from "./routes/invites";
 
 type WsData = {
+  kind: "tldraw" | "kanban";
   sessionId: string;
   boardId: string;
   userId: string;
 };
+
+const kanbanLeaves = new Map<string, () => void>();
 
 const app = new Hono<{ Variables: Variables }>();
 
@@ -75,6 +82,7 @@ app.route("/api/users", userRoutes);
 app.route("/api/groups", groupRoutes);
 app.route("/api/org", orgRoutes);
 app.route("/api/boards", boardRoutes);
+app.route("/api/kanban", kanbanRoutes);
 app.route("/api/assets", assetRoutes);
 app.route("/api/gifs", gifRoutes);
 app.route("/api/invites", inviteAdminRoutes);
@@ -181,16 +189,19 @@ const server = Bun.serve<WsData>({
   async fetch(req, srv) {
     const url = new URL(req.url);
 
-    // WebSocket upgrade for tldraw sync
-    if (url.pathname.startsWith("/api/sync/")) {
+    // WebSocket upgrade: tldraw `/api/sync/:id` or kanban `/api/kanban-sync/:id`
+    const isTldrawSync = url.pathname.startsWith("/api/sync/");
+    const isKanbanSync = url.pathname.startsWith("/api/kanban-sync/");
+    if (isTldrawSync || isKanbanSync) {
       const isUpgrade =
         req.headers.get("upgrade")?.toLowerCase() === "websocket";
       if (!isUpgrade) {
         return new Response("Expected WebSocket upgrade", { status: 426 });
       }
 
+      const prefix = isKanbanSync ? "/api/kanban-sync/" : "/api/sync/";
       const boardId = decodeURIComponent(
-        url.pathname.slice("/api/sync/".length).split("/")[0] ?? "",
+        url.pathname.slice(prefix.length).split("/")[0] ?? "",
       );
       const sessionId = url.searchParams.get("sessionId");
       const syncToken = url.searchParams.get("token");
@@ -223,21 +234,29 @@ const server = Bun.serve<WsData>({
         userId = user.id;
       }
 
+      const table = isKanbanSync ? "kanban_boards" : "boards";
       const board = (
         await import("./db")
       ).db
-        .query("SELECT id FROM boards WHERE id = ?")
+        .query(`SELECT id FROM ${table} WHERE id = ?`)
         .get(boardId);
       if (!board) {
         return new Response("Board not found", { status: 404 });
       }
 
-      if (!userId || !userCanAccessBoard(userId, boardId)) {
+      if (!userId) {
+        return new Response("Forbidden", { status: 403 });
+      }
+      const allowed = isKanbanSync
+        ? userCanAccessKanban(userId, boardId)
+        : userCanAccessBoard(userId, boardId);
+      if (!allowed) {
         return new Response("Forbidden", { status: 403 });
       }
 
       const ok = srv.upgrade(req, {
         data: {
+          kind: isKanbanSync ? "kanban" : "tldraw",
           sessionId,
           boardId,
           userId,
@@ -255,8 +274,12 @@ const server = Bun.serve<WsData>({
   websocket: {
     open(ws) {
       try {
+        const trackId =
+          ws.data.kind === "kanban"
+            ? `kanban:${ws.data.boardId}`
+            : ws.data.boardId;
         trackWs({
-          boardId: ws.data.boardId,
+          boardId: trackId,
           userId: ws.data.userId,
           sessionId: ws.data.sessionId,
           close: () => {
@@ -267,6 +290,32 @@ const server = Bun.serve<WsData>({
             }
           },
         });
+
+        if (ws.data.kind === "kanban") {
+          const leave = joinKanbanRoom(ws.data.boardId, {
+            send: (data) => {
+              try {
+                ws.send(data);
+              } catch {
+                // ignore
+              }
+            },
+            close: (code, reason) => {
+              try {
+                ws.close(code, reason);
+              } catch {
+                // ignore
+              }
+            },
+          });
+          kanbanLeaves.set(ws.data.sessionId, leave);
+          const state = loadKanbanState(ws.data.boardId);
+          if (state) {
+            ws.send(JSON.stringify({ type: "state", ...state }));
+          }
+          return;
+        }
+
         const room = makeOrLoadRoom(ws.data.boardId);
         room.handleSocketConnect({
           sessionId: ws.data.sessionId,
@@ -296,6 +345,7 @@ const server = Bun.serve<WsData>({
       }
     },
     message(ws, message) {
+      if (ws.data.kind === "kanban") return;
       try {
         const room = makeOrLoadRoom(ws.data.boardId);
         const data =
@@ -313,7 +363,16 @@ const server = Bun.serve<WsData>({
       }
     },
     close(ws) {
-      untrackWs(ws.data.boardId, ws.data.sessionId);
+      const trackId =
+        ws.data.kind === "kanban"
+          ? `kanban:${ws.data.boardId}`
+          : ws.data.boardId;
+      untrackWs(trackId, ws.data.sessionId);
+      if (ws.data.kind === "kanban") {
+        kanbanLeaves.get(ws.data.sessionId)?.();
+        kanbanLeaves.delete(ws.data.sessionId);
+        return;
+      }
       const room = getActiveRoom(ws.data.boardId);
       if (room) {
         room.handleSocketClose(ws.data.sessionId);
@@ -351,6 +410,7 @@ if (env.allowedOrigins.length) {
 function shutdown() {
   clearInterval(purgeTimer);
   closeAllRooms();
+  closeAllKanbanRooms();
   server.stop();
   process.exit(0);
 }
