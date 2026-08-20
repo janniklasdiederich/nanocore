@@ -1,6 +1,8 @@
 import type { TLAssetId, TLUiOverrides } from "tldraw";
 import { GifPickerDialog } from "./GifPickerDialog";
 import { GIF_TOOL_ICON_ID } from "./gifToolIcon";
+import { KanbanPickerDialog } from "./KanbanPickerDialog";
+import { KANBAN_TOOL_ICON_ID } from "./kanbanToolIcon";
 
 /**
  * Open media originals in a new tab instead of navigating the board tab away
@@ -12,6 +14,7 @@ export const boardUiOverrides: TLUiOverrides = {
     en: {
       "page-menu.submenu.change-color": "Change color",
       "tool.gif": "GIF",
+      "tool.kanban": "Kanban",
       "fill-style.fill": "True solid",
       "dash-style.none": "None",
       "owner-label.menu": "Owner labels",
@@ -22,6 +25,7 @@ export const boardUiOverrides: TLUiOverrides = {
     de: {
       "page-menu.submenu.change-color": "Farbe ändern",
       "tool.gif": "GIF",
+      "tool.kanban": "Kanban",
       "fill-style.fill": "Echt deckend",
       "dash-style.none": "Keine",
       "owner-label.menu": "Besitzer anzeigen",
@@ -40,6 +44,14 @@ export const boardUiOverrides: TLUiOverrides = {
         kbd: "g",
         onSelect() {
           addDialog({ component: GifPickerDialog });
+        },
+      },
+      kanban: {
+        id: "kanban",
+        label: "tool.kanban" as never,
+        icon: KANBAN_TOOL_ICON_ID as never,
+        onSelect() {
+          addDialog({ component: KanbanPickerDialog });
         },
       },
     };

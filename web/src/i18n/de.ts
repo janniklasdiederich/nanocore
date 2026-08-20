@@ -309,4 +309,17 @@ export const de: Messages = {
   "kanban.cardDescription": "Beschreibung",
   "kanban.deleteCard": "Diese Karte löschen?",
   "kanban.saveFailed": "Karte konnte nicht gespeichert werden",
+
+  "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
+  "kanbanEmbed.pickHelp":
+    "Wähle ein Board, dann eine Spalte oder Karte. Sie bleibt verknüpft und aktualisiert sich live.",
+  "kanbanEmbed.placeColumn": "Spalte platzieren",
+  "kanbanEmbed.noBoards": "Keine Kanban-Boards, die du öffnen kannst.",
+  "kanbanEmbed.loadFailed": "Kanban-Boards konnten nicht geladen werden",
+  "kanbanEmbed.loading": "Laden…",
+  "kanbanEmbed.noAccess": "Du hast keinen Zugriff auf dieses Kanban-Board.",
+  "kanbanEmbed.missingCard": "Diese Karte wurde entfernt.",
+  "kanbanEmbed.missingColumn": "Diese Spalte wurde entfernt.",
+  "kanbanEmbed.emptyColumn": "Keine Karten in dieser Spalte.",
+  "kanbanEmbed.error": "Konnte nicht laden: {message}",
 };

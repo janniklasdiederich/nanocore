@@ -28,6 +28,14 @@ import { registerMarkdownOnEditEnd } from "../tldraw/markdown";
 import { registerShapeOwnerStamp } from "../tldraw/shapeOwner";
 import { boardTextOptions } from "../tldraw/textOptions";
 import { GIF_TOOL_ICON_ID, GIF_TOOL_ICON_URL } from "../tldraw/gifToolIcon";
+import {
+  KanbanCardShapeUtil,
+  KanbanColumnShapeUtil,
+} from "../tldraw/kanbanEmbed";
+import {
+  KANBAN_TOOL_ICON_ID,
+  KANBAN_TOOL_ICON_URL,
+} from "../tldraw/kanbanToolIcon";
 import { useDocumentTitle } from "../useDocumentTitle";
 
 const boardShapeUtils = [
@@ -35,6 +43,8 @@ const boardShapeUtils = [
   NanocoreNoteShapeUtil,
   NanocoreDrawShapeUtil,
   NanocoreArrowShapeUtil,
+  KanbanCardShapeUtil,
+  KanbanColumnShapeUtil,
 ];
 const boardTools = [NanocoreSelectTool];
 
@@ -160,6 +170,7 @@ function BoardCanvas({
     uri,
     assets: multiplayerAssets,
     userInfo,
+    shapeUtils: boardShapeUtils,
   });
 
   // Apply palette from the synced store *before* Tldraw paints shapes, so
@@ -229,7 +240,12 @@ function BoardCanvas({
         tools={boardTools}
         components={boardUiComponents}
         overrides={boardUiOverrides}
-        assetUrls={{ icons: { [GIF_TOOL_ICON_ID]: GIF_TOOL_ICON_URL } }}
+        assetUrls={{
+          icons: {
+            [GIF_TOOL_ICON_ID]: GIF_TOOL_ICON_URL,
+            [KANBAN_TOOL_ICON_ID]: KANBAN_TOOL_ICON_URL,
+          },
+        }}
         textOptions={boardTextOptions}
         onMount={onMount}
       />

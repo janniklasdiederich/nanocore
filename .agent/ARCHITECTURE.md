@@ -27,6 +27,8 @@ nanocore/
 - `web/src/components/AppShell.tsx` — sidebar on list/admin pages (not tldraw)
 - `server/src/kanbanAccess.ts` / `kanbanState.ts` / `kanbanRooms.ts` / `routes/kanban.ts` — kanban access, mutations, live rooms
 - `web/src/pages/KanbanListPage.tsx` / `KanbanBoardPage.tsx` — kanban UI (`react-kanban-kit`)
+- `web/src/tldraw/kanbanEmbed.tsx` — live-linked `kanban-card` / `kanban-column` shapes
+- `server/src/kanbanEmbedSchema.ts` — same custom shapes registered on `TLSocketRoom`
 - `web/src/tldraw/shapeOwner.ts` — `nanocoreOwner` meta + local owner-label preference
 - `web/src/tldraw/ShapeOwnerLayer.tsx` — top-right owner name overlay
 - `web/src/tldraw/shapeReactions.ts` / `ShapeReactionsLayer.tsx` — emoji reactions on `nanocoreReactions`
@@ -54,6 +56,7 @@ nanocore/
 - **Resizable notes**: `NanocoreNoteShapeUtil` stores `{w,h}` on `shape.meta.nanocoreNoteSize` (stock schema unchanged). Resize handles are unlocked; text wraps to the new box.
 - **Kanban is not tldraw.** Own tables (`kanban_boards/columns/cards/members/groups`), REST mutations, WebSocket `/api/kanban-sync/:id` broadcasts full state after each change. Access matches whiteboards (admins always; members via people + groups).
 - **Shell**: sidebar for product areas (Whiteboards / Kanban / Administration). Tldraw canvas stays full-bleed with its own top bar.
+- **Kanban on whiteboards**: custom tldraw shapes hold IDs only; live title/description/column membership comes from the kanban WS. Schema is registered on both `useSync` and `TLSocketRoom`.
 
 ## Dependencies
 

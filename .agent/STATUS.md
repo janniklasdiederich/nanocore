@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: sidebar + kanban boards on feature/kanban
+_Last updated: 2026-08-20 after: live kanban card/column embeds on whiteboards
 
 ## What's Been Built
 
@@ -28,7 +28,9 @@ _Last updated: 2026-08-20 after: sidebar + kanban boards on feature/kanban
 
 ## Current Task / Last Completed
 
-Sidebar + Kanban on `feature/kanban` (cut from current `main`). List page matches whiteboard cards (access, rename, type-name delete). Board UI is `react-kanban-kit` restyled to Nanocore dark tokens. Live updates over `/api/kanban-sync/:id`.
+Live Kanban embeds on whiteboards: toolbar picker places a card or a whole column as a tldraw shape. Shapes store `{boardId, cardId|columnId}` and subscribe to the kanban WS, so edits on `/kanban` show up on the canvas. Click a card on the embed to edit/delete via the same API. Drag-and-drop between columns on the canvas is not in this slice.
+
+Previous: sidebar + kanban boards.
 
 Previous: org logo/favicon; access groups; resizable stickies.
 

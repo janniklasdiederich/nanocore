@@ -1,9 +1,11 @@
 import { TLSocketRoom, type RoomSnapshot } from "@tldraw/sync-core";
 import { db } from "./db";
+import { createKanbanAwareSchema } from "./kanbanEmbedSchema";
 import { patchColorStylesForSync } from "./patchColorStyles";
 
 // Must run before the first room validates shape records (custom-* colors)
 patchColorStylesForSync();
+const kanbanAwareSchema = createKanbanAwareSchema();
 
 type RoomEntry = {
   room: TLSocketRoom;
@@ -83,6 +85,7 @@ export function makeOrLoadRoom(boardId: string): TLSocketRoom {
   };
 
   const room = new TLSocketRoom({
+    schema: kanbanAwareSchema as never,
     initialSnapshot,
     onDataChange() {
       scheduleSave(entry);

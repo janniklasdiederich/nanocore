@@ -309,6 +309,19 @@ export const en = {
   "kanban.cardDescription": "Description",
   "kanban.deleteCard": "Delete this card?",
   "kanban.saveFailed": "Could not save card",
+
+  "kanbanEmbed.pickTitle": "Place from Kanban",
+  "kanbanEmbed.pickHelp":
+    "Pick a board, then a column or a card. It stays linked and updates live.",
+  "kanbanEmbed.placeColumn": "Place column",
+  "kanbanEmbed.noBoards": "No kanban boards you can open.",
+  "kanbanEmbed.loadFailed": "Could not load kanban boards",
+  "kanbanEmbed.loading": "Loading…",
+  "kanbanEmbed.noAccess": "You do not have access to this kanban board.",
+  "kanbanEmbed.missingCard": "This card was removed.",
+  "kanbanEmbed.missingColumn": "This column was removed.",
+  "kanbanEmbed.emptyColumn": "No cards in this column.",
+  "kanbanEmbed.error": "Could not load: {message}",
 } as const;
 
 export type MessageKey = keyof typeof en;

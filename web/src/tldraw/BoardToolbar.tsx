@@ -39,6 +39,12 @@ function GifToolbarItem() {
   return <TldrawUiMenuToolItem toolId="gif" isSelected={isSelected} />;
 }
 
+function KanbanToolbarItem() {
+  const tools = useTools();
+  const isSelected = useIsToolSelected(tools.kanban);
+  return <TldrawUiMenuToolItem toolId="kanban" isSelected={isSelected} />;
+}
+
 /** GIF sits after media so it stays on the main bar, not in More. */
 export function BoardToolbar() {
   return (
@@ -52,6 +58,7 @@ export function BoardToolbar() {
       <NoteToolbarItem />
       <AssetToolbarItem />
       <GifToolbarItem />
+      <KanbanToolbarItem />
 
       <RectangleToolbarItem />
       <EllipseToolbarItem />
