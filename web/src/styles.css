@@ -2231,17 +2231,66 @@ span.kb-cal-day-num {
   width: min(520px, 100%);
   max-height: min(90vh, 760px);
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-editor-modal--split {
+  width: min(920px, calc(100vw - 40px));
+  overflow: hidden;
+}
+
+.kb-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 0 20px;
+  min-height: 0;
+  flex: 1;
+}
+
+.kb-editor-main {
+  min-width: 0;
+  overflow: auto;
+}
+
+.kb-editor-side,
+.nc-kb-edit-side {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  padding-left: 18px;
+}
+
+.nc-kb-edit-side {
+  border-left-color: var(--color-low-border, var(--tl-color-low-border, #ddd));
+  padding-left: 16px;
 }
 
 .kb-comments,
 .nc-kb-comments {
-  margin-top: 6px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.nc-kb-comments {
-  border-top-color: var(--color-low-border, var(--tl-color-low-border, #ddd));
+@media (max-width: 720px) {
+  .kb-editor-layout,
+  .nc-kb-edit-dialog--split {
+    grid-template-columns: 1fr;
+  }
+
+  .kb-editor-side,
+  .nc-kb-edit-side {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 8px;
+    max-height: 42vh;
+  }
 }
 
 .kb-comments-head,
@@ -2269,6 +2318,11 @@ span.kb-cal-day-num {
   color: var(--text-muted);
 }
 
+.kb-comments-empty,
+.nc-kb-comments-empty {
+  flex: 1;
+}
+
 .kb-comments-error,
 .nc-kb-comments-error {
   color: var(--danger);
@@ -2286,7 +2340,8 @@ span.kb-cal-day-num {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 220px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
 }
 
@@ -2337,6 +2392,7 @@ span.kb-cal-day-num {
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .kb-comment-compose textarea,
@@ -2563,6 +2619,21 @@ span.kb-cal-day-num {
 
 .nc-kb-edit-dialog {
   width: min(400px, 92vw);
+}
+
+.nc-kb-edit-dialog--split {
+  width: min(820px, 94vw);
+  max-height: min(70vh, 640px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 16px;
+  align-items: stretch;
+  overflow: hidden;
+}
+
+.nc-kb-edit-main {
+  min-width: 0;
+  overflow: auto;
 }
 
 .nc-kb-picker {

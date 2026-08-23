@@ -122,7 +122,8 @@ export function KanbanCardEditDialog({
         <TldrawUiDialogTitle>{t("kanban.editCard")}</TldrawUiDialogTitle>
         <TldrawUiDialogCloseButton />
       </TldrawUiDialogHeader>
-      <TldrawUiDialogBody className="nc-kb-edit-dialog">
+      <TldrawUiDialogBody className="nc-kb-edit-dialog nc-kb-edit-dialog--split">
+        <div className="nc-kb-edit-main">
         {error && <p className="nc-kb-picker-error">{error}</p>}
         <form id="nc-kb-edit-form" onSubmit={(e) => void save(e)}>
           <label className="nc-kb-tl-field" htmlFor="nc-kb-edit-title">
@@ -273,12 +274,15 @@ export function KanbanCardEditDialog({
             </div>
           </div>
         </form>
-        <KanbanCommentThread
-          boardId={boardId}
-          cardId={card.id}
-          comments={liveCard.comments ?? []}
-          variant="canvas"
-        />
+        </div>
+        <aside className="nc-kb-edit-side">
+          <KanbanCommentThread
+            boardId={boardId}
+            cardId={card.id}
+            comments={liveCard.comments ?? []}
+            variant="canvas"
+          />
+        </aside>
       </TldrawUiDialogBody>
       <TldrawUiDialogFooter className="tlui-dialog__footer__actions">
         <TldrawUiButton

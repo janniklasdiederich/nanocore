@@ -116,9 +116,16 @@ export function KanbanCardEditor({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <form className="modal kb-editor-modal" onSubmit={(e) => void submit(e)}>
+      <form
+        className={
+          "modal kb-editor-modal" + (card ? " kb-editor-modal--split" : "")
+        }
+        onSubmit={(e) => void submit(e)}
+      >
         <h2>{card ? t("kanban.editCard") : t("kanban.newCard")}</h2>
         {error && <div className="error-banner">{error}</div>}
+        <div className={card ? "kb-editor-layout" : undefined}>
+        <div className="kb-editor-main">
         <div className="field">
           <label htmlFor="kb-title">{t("kanban.cardTitle")}</label>
           <input
@@ -268,14 +275,6 @@ export function KanbanCardEditor({
             </div>
           )}
         </div>
-        {card ? (
-          <KanbanCommentThread
-            boardId={boardId}
-            cardId={card.id}
-            comments={card.comments ?? []}
-            variant="page"
-          />
-        ) : null}
         <div className="modal-actions">
           {onDelete && (
             <button
@@ -307,6 +306,18 @@ export function KanbanCardEditor({
           >
             {busy ? t("common.saving") : t("common.save")}
           </button>
+        </div>
+        </div>
+        {card ? (
+          <aside className="kb-editor-side">
+            <KanbanCommentThread
+              boardId={boardId}
+              cardId={card.id}
+              comments={card.comments ?? []}
+              variant="page"
+            />
+          </aside>
+        ) : null}
         </div>
       </form>
     </div>

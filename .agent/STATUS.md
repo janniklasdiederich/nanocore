@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-24 after: kanban card comments
+_Last updated: 2026-08-24 after: comments beside card editor
 
 ## What's Been Built
 
@@ -28,7 +28,7 @@ _Last updated: 2026-08-24 after: kanban card comments
 
 ## Current Task / Last Completed
 
-Kanban cards have comments (plain text). Anyone with board access can post; the author or an org admin can delete. Thread lives in the card editor (page + whiteboard). Count shows on the card. Live via the existing board snapshot. Restart API once for the new `kanban_card_comments` table.
+Card editor puts comments in a right-hand column (fields left, thread right). Stacks on narrow widths. Restart API once if comments table is missing.
 
 Previous: calendar Day / Week / Month.
 
