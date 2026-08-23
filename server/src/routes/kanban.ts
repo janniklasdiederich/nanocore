@@ -18,10 +18,12 @@ import { closeKanbanRoom } from "../kanbanRooms";
 import {
   addCard,
   addColumn,
+  addComment,
   addLabel,
   createKanbanBoard,
   deleteCard,
   deleteColumn,
+  deleteComment,
   deleteLabel,
   isDueDate,
   isKanbanPriority,
@@ -424,5 +426,51 @@ kanbanRoutes.delete("/:id/cards/:cardId", async (c) => {
     return c.json({ error: "Board not found" }, 404);
   }
   if (!deleteCard(id, cardId)) return c.json({ error: "Card not found" }, 404);
+  return c.json({ ok: true });
+});
+
+kanbanRoutes.post("/:id/cards/:cardId/comments", async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+  const id = c.req.param("id");
+  const cardId = c.req.param("cardId");
+  const user = c.get("user");
+  if (!id || !cardId || !userCanAccessKanban(user.id, id) || !boardExists(id)) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+  const body = await c.req.json().catch(() => null);
+  const text = typeof body?.body === "string" ? body.body.trim() : "";
+  if (!text) return c.json({ error: "Comment required" }, 400);
+  if (text.length > 4000) return c.json({ error: "Comment too long" }, 400);
+  const comment = addComment(id, cardId, user.id, text);
+  if (!comment) return c.json({ error: "Card not found" }, 404);
+  return c.json({ comment }, 201);
+});
+
+kanbanRoutes.delete("/:id/cards/:cardId/comments/:commentId", async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+  const id = c.req.param("id");
+  const cardId = c.req.param("cardId");
+  const commentId = c.req.param("commentId");
+  const user = c.get("user");
+  if (
+    !id ||
+    !cardId ||
+    !commentId ||
+    !userCanAccessKanban(user.id, id) ||
+    !boardExists(id)
+  ) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+  const result = deleteComment(
+    id,
+    cardId,
+    commentId,
+    user.id,
+    user.role === "admin",
+  );
+  if (result === "missing") return c.json({ error: "Comment not found" }, 404);
+  if (result === "forbidden") return c.json({ error: "Forbidden" }, 403);
   return c.json({ ok: true });
 });

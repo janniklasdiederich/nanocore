@@ -57,6 +57,15 @@ export type KanbanLabel = {
   sortOrder: number;
 };
 
+export type KanbanComment = {
+  id: string;
+  cardId: string;
+  authorId: string | null;
+  authorName: string | null;
+  body: string;
+  createdAt: string;
+};
+
 export type KanbanCard = {
   id: string;
   boardId: string;
@@ -67,6 +76,7 @@ export type KanbanCard = {
   dueDate: string | null;
   assigneeIds: string[];
   labelIds: string[];
+  comments: KanbanComment[];
   sortOrder: number;
   createdBy: string | null;
   createdAt: string;
@@ -486,6 +496,21 @@ export const api = {
     request<{ ok: boolean }>(`/api/kanban/${id}/cards/${cardId}`, {
       method: "DELETE",
     }),
+
+  addKanbanComment: (id: string, cardId: string, body: string) =>
+    request<{ comment: KanbanComment }>(
+      `/api/kanban/${id}/cards/${cardId}/comments`,
+      {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      },
+    ),
+
+  deleteKanbanComment: (id: string, cardId: string, commentId: string) =>
+    request<{ ok: boolean }>(
+      `/api/kanban/${id}/cards/${cardId}/comments/${commentId}`,
+      { method: "DELETE" },
+    ),
 
   searchGifs: (q: string, offset = 0) =>
     request<{

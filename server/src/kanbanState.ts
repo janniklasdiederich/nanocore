@@ -48,10 +48,20 @@ export type KanbanCard = {
   dueDate: string | null;
   assigneeIds: string[];
   labelIds: string[];
+  comments: KanbanComment[];
   sortOrder: number;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+export type KanbanComment = {
+  id: string;
+  cardId: string;
+  authorId: string | null;
+  authorName: string | null;
+  body: string;
+  createdAt: string;
 };
 
 export type KanbanLabel = {
@@ -132,6 +142,7 @@ function mapCard(
   },
   assigneeIds: string[] = [],
   labelIds: string[] = [],
+  comments: KanbanComment[] = [],
 ): KanbanCard {
   return {
     id: row.id,
@@ -143,6 +154,7 @@ function mapCard(
     dueDate: isDueDate(row.due_date) ? row.due_date : null,
     assigneeIds,
     labelIds,
+    comments,
     sortOrder: row.sort_order,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -164,7 +176,12 @@ function loadCard(cardId: string): KanbanCard {
     created_at: string;
     updated_at: string;
   };
-  return mapCard(row, assigneesFor(cardId), labelsFor(cardId));
+  return mapCard(
+    row,
+    assigneesFor(cardId),
+    labelsFor(cardId),
+    commentsFor(cardId),
+  );
 }
 
 function assigneesFor(cardId: string): string[] {
@@ -173,6 +190,47 @@ function assigneesFor(cardId: string): string[] {
       .query(`SELECT user_id FROM kanban_card_assignees WHERE card_id = ?`)
       .all(cardId) as { user_id: string }[]
   ).map((r) => r.user_id);
+}
+
+function commentsFor(cardId: string): KanbanComment[] {
+  return (
+    db
+      .query(
+        `SELECT c.id AS id, c.card_id AS card_id, c.user_id AS user_id,
+                c.body AS body, c.created_at AS created_at,
+                u.display_name AS display_name
+         FROM kanban_card_comments c
+         LEFT JOIN users u ON u.id = c.user_id
+         WHERE c.card_id = ?
+         ORDER BY c.created_at ASC`,
+      )
+      .all(cardId) as {
+      id: string;
+      card_id: string;
+      user_id: string | null;
+      body: string;
+      created_at: string;
+      display_name: string | null;
+    }[]
+  ).map(mapComment);
+}
+
+function mapComment(row: {
+  id: string;
+  card_id: string;
+  user_id: string | null;
+  body: string;
+  created_at: string;
+  display_name: string | null;
+}): KanbanComment {
+  return {
+    id: row.id,
+    cardId: row.card_id,
+    authorId: row.user_id,
+    authorName: row.display_name,
+    body: row.body,
+    createdAt: row.created_at,
+  };
 }
 
 function labelsFor(cardId: string): string[] {
@@ -282,8 +340,39 @@ export function loadKanbanState(boardId: string): KanbanState | null {
     labelsByCard.set(r.card_id, list);
   }
 
+  const commentsByCard = new Map<string, KanbanComment[]>();
+  const commentRows = db
+    .query(
+      `SELECT cm.id AS id, cm.card_id AS card_id, cm.user_id AS user_id,
+              cm.body AS body, cm.created_at AS created_at,
+              u.display_name AS display_name
+       FROM kanban_card_comments cm
+       LEFT JOIN users u ON u.id = cm.user_id
+       INNER JOIN kanban_cards c ON c.id = cm.card_id
+       WHERE c.board_id = ?
+       ORDER BY cm.created_at ASC`,
+    )
+    .all(boardId) as {
+    id: string;
+    card_id: string;
+    user_id: string | null;
+    body: string;
+    created_at: string;
+    display_name: string | null;
+  }[];
+  for (const r of commentRows) {
+    const list = commentsByCard.get(r.card_id) ?? [];
+    list.push(mapComment(r));
+    commentsByCard.set(r.card_id, list);
+  }
+
   const cards = cardRows.map((r) =>
-    mapCard(r, assigneesByCard.get(r.id) ?? [], labelsByCard.get(r.id) ?? []),
+    mapCard(
+      r,
+      assigneesByCard.get(r.id) ?? [],
+      labelsByCard.get(r.id) ?? [],
+      commentsByCard.get(r.id) ?? [],
+    ),
   );
 
   const labels = (
@@ -487,6 +576,65 @@ export function updateCard(
   }
   notifyKanban(boardId);
   return true;
+}
+
+export function addComment(
+  boardId: string,
+  cardId: string,
+  userId: string,
+  body: string,
+): KanbanComment | null {
+  const card = db
+    .query(`SELECT id FROM kanban_cards WHERE id = ? AND board_id = ?`)
+    .get(cardId, boardId);
+  if (!card) return null;
+  const id = crypto.randomUUID();
+  db.query(
+    `INSERT INTO kanban_card_comments (id, board_id, card_id, user_id, body)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run(id, boardId, cardId, userId, body);
+  notifyKanban(boardId);
+  const row = db
+    .query(
+      `SELECT c.id AS id, c.card_id AS card_id, c.user_id AS user_id,
+              c.body AS body, c.created_at AS created_at,
+              u.display_name AS display_name
+       FROM kanban_card_comments c
+       LEFT JOIN users u ON u.id = c.user_id
+       WHERE c.id = ?`,
+    )
+    .get(id) as {
+    id: string;
+    card_id: string;
+    user_id: string | null;
+    body: string;
+    created_at: string;
+    display_name: string | null;
+  };
+  return mapComment(row);
+}
+
+export function deleteComment(
+  boardId: string,
+  cardId: string,
+  commentId: string,
+  actorId: string,
+  isAdmin: boolean,
+): "ok" | "missing" | "forbidden" {
+  const row = db
+    .query(
+      `SELECT id, user_id, card_id FROM kanban_card_comments WHERE id = ? AND board_id = ?`,
+    )
+    .get(commentId, boardId) as {
+    id: string;
+    user_id: string | null;
+    card_id: string;
+  } | null;
+  if (!row || row.card_id !== cardId) return "missing";
+  if (!isAdmin && row.user_id !== actorId) return "forbidden";
+  db.query(`DELETE FROM kanban_card_comments WHERE id = ?`).run(commentId);
+  notifyKanban(boardId);
+  return "ok";
 }
 
 const HEX = /^#[0-9a-fA-F]{6}$/;

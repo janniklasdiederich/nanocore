@@ -23,6 +23,7 @@ import {
   labelTextColor,
 } from "../kanbanDisplay";
 import { useT } from "../i18n";
+import { KanbanCommentThread } from "../pages/KanbanComments";
 import { useKanbanLive } from "./kanbanLive";
 
 export function KanbanCardEditDialog({
@@ -34,6 +35,10 @@ export function KanbanCardEditDialog({
   const live = useKanbanLive(boardId);
   const people = live.status === "ok" ? live.state.people : [];
   const labels = live.status === "ok" ? live.state.labels : [];
+  const liveCard =
+    live.status === "ok"
+      ? (live.state.cards.find((c) => c.id === card.id) ?? card)
+      : card;
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description);
   const [priority, setPriority] = useState<KanbanPriority>(
@@ -268,6 +273,12 @@ export function KanbanCardEditDialog({
             </div>
           </div>
         </form>
+        <KanbanCommentThread
+          boardId={boardId}
+          cardId={card.id}
+          comments={liveCard.comments ?? []}
+          variant="canvas"
+        />
       </TldrawUiDialogBody>
       <TldrawUiDialogFooter className="tlui-dialog__footer__actions">
         <TldrawUiButton

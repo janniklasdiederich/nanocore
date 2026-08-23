@@ -15,8 +15,10 @@ import {
   labelTextColor,
 } from "../kanbanDisplay";
 import { useT } from "../i18n";
+import { KanbanCommentThread } from "./KanbanComments";
 
 export function KanbanCardEditor({
+  boardId,
   card,
   people,
   labels,
@@ -25,6 +27,7 @@ export function KanbanCardEditor({
   onDelete,
   onCreateLabel,
 }: {
+  boardId: string;
   card?: KanbanCard;
   people: KanbanPerson[];
   labels: KanbanLabel[];
@@ -265,6 +268,14 @@ export function KanbanCardEditor({
             </div>
           )}
         </div>
+        {card ? (
+          <KanbanCommentThread
+            boardId={boardId}
+            cardId={card.id}
+            comments={card.comments ?? []}
+            variant="page"
+          />
+        ) : null}
         <div className="modal-actions">
           {onDelete && (
             <button

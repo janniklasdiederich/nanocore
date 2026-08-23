@@ -245,7 +245,8 @@ function EmbedCard({
       : [];
   const showPriority = card.priority === "high" || card.priority === "low";
   const due = isDueDate(card.dueDate) ? card.dueDate : null;
-  const showFoot = Boolean(due) || people.length > 0;
+  const commentCount = card.comments?.length ?? 0;
+  const showFoot = Boolean(due) || people.length > 0 || commentCount > 0;
 
   function openEdit() {
     addDialog({
@@ -340,6 +341,11 @@ function EmbedCard({
           ) : (
             <span />
           )}
+          {commentCount > 0 ? (
+            <span className="nc-kb-comment-count" title={t("kanban.comments")}>
+              {commentCount}
+            </span>
+          ) : null}
           {people.length > 0 ? (
             <div className="nc-kb-embed-people">
               {people.map((p) => (

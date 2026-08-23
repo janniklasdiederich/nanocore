@@ -165,12 +165,22 @@ db.exec(`
     PRIMARY KEY (card_id, label_id)
   );
 
+  CREATE TABLE IF NOT EXISTS kanban_card_comments (
+    id TEXT PRIMARY KEY,
+    board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
+    card_id TEXT NOT NULL REFERENCES kanban_cards(id) ON DELETE CASCADE,
+    user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_kanban_members_user ON kanban_members(user_id);
   CREATE INDEX IF NOT EXISTS idx_kanban_groups_group ON kanban_groups(group_id);
   CREATE INDEX IF NOT EXISTS idx_kanban_columns_board ON kanban_columns(board_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_kanban_cards_col ON kanban_cards(column_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_kanban_labels_board ON kanban_labels(board_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_kanban_card_assignees_user ON kanban_card_assignees(user_id);
+  CREATE INDEX IF NOT EXISTS idx_kanban_comments_card ON kanban_card_comments(card_id, created_at);
 `);
 
 export type UserRole = "admin" | "member";

@@ -473,7 +473,12 @@ export function KanbanBoardPage() {
       </div>
       {editing && (
         <KanbanCardEditor
-          card={editing.card}
+          boardId={id}
+          card={
+            editing.card
+              ? (cardsById.get(editing.card.id) ?? editing.card)
+              : undefined
+          }
           people={state.people}
           labels={state.labels}
           onClose={() => setEditing(null)}
@@ -524,6 +529,7 @@ function normalizeKanbanState(raw: KanbanState): KanbanState {
       dueDate: isDueDate(c.dueDate) ? c.dueDate : null,
       assigneeIds: c.assigneeIds ?? [],
       labelIds: c.labelIds ?? [],
+      comments: c.comments ?? [],
     })),
   };
 }
@@ -640,7 +646,8 @@ function KanbanCardFace({
   const assignees = people.filter((p) => card.assigneeIds.includes(p.id));
   const due = isDueDate(card.dueDate) ? card.dueDate : null;
   const showPriority = card.priority === "high" || card.priority === "low";
-  const showFoot = Boolean(due) || assignees.length > 0;
+  const commentCount = card.comments?.length ?? 0;
+  const showFoot = Boolean(due) || assignees.length > 0 || commentCount > 0;
   return (
     <div
       className={
@@ -683,6 +690,11 @@ function KanbanCardFace({
           ) : (
             <span />
           )}
+          {commentCount > 0 ? (
+            <span className="kb-comment-count" title={t("kanban.comments")}>
+              {commentCount}
+            </span>
+          ) : null}
           {assignees.length > 0 ? (
             <div className="kb-card-people">
               {assignees.map((p) => (

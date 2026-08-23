@@ -357,6 +357,13 @@ export const de: Messages = {
   "kanban.calendar.range.month": "Monat",
   "kanban.calendar.openDay": "Tag öffnen",
   "kanban.calendar.emptyDay": "An diesem Tag ist nichts fällig.",
+  "kanban.comments": "Kommentare",
+  "kanban.comment.placeholder": "Kommentar schreiben…",
+  "kanban.comment.post": "Kommentieren",
+  "kanban.comment.delete": "Diesen Kommentar löschen?",
+  "kanban.comment.empty": "Noch keine Kommentare.",
+  "kanban.comment.failed": "Kommentar konnte nicht geändert werden",
+  "kanban.comment.deletedUser": "Gelöschter Nutzer",
 
   "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
   "kanbanEmbed.pickHelp":

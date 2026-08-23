@@ -356,6 +356,13 @@ export const en = {
   "kanban.calendar.range.month": "Month",
   "kanban.calendar.openDay": "Open day",
   "kanban.calendar.emptyDay": "No cards due this day.",
+  "kanban.comments": "Comments",
+  "kanban.comment.placeholder": "Write a comment…",
+  "kanban.comment.post": "Comment",
+  "kanban.comment.delete": "Delete this comment?",
+  "kanban.comment.empty": "No comments yet.",
+  "kanban.comment.failed": "Could not update comment",
+  "kanban.comment.deletedUser": "Deleted user",
 
   "kanbanEmbed.pickTitle": "Place from Kanban",
   "kanbanEmbed.pickHelp":

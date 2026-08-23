@@ -87,6 +87,15 @@ export function avatarColor(id: string): string {
   );
 }
 
+export function formatStamp(iso: string, locale: string): string {
+  const date = new Date(iso.includes("T") ? iso : iso.replace(" ", "T") + "Z");
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString(locale === "de" ? "de-DE" : "en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 export function labelTextColor(hex: string): "#111" | "#fff" {
   const raw = hex.replace("#", "");
   if (raw.length < 6) return "#fff";
