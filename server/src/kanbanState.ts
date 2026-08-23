@@ -202,7 +202,7 @@ function commentsFor(cardId: string): KanbanComment[] {
          FROM kanban_card_comments c
          LEFT JOIN users u ON u.id = c.user_id
          WHERE c.card_id = ?
-         ORDER BY c.created_at ASC`,
+         ORDER BY c.created_at DESC`,
       )
       .all(cardId) as {
       id: string;
@@ -350,7 +350,7 @@ export function loadKanbanState(boardId: string): KanbanState | null {
        LEFT JOIN users u ON u.id = cm.user_id
        INNER JOIN kanban_cards c ON c.id = cm.card_id
        WHERE c.board_id = ?
-       ORDER BY cm.created_at ASC`,
+       ORDER BY cm.created_at DESC`,
     )
     .all(boardId) as {
     id: string;

@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { ApiError, api, type KanbanComment } from "../api";
 import { useAuth } from "../auth";
 import { avatarColor, formatStamp, initials } from "../kanbanDisplay";
@@ -22,6 +22,14 @@ export function KanbanCommentThread({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const ns = variant === "page" ? "kb" : "nc-kb";
+  const ordered = useMemo(
+    () =>
+      [...comments].sort(
+        (a, b) =>
+          b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id),
+      ),
+    [comments],
+  );
 
   async function post() {
     const body = draft.trim();
@@ -66,15 +74,15 @@ export function KanbanCommentThread({
     <div className={`${ns}-comments`}>
       <div className={`${ns}-comments-head`}>
         {t("kanban.comments")}
-        {comments.length > 0 ? (
-          <span className="kb-col-count">{comments.length}</span>
+        {ordered.length > 0 ? (
+          <span className="kb-col-count">{ordered.length}</span>
         ) : null}
       </div>
-      {comments.length === 0 ? (
+      {ordered.length === 0 ? (
         <p className={`${ns}-comments-empty`}>{t("kanban.comment.empty")}</p>
       ) : (
         <ul className={`${ns}-comment-list`}>
-          {comments.map((c) => {
+          {ordered.map((c) => {
             const name = c.authorName || t("kanban.comment.deletedUser");
             const canDelete =
               !!user && (user.id === c.authorId || user.role === "admin");
