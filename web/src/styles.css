@@ -1684,15 +1684,16 @@ a.btn-primary:hover {
 
 .kb-cal-nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .kb-cal-month {
-  margin: 0 8px 0 0;
+  margin: 0 4px 0 0;
   font-size: 1.05rem;
   letter-spacing: -0.02em;
-  min-width: 10rem;
+  min-width: 8rem;
 }
 
 .kb-cal-weekdays,
@@ -1717,6 +1718,15 @@ a.btn-primary:hover {
   grid-template-rows: repeat(6, minmax(0, 1fr));
 }
 
+.kb-cal-days--week {
+  grid-template-rows: 1fr;
+}
+
+.kb-cal-days--day {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
 .kb-cal-day {
   min-height: 0;
   display: flex;
@@ -1738,10 +1748,25 @@ a.btn-primary:hover {
 }
 
 .kb-cal-day-num {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  align-self: flex-start;
+  font: inherit;
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+button.kb-cal-day-num:hover {
+  color: var(--text);
+}
+
+span.kb-cal-day-num {
+  cursor: default;
 }
 
 .kb-cal-day.is-today .kb-cal-day-num {
@@ -1777,6 +1802,32 @@ a.btn-primary:hover {
 
 .kb-cal-chip:hover {
   background: color-mix(in srgb, var(--accent) 16%, var(--bg-soft));
+}
+
+.kb-cal-chip--detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 10px;
+  white-space: normal;
+}
+
+.kb-cal-chip-desc {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.kb-cal-empty {
+  margin: 8px 2px 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .kb-cal-chip--high {

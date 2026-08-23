@@ -348,9 +348,15 @@ export const de: Messages = {
   "kanban.view.board": "Board",
   "kanban.view.calendar": "Kalender",
   "kanban.calendar.today": "Heute",
-  "kanban.calendar.prev": "Vorheriger Monat",
-  "kanban.calendar.next": "Nächster Monat",
+  "kanban.calendar.prev": "Zurück",
+  "kanban.calendar.next": "Weiter",
   "kanban.calendar.undated": "Ohne Fälligkeitsdatum",
+  "kanban.calendar.range": "Zeitraum",
+  "kanban.calendar.range.day": "Tag",
+  "kanban.calendar.range.week": "Woche",
+  "kanban.calendar.range.month": "Monat",
+  "kanban.calendar.openDay": "Tag öffnen",
+  "kanban.calendar.emptyDay": "An diesem Tag ist nichts fällig.",
 
   "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
   "kanbanEmbed.pickHelp":

@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-24 after: kanban board calendar view
+_Last updated: 2026-08-24 after: kanban calendar day/week/month
 
 ## What's Been Built
 
@@ -24,11 +24,11 @@ _Last updated: 2026-08-24 after: kanban board calendar view
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
 - **Sidebar shell** on list/admin pages: Whiteboards / Kanban / Administration. Tldraw canvas stays full-bleed.
-- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), optional due date (YYYY-MM-DD), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Board / Calendar view switcher (`?view=calendar`) shows due dates on a month grid plus undated cards. Whiteboard embeds show the extra fields.
+- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), optional due date (YYYY-MM-DD), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Board / Calendar view switcher (`?view=calendar`) with Day / Week / Month (`&cal=day|week`). Undated tray. Whiteboard embeds show the extra fields.
 
 ## Current Task / Last Completed
 
-Kanban boards have a Calendar layout (toolbar switcher, URL `?view=calendar`): month grid of card due dates, undated tray, same filters as the board, click opens the card editor. Gantt not started. No sidebar Calendar.
+Kanban calendar supports Day, Week, and Month (`?view=calendar&cal=week`). Prev/next steps by the active range; clicking a day number opens Day. Same undated tray and filters. Gantt not started.
 
 Previous: documented optional-module plan in `.agent/MODULES.md` (not implemented).
 

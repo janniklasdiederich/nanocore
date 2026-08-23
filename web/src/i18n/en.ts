@@ -347,9 +347,15 @@ export const en = {
   "kanban.view.board": "Board",
   "kanban.view.calendar": "Calendar",
   "kanban.calendar.today": "Today",
-  "kanban.calendar.prev": "Previous month",
-  "kanban.calendar.next": "Next month",
+  "kanban.calendar.prev": "Previous",
+  "kanban.calendar.next": "Next",
   "kanban.calendar.undated": "No due date",
+  "kanban.calendar.range": "Range",
+  "kanban.calendar.range.day": "Day",
+  "kanban.calendar.range.week": "Week",
+  "kanban.calendar.range.month": "Month",
+  "kanban.calendar.openDay": "Open day",
+  "kanban.calendar.emptyDay": "No cards due this day.",
 
   "kanbanEmbed.pickTitle": "Place from Kanban",
   "kanbanEmbed.pickHelp":
