@@ -339,6 +339,11 @@ export const de: Messages = {
   "kanban.filter.overdue": "Überfällig",
   "kanban.filter.upcoming": "Anstehend",
   "kanban.filter.noDue": "Ohne Fälligkeitsdatum",
+  "kanban.clearFilters": "Filter zurücksetzen",
+  "kanban.filter.empty": "Keine Karten passen zu diesen Filtern.",
+  "kanban.due.today": "Heute",
+  "kanban.due.tomorrow": "Morgen",
+  "kanban.due.yesterday": "Gestern",
 
   "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
   "kanbanEmbed.pickHelp":

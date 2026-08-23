@@ -50,15 +50,41 @@ export function dueStatus(dueDate: string, today = localTodayIso()): DueStatus {
   return "upcoming";
 }
 
+export function dueDayDelta(dueDate: string, today = localTodayIso()): number {
+  const a = Date.UTC(
+    Number(dueDate.slice(0, 4)),
+    Number(dueDate.slice(5, 7)) - 1,
+    Number(dueDate.slice(8, 10)),
+  );
+  const b = Date.UTC(
+    Number(today.slice(0, 4)),
+    Number(today.slice(5, 7)) - 1,
+    Number(today.slice(8, 10)),
+  );
+  return Math.round((a - b) / 86_400_000);
+}
+
 export function formatDueDate(dueDate: string, locale: string): string {
   const y = Number(dueDate.slice(0, 4));
   const m = Number(dueDate.slice(5, 7));
   const d = Number(dueDate.slice(8, 10));
+  const thisYear = new Date().getFullYear() === y;
   return new Date(y, m - 1, d).toLocaleDateString(locale, {
-    year: "numeric",
     month: "short",
     day: "numeric",
+    ...(thisYear ? {} : { year: "numeric" }),
   });
+}
+
+export function avatarColor(id: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (
+    KANBAN_LABEL_COLORS[Math.abs(hash) % KANBAN_LABEL_COLORS.length] ?? "#3b82f6"
+  );
 }
 
 export function labelTextColor(hex: string): "#111" | "#fff" {

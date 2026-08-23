@@ -18,6 +18,7 @@ import {
 import {
   KANBAN_LABEL_COLORS,
   KANBAN_PRIORITIES,
+  avatarColor,
   initials,
   labelTextColor,
 } from "../kanbanDisplay";
@@ -187,13 +188,23 @@ export function KanbanCardEditDialog({
             <span className="nc-kb-tl-label">{t("kanban.assignees")}</span>
             <div className="nc-kb-pick-chips">
               {people.map((p) => (
-                <label key={p.id} className="nc-kb-check">
+                <label
+                  key={p.id}
+                  className={
+                    "nc-kb-check" + (assigneeIds.has(p.id) ? " is-on" : "")
+                  }
+                >
                   <input
                     type="checkbox"
                     checked={assigneeIds.has(p.id)}
                     onChange={() => setAssigneeIds((s) => toggle(s, p.id))}
                   />
-                  <span className="nc-kb-avatar">{initials(p.displayName)}</span>
+                  <span
+                    className="nc-kb-avatar"
+                    style={{ background: avatarColor(p.id) }}
+                  >
+                    {initials(p.displayName)}
+                  </span>
                   {p.displayName}
                 </label>
               ))}
@@ -203,7 +214,12 @@ export function KanbanCardEditDialog({
             <span className="nc-kb-tl-label">{t("kanban.labels")}</span>
             <div className="nc-kb-pick-chips">
               {labels.map((label) => (
-                <label key={label.id} className="nc-kb-check">
+                <label
+                  key={label.id}
+                  className={
+                    "nc-kb-check" + (labelIds.has(label.id) ? " is-on" : "")
+                  }
+                >
                   <input
                     type="checkbox"
                     checked={labelIds.has(label.id)}

@@ -10,6 +10,8 @@ import {
 } from "tldraw";
 import { api, type KanbanCard } from "../api";
 import {
+  avatarColor,
+  dueDayDelta,
   dueStatus,
   formatDueDate,
   initials,
@@ -241,9 +243,9 @@ function EmbedCard({
     live.status === "ok"
       ? live.state.people.filter((p) => (card.assigneeIds ?? []).includes(p.id))
       : [];
-  const priority =
-    card.priority === "high" || card.priority === "low" ? card.priority : "normal";
+  const showPriority = card.priority === "high" || card.priority === "low";
   const due = isDueDate(card.dueDate) ? card.dueDate : null;
+  const showFoot = Boolean(due) || people.length > 0;
 
   function openEdit() {
     addDialog({
@@ -256,7 +258,10 @@ function EmbedCard({
   return (
     <button
       type="button"
-      className="nc-kb-embed-card"
+      className={
+        "nc-kb-embed-card" +
+        (card.priority === "high" ? " nc-kb-embed-card--high" : "")
+      }
       data-nc-kb-card={card.id}
       onPointerDown={(e) => {
         stopEventPropagation(e);
@@ -299,26 +304,8 @@ function EmbedCard({
         window.addEventListener("pointercancel", onCancel);
       }}
     >
-      <div className="nc-kb-embed-meta">
-        <span className={`nc-kb-priority nc-kb-priority--${priority}`}>
-          {priority === "high"
-            ? t("kanban.priority.high")
-            : priority === "low"
-              ? t("kanban.priority.low")
-              : t("kanban.priority.normal")}
-        </span>
-        {due ? (
-          <span className={`nc-kb-due nc-kb-due--${dueStatus(due)}`}>
-            {formatDueDate(due, locale)}
-          </span>
-        ) : null}
-      </div>
-      <div className="nc-kb-embed-card-title">{card.title}</div>
-      {card.description ? (
-        <div className="nc-kb-embed-card-desc">{card.description}</div>
-      ) : null}
-      {labels.length > 0 && (
-        <div className="nc-kb-embed-tags">
+      {(labels.length > 0 || showPriority) && (
+        <div className="nc-kb-embed-meta">
           {labels.map((l) => (
             <span
               key={l.id}
@@ -328,19 +315,61 @@ function EmbedCard({
               {l.name}
             </span>
           ))}
-        </div>
-      )}
-      {people.length > 0 && (
-        <div className="nc-kb-embed-people">
-          {people.map((p) => (
-            <span key={p.id} className="nc-kb-avatar" title={p.displayName}>
-              {initials(p.displayName)}
+          {showPriority ? (
+            <span className={`nc-kb-priority nc-kb-priority--${card.priority}`}>
+              {card.priority === "high"
+                ? t("kanban.priority.high")
+                : t("kanban.priority.low")}
             </span>
-          ))}
+          ) : null}
         </div>
       )}
+      <div className="nc-kb-embed-card-title">{card.title}</div>
+      {card.description ? (
+        <div className="nc-kb-embed-card-desc">{card.description}</div>
+      ) : null}
+      {showFoot ? (
+        <div className="nc-kb-embed-foot">
+          {due ? (
+            <span
+              className={`nc-kb-due nc-kb-due--${dueStatus(due)}`}
+              title={formatDueDate(due, locale)}
+            >
+              {embedDueText(due, locale, t)}
+            </span>
+          ) : (
+            <span />
+          )}
+          {people.length > 0 ? (
+            <div className="nc-kb-embed-people">
+              {people.map((p) => (
+                <span
+                  key={p.id}
+                  className="nc-kb-avatar"
+                  title={p.displayName}
+                  style={{ background: avatarColor(p.id) }}
+                >
+                  {initials(p.displayName)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </button>
   );
+}
+
+function embedDueText(
+  due: string,
+  locale: string,
+  t: ReturnType<typeof useT>,
+): string {
+  const delta = dueDayDelta(due);
+  if (delta === 0) return t("kanban.due.today");
+  if (delta === 1) return t("kanban.due.tomorrow");
+  if (delta === -1) return t("kanban.due.yesterday");
+  return formatDueDate(due, locale);
 }
 
 function StatusBody({

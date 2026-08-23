@@ -10,6 +10,7 @@ import {
 import {
   KANBAN_LABEL_COLORS,
   KANBAN_PRIORITIES,
+  avatarColor,
   initials,
   labelTextColor,
 } from "../kanbanDisplay";
@@ -137,38 +138,40 @@ export function KanbanCardEditor({
             rows={4}
           />
         </div>
-        <div className="field">
-          <label htmlFor="kb-priority">{t("kanban.priority")}</label>
-          <select
-            id="kb-priority"
-            value={priority}
-            onChange={(e) => setPriority(e.target.value as KanbanPriority)}
-          >
-            {KANBAN_PRIORITIES.map((p) => (
-              <option key={p} value={p}>
-                {t(`kanban.priority.${p}`)}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="kb-due">{t("kanban.dueDate")}</label>
-          <div className="kb-due-row">
-            <input
-              id="kb-due"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-            {dueDate ? (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setDueDate("")}
-              >
-                {t("kanban.dueDate.clear")}
-              </button>
-            ) : null}
+        <div className="kb-editor-row">
+          <div className="field">
+            <label htmlFor="kb-priority">{t("kanban.priority")}</label>
+            <select
+              id="kb-priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as KanbanPriority)}
+            >
+              {KANBAN_PRIORITIES.map((p) => (
+                <option key={p} value={p}>
+                  {t(`kanban.priority.${p}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="kb-due">{t("kanban.dueDate")}</label>
+            <div className="kb-due-row">
+              <input
+                id="kb-due"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+              {dueDate ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setDueDate("")}
+                >
+                  {t("kanban.dueDate.clear")}
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
         <div className="field">
@@ -178,13 +181,22 @@ export function KanbanCardEditor({
           ) : (
             <div className="kb-chip-list">
               {people.map((p) => (
-                <label key={p.id} className="kb-check-chip">
+                <label
+                  key={p.id}
+                  className={
+                    "kb-check-chip" + (assigneeIds.has(p.id) ? " is-on" : "")
+                  }
+                >
                   <input
                     type="checkbox"
                     checked={assigneeIds.has(p.id)}
                     onChange={() => setAssigneeIds((s) => toggle(s, p.id))}
                   />
-                  <span className="kb-avatar" title={p.email}>
+                  <span
+                    className="kb-avatar"
+                    title={p.email}
+                    style={{ background: avatarColor(p.id) }}
+                  >
                     {initials(p.displayName)}
                   </span>
                   <span>{p.displayName}</span>
@@ -197,7 +209,12 @@ export function KanbanCardEditor({
           <span className="kb-editor-legend">{t("kanban.labels")}</span>
           <div className="kb-chip-list">
             {labels.map((label) => (
-              <label key={label.id} className="kb-check-chip">
+              <label
+                key={label.id}
+                className={
+                  "kb-check-chip" + (labelIds.has(label.id) ? " is-on" : "")
+                }
+              >
                 <input
                   type="checkbox"
                   checked={labelIds.has(label.id)}

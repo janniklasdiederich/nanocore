@@ -18,6 +18,8 @@ import {
 import { AppShell } from "../components/AppShell";
 import { syncWsBase } from "../config";
 import {
+  avatarColor,
+  dueDayDelta,
   dueStatus,
   formatDueDate,
   initials,
@@ -208,13 +210,21 @@ export function KanbanBoardPage() {
     );
   }
 
+  const filtersOn =
+    view.sort !== "board" ||
+    view.priority !== "" ||
+    view.due !== "" ||
+    view.assignee !== "" ||
+    view.label !== "";
+  const visibleCount = state.cards.filter((c) => matchesView(c, view)).length;
+
   return (
     <AppShell title={state.board.name} wide>
       <div className="kb-page">
         <div className="kb-toolbar">
           <h1>{state.board.name}</h1>
           <div className="kb-toolbar-tools">
-            <label className="kb-filter">
+            <label className={"kb-filter" + (view.sort !== "board" ? " is-on" : "")}>
               <span>{t("kanban.sort")}</span>
               <select
                 value={view.sort}
@@ -228,7 +238,7 @@ export function KanbanBoardPage() {
                 <option value="due">{t("kanban.sort.due")}</option>
               </select>
             </label>
-            <label className="kb-filter">
+            <label className={"kb-filter" + (view.priority ? " is-on" : "")}>
               <span>{t("kanban.priority")}</span>
               <select
                 value={view.priority}
@@ -245,7 +255,7 @@ export function KanbanBoardPage() {
                 <option value="low">{t("kanban.priority.low")}</option>
               </select>
             </label>
-            <label className="kb-filter">
+            <label className={"kb-filter" + (view.due ? " is-on" : "")}>
               <span>{t("kanban.dueDate")}</span>
               <select
                 value={view.due}
@@ -262,7 +272,7 @@ export function KanbanBoardPage() {
                 <option value="none">{t("kanban.filter.noDue")}</option>
               </select>
             </label>
-            <label className="kb-filter">
+            <label className={"kb-filter" + (view.assignee ? " is-on" : "")}>
               <span>{t("kanban.assignees")}</span>
               <select
                 value={view.assignee}
@@ -279,7 +289,7 @@ export function KanbanBoardPage() {
                 ))}
               </select>
             </label>
-            <label className="kb-filter">
+            <label className={"kb-filter" + (view.label ? " is-on" : "")}>
               <span>{t("kanban.labels")}</span>
               <select
                 value={view.label}
@@ -296,6 +306,23 @@ export function KanbanBoardPage() {
                 ))}
               </select>
             </label>
+            {filtersOn && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() =>
+                  setView({
+                    sort: "board",
+                    priority: "",
+                    due: "",
+                    assignee: "",
+                    label: "",
+                  })
+                }
+              >
+                {t("kanban.clearFilters")}
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -305,6 +332,9 @@ export function KanbanBoardPage() {
             </button>
           </div>
         </div>
+        {filtersOn && visibleCount === 0 && (
+          <div className="kb-filter-empty">{t("kanban.filter.empty")}</div>
+        )}
         <div className="kb-board">
           <Kanban
             dataSource={dataSource}
@@ -324,47 +354,57 @@ export function KanbanBoardPage() {
             }}
             renderColumnHeader={(column) => (
               <div className="kb-col-head">
-                <strong>{column.title}</strong>
+                <strong className="kb-col-title">{column.title}</strong>
                 <span className="kb-col-count">{column.totalChildrenCount}</span>
-                <button
-                  type="button"
-                  className="kb-icon-btn"
-                  title={t("common.rename")}
-                  onClick={() => {
-                    const name = window.prompt(
-                      t("kanban.renameColumn"),
-                      column.title,
-                    );
-                    if (!name || name.trim() === column.title) return;
-                    void api.renameKanbanColumn(id, column.id, name.trim());
-                  }}
-                >
-                  ✎
-                </button>
-                <button
-                  type="button"
-                  className="kb-icon-btn"
-                  title={t("common.delete")}
-                  onClick={() => {
-                    if (
-                      !window.confirm(
-                        t("kanban.deleteColumn", { name: column.title }),
-                      )
-                    ) {
-                      return;
-                    }
-                    void api.deleteKanbanColumn(id, column.id);
-                  }}
-                >
-                  ×
-                </button>
+                <div className="kb-col-actions">
+                  <button
+                    type="button"
+                    className="kb-icon-btn"
+                    title={t("common.rename")}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const name = window.prompt(
+                        t("kanban.renameColumn"),
+                        column.title,
+                      );
+                      if (!name || name.trim() === column.title) return;
+                      void api.renameKanbanColumn(id, column.id, name.trim());
+                    }}
+                  >
+                    <IconPencil />
+                  </button>
+                  <button
+                    type="button"
+                    className="kb-icon-btn kb-icon-btn--danger"
+                    title={t("common.delete")}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (
+                        !window.confirm(
+                          t("kanban.deleteColumn", { name: column.title }),
+                        )
+                      ) {
+                        return;
+                      }
+                      void api.deleteKanbanColumn(id, column.id);
+                    }}
+                  >
+                    <IconClose />
+                  </button>
+                </div>
               </div>
             )}
             renderListFooter={(column) => (
               <button
                 type="button"
                 className="kb-add-card"
-                onClick={() => setEditing({ columnId: column.id })}
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditing({ columnId: column.id });
+                }}
               >
                 {t("kanban.addCard")}
               </button>
@@ -553,28 +593,16 @@ function KanbanCardFace({
   const cardLabels = labels.filter((l) => card.labelIds.includes(l.id));
   const assignees = people.filter((p) => card.assigneeIds.includes(p.id));
   const due = isDueDate(card.dueDate) ? card.dueDate : null;
+  const showPriority = card.priority === "high" || card.priority === "low";
+  const showFoot = Boolean(due) || assignees.length > 0;
   return (
-    <div className="kb-card">
-      <div className="kb-card-top">
-        <span className={`kb-priority kb-priority--${card.priority}`}>
-          {card.priority === "high"
-            ? t("kanban.priority.high")
-            : card.priority === "low"
-              ? t("kanban.priority.low")
-              : t("kanban.priority.normal")}
-        </span>
-        {due ? (
-          <span className={`kb-due kb-due--${dueStatus(due)}`}>
-            {formatDueDate(due, locale)}
-          </span>
-        ) : null}
-      </div>
-      <div className="kb-card-title">{card.title}</div>
-      {card.description ? (
-        <div className="kb-card-desc">{card.description}</div>
-      ) : null}
-      {cardLabels.length > 0 && (
-        <div className="kb-card-labels">
+    <div
+      className={
+        "kb-card" + (card.priority === "high" ? " kb-card--high" : "")
+      }
+    >
+      {(cardLabels.length > 0 || showPriority) && (
+        <div className="kb-card-top">
           {cardLabels.map((l) => (
             <span
               key={l.id}
@@ -584,17 +612,86 @@ function KanbanCardFace({
               {l.name}
             </span>
           ))}
-        </div>
-      )}
-      {assignees.length > 0 && (
-        <div className="kb-card-people">
-          {assignees.map((p) => (
-            <span key={p.id} className="kb-avatar" title={p.displayName}>
-              {initials(p.displayName)}
+          {showPriority ? (
+            <span className={`kb-priority kb-priority--${card.priority}`}>
+              {card.priority === "high"
+                ? t("kanban.priority.high")
+                : t("kanban.priority.low")}
             </span>
-          ))}
+          ) : null}
         </div>
       )}
+      <div className="kb-card-title">{card.title}</div>
+      {card.description ? (
+        <div className="kb-card-desc">{card.description}</div>
+      ) : null}
+      {showFoot ? (
+        <div className="kb-card-foot">
+          {due ? (
+            <span
+              className={`kb-due kb-due--${dueStatus(due)}`}
+              title={formatDueDate(due, locale)}
+            >
+              {dueChipText(due, locale, t)}
+            </span>
+          ) : (
+            <span />
+          )}
+          {assignees.length > 0 ? (
+            <div className="kb-card-people">
+              {assignees.map((p) => (
+                <span
+                  key={p.id}
+                  className="kb-avatar"
+                  title={p.displayName}
+                  style={{ background: avatarColor(p.id) }}
+                >
+                  {initials(p.displayName)}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function dueChipText(
+  due: string,
+  locale: string,
+  t: ReturnType<typeof useT>,
+): string {
+  const delta = dueDayDelta(due);
+  if (delta === 0) return t("kanban.due.today");
+  if (delta === 1) return t("kanban.due.tomorrow");
+  if (delta === -1) return t("kanban.due.yesterday");
+  return formatDueDate(due, locale);
+}
+
+function IconPencil() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M18 6 6 18M6 6l12 12"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

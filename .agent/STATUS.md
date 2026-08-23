@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-23 after: kanban card due dates
+_Last updated: 2026-08-23 after: kanban board/card UI polish
 
 ## What's Been Built
 
@@ -28,7 +28,9 @@ _Last updated: 2026-08-23 after: kanban card due dates
 
 ## Current Task / Last Completed
 
-Kanban cards have an optional due date (calendar day only, stored as `YYYY-MM-DD`). Overdue dates highlight on the card. The Kanban page can filter (all / overdue / upcoming / none) and sort by due date (undated last). Editors on `/kanban` and whiteboard embeds can set or clear it. Restart the API once so existing DBs get the `due_date` column.
+Kanban board and cards got a visual pass: quieter columns, cards lead with labels + title, normal priority is hidden, high priority has a left accent, due dates read as Today/Tomorrow, assignees use stacked colored avatars, filters highlight when active and can be cleared. Same card hierarchy on whiteboard embeds.
+
+Previous: optional card due dates (`YYYY-MM-DD`). Restart the API once so existing DBs get the `due_date` column.
 
 Previous: priority, assignees, labels.
 

@@ -338,6 +338,11 @@ export const en = {
   "kanban.filter.overdue": "Overdue",
   "kanban.filter.upcoming": "Upcoming",
   "kanban.filter.noDue": "No due date",
+  "kanban.clearFilters": "Clear filters",
+  "kanban.filter.empty": "No cards match these filters.",
+  "kanban.due.today": "Today",
+  "kanban.due.tomorrow": "Tomorrow",
+  "kanban.due.yesterday": "Yesterday",
 
   "kanbanEmbed.pickTitle": "Place from Kanban",
   "kanbanEmbed.pickHelp":
