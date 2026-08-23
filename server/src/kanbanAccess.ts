@@ -54,6 +54,29 @@ export function memberIdsWithKanbanAccess(boardId: string): Set<string> {
   return ids;
 }
 
+export type KanbanPerson = {
+  id: string;
+  displayName: string;
+  email: string;
+};
+
+/** Admins plus members who can open this kanban board. */
+export function listKanbanPeople(boardId: string): KanbanPerson[] {
+  const allowed = memberIdsWithKanbanAccess(boardId);
+  const users = db
+    .query(
+      `SELECT id, display_name, email, role FROM users ORDER BY display_name COLLATE NOCASE ASC`,
+    )
+    .all() as Pick<UserRow, "id" | "display_name" | "email" | "role">[];
+  return users
+    .filter((u) => u.role === "admin" || allowed.has(u.id))
+    .map((u) => ({
+      id: u.id,
+      displayName: u.display_name,
+      email: u.email,
+    }));
+}
+
 export function listKanbanBoardsForUser(
   userId: string,
   role: UserRole,

@@ -54,7 +54,7 @@ nanocore/
 - **Shape owner** is stamped only on local (`source === 'user'`) creates of note/text/image/geo. Name is a snapshot at place-time. Visibility preference is per-browser (`localStorage`), not synced.
 - **InFrontOfTheCanvas** is a single slot — overlays compose in `BoardCanvasOverlays`
 - **Resizable notes**: `NanocoreNoteShapeUtil` stores `{w,h}` on `shape.meta.nanocoreNoteSize` (stock schema unchanged). Resize handles are unlocked; text wraps to the new box.
-- **Kanban is not tldraw.** Own tables (`kanban_boards/columns/cards/members/groups`), REST mutations, WebSocket `/api/kanban-sync/:id` broadcasts full state after each change. Access matches whiteboards (admins always; members via people + groups).
+- **Kanban is not tldraw.** Own tables (`kanban_boards/columns/cards/members/groups`, plus `kanban_labels`, `kanban_card_assignees`, `kanban_card_labels`), REST mutations, WebSocket `/api/kanban-sync/:id` broadcasts full state after each change. Access matches whiteboards (admins always; members via people + groups). Cards carry priority, assignees, and labels in that snapshot.
 - **Shell**: sidebar for product areas (Whiteboards / Kanban / Administration). Tldraw canvas stays full-bleed with its own top bar.
 - **Kanban on whiteboards**: custom tldraw shapes hold IDs only; live title/description/column membership comes from the kanban WS. Schema is registered on both `useSync` and `TLSocketRoom`.
 

@@ -41,12 +41,31 @@ export type KanbanColumn = {
   sortOrder: number;
 };
 
+export type KanbanPriority = "high" | "normal" | "low";
+
+export type KanbanPerson = {
+  id: string;
+  displayName: string;
+  email: string;
+};
+
+export type KanbanLabel = {
+  id: string;
+  boardId: string;
+  name: string;
+  color: string;
+  sortOrder: number;
+};
+
 export type KanbanCard = {
   id: string;
   boardId: string;
   columnId: string;
   title: string;
   description: string;
+  priority: KanbanPriority;
+  assigneeIds: string[];
+  labelIds: string[];
   sortOrder: number;
   createdBy: string | null;
   createdAt: string;
@@ -57,6 +76,16 @@ export type KanbanState = {
   board: Board;
   columns: KanbanColumn[];
   cards: KanbanCard[];
+  labels: KanbanLabel[];
+  people: KanbanPerson[];
+};
+
+export type KanbanCardFields = {
+  title?: string;
+  description?: string;
+  priority?: KanbanPriority;
+  assigneeIds?: string[];
+  labelIds?: string[];
 };
 
 export type AccessGroup = {
@@ -396,21 +425,48 @@ export const api = {
 
   addKanbanCard: (
     id: string,
-    body: { columnId: string; title: string; description?: string },
+    body: {
+      columnId: string;
+      title: string;
+      description?: string;
+      priority?: KanbanPriority;
+      assigneeIds?: string[];
+      labelIds?: string[];
+    },
   ) =>
     request<{ card: KanbanCard }>(`/api/kanban/${id}/cards`, {
       method: "POST",
       body: JSON.stringify(body),
     }),
 
-  updateKanbanCard: (
-    id: string,
-    cardId: string,
-    body: { title?: string; description?: string },
-  ) =>
+  updateKanbanCard: (id: string, cardId: string, body: KanbanCardFields) =>
     request<{ ok: boolean }>(`/api/kanban/${id}/cards/${cardId}`, {
       method: "PATCH",
       body: JSON.stringify(body),
+    }),
+
+  createKanbanLabel: (
+    id: string,
+    body: { name: string; color: string },
+  ) =>
+    request<{ label: KanbanLabel }>(`/api/kanban/${id}/labels`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateKanbanLabel: (
+    id: string,
+    labelId: string,
+    body: { name?: string; color?: string },
+  ) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/labels/${labelId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  deleteKanbanLabel: (id: string, labelId: string) =>
+    request<{ ok: boolean }>(`/api/kanban/${id}/labels/${labelId}`, {
+      method: "DELETE",
     }),
 
   moveKanbanCard: (

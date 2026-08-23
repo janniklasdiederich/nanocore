@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Kanban,
@@ -10,13 +10,26 @@ import {
   api,
   ApiError,
   type KanbanCard,
+  type KanbanLabel,
+  type KanbanPerson,
+  type KanbanPriority,
   type KanbanState,
 } from "../api";
 import { AppShell } from "../components/AppShell";
 import { syncWsBase } from "../config";
+import { initials, labelTextColor } from "../kanbanDisplay";
 import { useT } from "../i18n";
 import { useDocumentTitle } from "../useDocumentTitle";
 import { KanbanCardEditor } from "./KanbanCardEditor";
+import { KanbanLabelsDialog } from "./KanbanLabelsDialog";
+
+type SortKey = "board" | "priority" | "title";
+type View = {
+  sort: SortKey;
+  priority: "" | KanbanPriority;
+  assignee: "" | "none" | string;
+  label: "" | "none" | string;
+};
 
 export function KanbanBoardPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +41,15 @@ export function KanbanBoardPage() {
     columnId: string;
     card?: KanbanCard;
   } | null>(null);
+  const [labelsOpen, setLabelsOpen] = useState(false);
+  const [view, setView] = useState<View>({
+    sort: "board",
+    priority: "",
+    assignee: "",
+    label: "",
+  });
+  const viewRef = useRef(view);
+  viewRef.current = view;
 
   useDocumentTitle(state?.board.name ?? t("kanban.loadingName"));
 
@@ -40,8 +62,9 @@ export function KanbanBoardPage() {
       try {
         const initial = await api.getKanban(id);
         if (closed) return;
-        setState(initial);
-        setDataSource(toKitData(initial));
+        const first = normalizeKanbanState(initial);
+        setState(first);
+        setDataSource(toKitData(first, viewRef.current));
         const { token } = await api.getKanbanSyncToken(id);
         const sessionId = crypto.randomUUID();
         const url = `${syncWsBase()}/api/kanban-sync/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}&sessionId=${encodeURIComponent(sessionId)}`;
@@ -52,13 +75,9 @@ export function KanbanBoardPage() {
               type?: string;
             };
             if (msg.type !== "state" || !msg.board) return;
-            const next = {
-              board: msg.board,
-              columns: msg.columns,
-              cards: msg.cards,
-            };
+            const next = normalizeKanbanState(msg);
             setState(next);
-            setDataSource(toKitData(next));
+            setDataSource(toKitData(next, viewRef.current));
           } catch {
             // ignore malformed
           }
@@ -84,24 +103,34 @@ export function KanbanBoardPage() {
     return map;
   }, [state]);
 
+  useEffect(() => {
+    if (state) setDataSource(toKitData(state, view));
+  }, [state, view]);
+
   const configMap = useMemo(
     () => ({
       card: {
         isDraggable: true,
         render: ({ data }: { data: { id: string; title: string } }) => {
           const card = cardsById.get(data.id);
+          if (!card) {
+            return (
+              <div className="kb-card">
+                <div className="kb-card-title">{data.title}</div>
+              </div>
+            );
+          }
           return (
-            <div className="kb-card">
-              <div className="kb-card-title">{data.title}</div>
-              {card?.description ? (
-                <div className="kb-card-desc">{card.description}</div>
-              ) : null}
-            </div>
+            <KanbanCardFace
+              card={card}
+              labels={state?.labels ?? []}
+              people={state?.people ?? []}
+            />
           );
         },
       },
     }),
-    [cardsById],
+    [cardsById, state],
   );
 
   const onCardMove = useCallback(
@@ -174,6 +203,79 @@ export function KanbanBoardPage() {
       <div className="kb-page">
         <div className="kb-toolbar">
           <h1>{state.board.name}</h1>
+          <div className="kb-toolbar-tools">
+            <label className="kb-filter">
+              <span>{t("kanban.sort")}</span>
+              <select
+                value={view.sort}
+                onChange={(e) =>
+                  setView((v) => ({ ...v, sort: e.target.value as SortKey }))
+                }
+              >
+                <option value="board">{t("kanban.sort.board")}</option>
+                <option value="priority">{t("kanban.sort.priority")}</option>
+                <option value="title">{t("kanban.sort.title")}</option>
+              </select>
+            </label>
+            <label className="kb-filter">
+              <span>{t("kanban.priority")}</span>
+              <select
+                value={view.priority}
+                onChange={(e) =>
+                  setView((v) => ({
+                    ...v,
+                    priority: e.target.value as View["priority"],
+                  }))
+                }
+              >
+                <option value="">{t("kanban.filter.all")}</option>
+                <option value="high">{t("kanban.priority.high")}</option>
+                <option value="normal">{t("kanban.priority.normal")}</option>
+                <option value="low">{t("kanban.priority.low")}</option>
+              </select>
+            </label>
+            <label className="kb-filter">
+              <span>{t("kanban.assignees")}</span>
+              <select
+                value={view.assignee}
+                onChange={(e) =>
+                  setView((v) => ({ ...v, assignee: e.target.value }))
+                }
+              >
+                <option value="">{t("kanban.filter.all")}</option>
+                <option value="none">{t("kanban.filter.unassigned")}</option>
+                {state.people.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="kb-filter">
+              <span>{t("kanban.labels")}</span>
+              <select
+                value={view.label}
+                onChange={(e) =>
+                  setView((v) => ({ ...v, label: e.target.value }))
+                }
+              >
+                <option value="">{t("kanban.filter.all")}</option>
+                <option value="none">{t("kanban.filter.noLabels")}</option>
+                {state.labels.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setLabelsOpen(true)}
+            >
+              {t("kanban.manageLabels")}
+            </button>
+          </div>
         </div>
         <div className="kb-board">
           <Kanban
@@ -258,18 +360,16 @@ export function KanbanBoardPage() {
       {editing && (
         <KanbanCardEditor
           card={editing.card}
+          people={state.people}
+          labels={state.labels}
           onClose={() => setEditing(null)}
-          onSave={async (title, description) => {
+          onSave={async (fields) => {
             if (editing.card) {
-              await api.updateKanbanCard(id, editing.card.id, {
-                title,
-                description,
-              });
+              await api.updateKanbanCard(id, editing.card.id, fields);
             } else {
               await api.addKanbanCard(id, {
                 columnId: editing.columnId,
-                title,
-                description,
+                ...fields,
               });
             }
             setEditing(null);
@@ -282,13 +382,77 @@ export function KanbanBoardPage() {
                 }
               : undefined
           }
+          onCreateLabel={(name, color) =>
+            api.createKanbanLabel(id, { name, color }).then((r) => r.label)
+          }
+        />
+      )}
+      {labelsOpen && (
+        <KanbanLabelsDialog
+          boardId={id}
+          labels={state.labels}
+          onClose={() => setLabelsOpen(false)}
         />
       )}
     </AppShell>
   );
 }
 
-function toKitData(state: KanbanState): BoardData {
+function normalizeKanbanState(raw: KanbanState): KanbanState {
+  return {
+    ...raw,
+    labels: raw.labels ?? [],
+    people: raw.people ?? [],
+    cards: (raw.cards ?? []).map((c) => ({
+      ...c,
+      priority:
+        c.priority === "high" || c.priority === "low" ? c.priority : "normal",
+      assigneeIds: c.assigneeIds ?? [],
+      labelIds: c.labelIds ?? [],
+    })),
+  };
+}
+
+function matchesView(card: KanbanCard, view: View): boolean {
+  if (view.priority && card.priority !== view.priority) return false;
+  if (view.assignee === "none" && card.assigneeIds.length > 0) return false;
+  if (
+    view.assignee &&
+    view.assignee !== "none" &&
+    !card.assigneeIds.includes(view.assignee)
+  ) {
+    return false;
+  }
+  if (view.label === "none" && card.labelIds.length > 0) return false;
+  if (
+    view.label &&
+    view.label !== "none" &&
+    !card.labelIds.includes(view.label)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function sortCards(cards: KanbanCard[], sort: SortKey): KanbanCard[] {
+  const copy = [...cards];
+  if (sort === "priority") {
+    const rank = { high: 0, normal: 1, low: 2 };
+    copy.sort(
+      (a, b) =>
+        rank[a.priority] - rank[b.priority] || a.sortOrder - b.sortOrder,
+    );
+  } else if (sort === "title") {
+    copy.sort(
+      (a, b) => a.title.localeCompare(b.title) || a.sortOrder - b.sortOrder,
+    );
+  } else {
+    copy.sort((a, b) => a.sortOrder - b.sortOrder);
+  }
+  return copy;
+}
+
+function toKitData(state: KanbanState, view: View): BoardData {
   const columns = [...state.columns].sort((a, b) => a.sortOrder - b.sortOrder);
   const rootChildren = columns.map((c) => c.id);
   const data: BoardData = {
@@ -301,9 +465,10 @@ function toKitData(state: KanbanState): BoardData {
     },
   };
   for (const col of columns) {
-    const cards = state.cards
-      .filter((c) => c.columnId === col.id)
-      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const cards = sortCards(
+      state.cards.filter((c) => c.columnId === col.id && matchesView(c, view)),
+      view.sort,
+    );
     data[col.id] = {
       id: col.id,
       title: col.title,
@@ -324,4 +489,57 @@ function toKitData(state: KanbanState): BoardData {
     }
   }
   return data;
+}
+
+function KanbanCardFace({
+  card,
+  labels,
+  people,
+}: {
+  card: KanbanCard;
+  labels: KanbanLabel[];
+  people: KanbanPerson[];
+}) {
+  const t = useT();
+  const cardLabels = labels.filter((l) => card.labelIds.includes(l.id));
+  const assignees = people.filter((p) => card.assigneeIds.includes(p.id));
+  return (
+    <div className="kb-card">
+      <div className="kb-card-top">
+        <span className={`kb-priority kb-priority--${card.priority}`}>
+          {card.priority === "high"
+            ? t("kanban.priority.high")
+            : card.priority === "low"
+              ? t("kanban.priority.low")
+              : t("kanban.priority.normal")}
+        </span>
+      </div>
+      <div className="kb-card-title">{card.title}</div>
+      {card.description ? (
+        <div className="kb-card-desc">{card.description}</div>
+      ) : null}
+      {cardLabels.length > 0 && (
+        <div className="kb-card-labels">
+          {cardLabels.map((l) => (
+            <span
+              key={l.id}
+              className="kb-label-chip"
+              style={{ background: l.color, color: labelTextColor(l.color) }}
+            >
+              {l.name}
+            </span>
+          ))}
+        </div>
+      )}
+      {assignees.length > 0 && (
+        <div className="kb-card-people">
+          {assignees.map((p) => (
+            <span key={p.id} className="kb-avatar" title={p.displayName}>
+              {initials(p.displayName)}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

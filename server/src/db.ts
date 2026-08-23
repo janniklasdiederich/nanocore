@@ -135,16 +135,41 @@ db.exec(`
     column_id TEXT NOT NULL REFERENCES kanban_columns(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
+    priority TEXT NOT NULL DEFAULT 'normal'
+      CHECK (priority IN ('low', 'normal', 'high')),
     sort_order INTEGER NOT NULL,
     created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS kanban_labels (
+    id TEXT PRIMARY KEY,
+    board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    sort_order INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS kanban_card_assignees (
+    card_id TEXT NOT NULL REFERENCES kanban_cards(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (card_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS kanban_card_labels (
+    card_id TEXT NOT NULL REFERENCES kanban_cards(id) ON DELETE CASCADE,
+    label_id TEXT NOT NULL REFERENCES kanban_labels(id) ON DELETE CASCADE,
+    PRIMARY KEY (card_id, label_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_kanban_members_user ON kanban_members(user_id);
   CREATE INDEX IF NOT EXISTS idx_kanban_groups_group ON kanban_groups(group_id);
   CREATE INDEX IF NOT EXISTS idx_kanban_columns_board ON kanban_columns(board_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_kanban_cards_col ON kanban_cards(column_id, sort_order);
+  CREATE INDEX IF NOT EXISTS idx_kanban_labels_board ON kanban_labels(board_id, sort_order);
+  CREATE INDEX IF NOT EXISTS idx_kanban_card_assignees_user ON kanban_card_assignees(user_id);
 `);
 
 export type UserRole = "admin" | "member";
@@ -168,6 +193,14 @@ export type OrgRow = {
 
 try {
   db.exec(`ALTER TABLE org ADD COLUMN logo_filename TEXT`);
+} catch {
+  // already exists
+}
+
+try {
+  db.exec(
+    `ALTER TABLE kanban_cards ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal'`,
+  );
 } catch {
   // already exists
 }

@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: tldraw-themed kanban picker/embeds/editor
+_Last updated: 2026-08-20 after: kanban priority, assignees, labels, filter/sort
 
 ## What's Been Built
 
@@ -24,11 +24,11 @@ _Last updated: 2026-08-20 after: tldraw-themed kanban picker/embeds/editor
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
 - **Sidebar shell** on list/admin pages: Whiteboards / Kanban / Administration. Tldraw canvas stays full-bleed.
-- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards are title + description. Default columns To Do / In Progress / Done.
+- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Whiteboard embeds show the extra fields.
 
 ## Current Task / Last Completed
 
-Live Kanban embeds on whiteboards: toolbar picker places a card or a whole column as a tldraw shape. Shapes store `{boardId, cardId|columnId}` and subscribe to the kanban WS, so edits on `/kanban` show up on the canvas. Click a card on the embed to edit/delete via the same API. Drag-and-drop between columns on the canvas is not in this slice.
+Kanban cards now have priority (high/normal/low), multiple assignees (people who can open the board), and per-board colored labels. The Kanban page filters by those fields and can sort by board order, priority, or title. Whiteboard card/column embeds show the same metadata; filter/sort stays on `/kanban`.
 
 Previous: sidebar + kanban boards.
 

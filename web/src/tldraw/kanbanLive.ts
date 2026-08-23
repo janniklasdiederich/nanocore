@@ -46,7 +46,9 @@ async function start(boardId: string, entry: Entry) {
           state: {
             board: msg.board,
             columns: msg.columns,
-            cards: msg.cards,
+            cards: msg.cards ?? [],
+            labels: msg.labels ?? [],
+            people: msg.people ?? [],
           },
         };
         notify(entry);

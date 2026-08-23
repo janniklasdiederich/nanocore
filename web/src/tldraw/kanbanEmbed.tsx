@@ -9,6 +9,7 @@ import {
   type TLBaseShape,
 } from "tldraw";
 import { api, type KanbanCard } from "../api";
+import { initials, labelTextColor } from "../kanbanDisplay";
 import { useT } from "../i18n";
 import { KanbanCardEditDialog } from "./KanbanCardEditDialog";
 import {
@@ -221,8 +222,20 @@ function EmbedCard({
   boardId: string;
   card: KanbanCard;
 }) {
+  const t = useT();
+  const live = useKanbanLive(boardId);
   const { addDialog } = useDialogs();
   const origin = useRef<{ x: number; y: number } | null>(null);
+  const labels =
+    live.status === "ok"
+      ? live.state.labels.filter((l) => (card.labelIds ?? []).includes(l.id))
+      : [];
+  const people =
+    live.status === "ok"
+      ? live.state.people.filter((p) => (card.assigneeIds ?? []).includes(p.id))
+      : [];
+  const priority =
+    card.priority === "high" || card.priority === "low" ? card.priority : "normal";
 
   function openEdit() {
     addDialog({
@@ -278,10 +291,39 @@ function EmbedCard({
         window.addEventListener("pointercancel", onCancel);
       }}
     >
+      <span className={`nc-kb-priority nc-kb-priority--${priority}`}>
+        {priority === "high"
+          ? t("kanban.priority.high")
+          : priority === "low"
+            ? t("kanban.priority.low")
+            : t("kanban.priority.normal")}
+      </span>
       <div className="nc-kb-embed-card-title">{card.title}</div>
       {card.description ? (
         <div className="nc-kb-embed-card-desc">{card.description}</div>
       ) : null}
+      {labels.length > 0 && (
+        <div className="nc-kb-embed-tags">
+          {labels.map((l) => (
+            <span
+              key={l.id}
+              className="nc-kb-chip"
+              style={{ background: l.color, color: labelTextColor(l.color) }}
+            >
+              {l.name}
+            </span>
+          ))}
+        </div>
+      )}
+      {people.length > 0 && (
+        <div className="nc-kb-embed-people">
+          {people.map((p) => (
+            <span key={p.id} className="nc-kb-avatar" title={p.displayName}>
+              {initials(p.displayName)}
+            </span>
+          ))}
+        </div>
+      )}
     </button>
   );
 }

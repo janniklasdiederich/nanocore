@@ -18,15 +18,19 @@ import { closeKanbanRoom } from "../kanbanRooms";
 import {
   addCard,
   addColumn,
+  addLabel,
   createKanbanBoard,
   deleteCard,
   deleteColumn,
+  deleteLabel,
+  isKanbanPriority,
   loadKanbanState,
   mapKanbanBoard,
   moveCard,
   renameColumn,
   reorderColumns,
   updateCard,
+  updateLabel,
 } from "../kanbanState";
 import { kickUsersFromBoard } from "../wsConnections";
 
@@ -242,6 +246,28 @@ kanbanRoutes.post("/:id/cards", async (c) => {
   }
   const card = addCard(id, columnId, title, description, user.id);
   if (!card) return c.json({ error: "Column not found" }, 404);
+  const extra: {
+    priority?: (typeof card)["priority"];
+    assigneeIds?: string[];
+    labelIds?: string[];
+  } = {};
+  if (isKanbanPriority(body?.priority)) extra.priority = body.priority;
+  if (Array.isArray(body?.assigneeIds)) {
+    extra.assigneeIds = body.assigneeIds.filter(
+      (v: unknown): v is string => typeof v === "string",
+    );
+  }
+  if (Array.isArray(body?.labelIds)) {
+    extra.labelIds = body.labelIds.filter(
+      (v: unknown): v is string => typeof v === "string",
+    );
+  }
+  if (Object.keys(extra).length) {
+    updateCard(id, card.id, extra);
+    const state = loadKanbanState(id);
+    const fresh = state?.cards.find((c) => c.id === card.id);
+    return c.json({ card: fresh ?? card }, 201);
+  }
   return c.json({ card }, 201);
 });
 
@@ -255,7 +281,13 @@ kanbanRoutes.patch("/:id/cards/:cardId", async (c) => {
     return c.json({ error: "Board not found" }, 404);
   }
   const body = await c.req.json().catch(() => null);
-  const fields: { title?: string; description?: string } = {};
+  const fields: {
+    title?: string;
+    description?: string;
+    priority?: "high" | "normal" | "low";
+    assigneeIds?: string[];
+    labelIds?: string[];
+  } = {};
   if (typeof body?.title === "string") {
     const title = cleanTitle(body.title, "", 200);
     if (!title) return c.json({ error: "Invalid title" }, 400);
@@ -267,9 +299,84 @@ kanbanRoutes.patch("/:id/cards/:cardId", async (c) => {
     }
     fields.description = body.description.trim();
   }
+  if (body?.priority !== undefined) {
+    if (!isKanbanPriority(body.priority)) {
+      return c.json({ error: "Invalid priority" }, 400);
+    }
+    fields.priority = body.priority;
+  }
+  if (body?.assigneeIds !== undefined) {
+    if (!Array.isArray(body.assigneeIds)) {
+      return c.json({ error: "assigneeIds array required" }, 400);
+    }
+    fields.assigneeIds = body.assigneeIds.filter(
+      (v: unknown): v is string => typeof v === "string",
+    );
+  }
+  if (body?.labelIds !== undefined) {
+    if (!Array.isArray(body.labelIds)) {
+      return c.json({ error: "labelIds array required" }, 400);
+    }
+    fields.labelIds = body.labelIds.filter(
+      (v: unknown): v is string => typeof v === "string",
+    );
+  }
   if (!updateCard(id, cardId, fields)) {
     return c.json({ error: "Card not found" }, 404);
   }
+  return c.json({ ok: true });
+});
+
+kanbanRoutes.post("/:id/labels", async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+  const id = c.req.param("id");
+  const user = c.get("user");
+  if (!id || !userCanAccessKanban(user.id, id) || !boardExists(id)) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+  const body = await c.req.json().catch(() => null);
+  const name = cleanTitle(body?.name, "", 40);
+  const color = typeof body?.color === "string" ? body.color.trim() : "";
+  if (!name) return c.json({ error: "Invalid name" }, 400);
+  const label = addLabel(id, name, color);
+  if (!label) return c.json({ error: "Invalid color" }, 400);
+  return c.json({ label }, 201);
+});
+
+kanbanRoutes.patch("/:id/labels/:labelId", async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+  const id = c.req.param("id");
+  const labelId = c.req.param("labelId");
+  const user = c.get("user");
+  if (!id || !labelId || !userCanAccessKanban(user.id, id) || !boardExists(id)) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+  const body = await c.req.json().catch(() => null);
+  const fields: { name?: string; color?: string } = {};
+  if (typeof body?.name === "string") {
+    const name = cleanTitle(body.name, "", 40);
+    if (!name) return c.json({ error: "Invalid name" }, 400);
+    fields.name = name;
+  }
+  if (typeof body?.color === "string") fields.color = body.color.trim();
+  if (!updateLabel(id, labelId, fields)) {
+    return c.json({ error: "Label not found" }, 404);
+  }
+  return c.json({ ok: true });
+});
+
+kanbanRoutes.delete("/:id/labels/:labelId", async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+  const id = c.req.param("id");
+  const labelId = c.req.param("labelId");
+  const user = c.get("user");
+  if (!id || !labelId || !userCanAccessKanban(user.id, id) || !boardExists(id)) {
+    return c.json({ error: "Board not found" }, 404);
+  }
+  if (!deleteLabel(id, labelId)) return c.json({ error: "Label not found" }, 404);
   return c.json({ ok: true });
 });
 
