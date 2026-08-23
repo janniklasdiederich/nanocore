@@ -64,6 +64,7 @@ export type KanbanCard = {
   title: string;
   description: string;
   priority: KanbanPriority;
+  dueDate: string | null;
   assigneeIds: string[];
   labelIds: string[];
   sortOrder: number;
@@ -84,6 +85,7 @@ export type KanbanCardFields = {
   title?: string;
   description?: string;
   priority?: KanbanPriority;
+  dueDate?: string | null;
   assigneeIds?: string[];
   labelIds?: string[];
 };
@@ -430,6 +432,7 @@ export const api = {
       title: string;
       description?: string;
       priority?: KanbanPriority;
+      dueDate?: string | null;
       assigneeIds?: string[];
       labelIds?: string[];
     },

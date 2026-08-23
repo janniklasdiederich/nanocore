@@ -15,6 +15,22 @@ export function isKanbanPriority(value: unknown): value is KanbanPriority {
   );
 }
 
+const DUE_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Calendar date only (`YYYY-MM-DD`). Empty string / null clears. */
+export function isDueDate(value: unknown): value is string {
+  if (typeof value !== "string" || !DUE_DATE.test(value)) return false;
+  const y = Number(value.slice(0, 4));
+  const m = Number(value.slice(5, 7));
+  const d = Number(value.slice(8, 10));
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y &&
+    dt.getUTCMonth() === m - 1 &&
+    dt.getUTCDate() === d
+  );
+}
+
 export type KanbanColumn = {
   id: string;
   boardId: string;
@@ -29,6 +45,7 @@ export type KanbanCard = {
   title: string;
   description: string;
   priority: KanbanPriority;
+  dueDate: string | null;
   assigneeIds: string[];
   labelIds: string[];
   sortOrder: number;
@@ -107,6 +124,7 @@ function mapCard(
     title: string;
     description: string;
     priority?: string;
+    due_date?: string | null;
     sort_order: number;
     created_by: string | null;
     created_at: string;
@@ -122,6 +140,7 @@ function mapCard(
     title: row.title,
     description: row.description,
     priority: isKanbanPriority(row.priority) ? row.priority : "normal",
+    dueDate: isDueDate(row.due_date) ? row.due_date : null,
     assigneeIds,
     labelIds,
     sortOrder: row.sort_order,
@@ -139,6 +158,7 @@ function loadCard(cardId: string): KanbanCard {
     title: string;
     description: string;
     priority?: string;
+    due_date?: string | null;
     sort_order: number;
     created_by: string | null;
     created_at: string;
@@ -225,6 +245,7 @@ export function loadKanbanState(boardId: string): KanbanState | null {
     title: string;
     description: string;
     priority?: string;
+    due_date?: string | null;
     sort_order: number;
     created_by: string | null;
     created_at: string;
@@ -423,6 +444,7 @@ export function updateCard(
     title?: string;
     description?: string;
     priority?: KanbanPriority;
+    dueDate?: string | null;
     assigneeIds?: string[];
     labelIds?: string[];
   },
@@ -445,6 +467,11 @@ export function updateCard(
     db.query(
       `UPDATE kanban_cards SET priority = ?, updated_at = datetime('now') WHERE id = ?`,
     ).run(fields.priority, cardId);
+  }
+  if (fields.dueDate !== undefined) {
+    db.query(
+      `UPDATE kanban_cards SET due_date = ?, updated_at = datetime('now') WHERE id = ?`,
+    ).run(fields.dueDate, cardId);
   }
   if (fields.assigneeIds) {
     setCardAssignees(boardId, cardId, fields.assigneeIds);

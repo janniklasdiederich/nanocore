@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-20 after: kanban priority, assignees, labels, filter/sort
+_Last updated: 2026-08-23 after: kanban card due dates
 
 ## What's Been Built
 
@@ -24,11 +24,13 @@ _Last updated: 2026-08-20 after: kanban priority, assignees, labels, filter/sort
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
 - **Sidebar shell** on list/admin pages: Whiteboards / Kanban / Administration. Tldraw canvas stays full-bleed.
-- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Whiteboard embeds show the extra fields.
+- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), optional due date (YYYY-MM-DD), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Whiteboard embeds show the extra fields.
 
 ## Current Task / Last Completed
 
-Kanban cards now have priority (high/normal/low), multiple assignees (people who can open the board), and per-board colored labels. The Kanban page filters by those fields and can sort by board order, priority, or title. Whiteboard card/column embeds show the same metadata; filter/sort stays on `/kanban`.
+Kanban cards have an optional due date (calendar day only, stored as `YYYY-MM-DD`). Overdue dates highlight on the card. The Kanban page can filter (all / overdue / upcoming / none) and sort by due date (undated last). Editors on `/kanban` and whiteboard embeds can set or clear it. Restart the API once so existing DBs get the `due_date` column.
+
+Previous: priority, assignees, labels.
 
 Previous: sidebar + kanban boards.
 

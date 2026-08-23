@@ -38,6 +38,7 @@ export function KanbanCardEditDialog({
   const [priority, setPriority] = useState<KanbanPriority>(
     card.priority === "high" || card.priority === "low" ? card.priority : "normal",
   );
+  const [dueDate, setDueDate] = useState(card.dueDate ?? "");
   const [assigneeIds, setAssigneeIds] = useState<Set<string>>(
     () => new Set(card.assigneeIds ?? []),
   );
@@ -68,6 +69,7 @@ export function KanbanCardEditDialog({
         title: title.trim(),
         description: description.trim(),
         priority,
+        dueDate: dueDate || null,
         assigneeIds: [...assigneeIds],
         labelIds: [...labelIds],
       });
@@ -158,6 +160,28 @@ export function KanbanCardEditDialog({
                 </option>
               ))}
             </select>
+          </label>
+          <label className="nc-kb-tl-field" htmlFor="nc-kb-edit-due">
+            <span className="nc-kb-tl-label">{t("kanban.dueDate")}</span>
+            <div className="nc-kb-due-row">
+              <input
+                id="nc-kb-edit-due"
+                className="nc-kb-tl-input"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+              {dueDate ? (
+                <TldrawUiButton
+                  type="low"
+                  onClick={() => setDueDate("")}
+                >
+                  <TldrawUiButtonLabel>
+                    {t("kanban.dueDate.clear")}
+                  </TldrawUiButtonLabel>
+                </TldrawUiButton>
+              ) : null}
+            </div>
           </label>
           <div className="nc-kb-tl-field">
             <span className="nc-kb-tl-label">{t("kanban.assignees")}</span>

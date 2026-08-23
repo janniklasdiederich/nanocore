@@ -137,6 +137,7 @@ db.exec(`
     description TEXT NOT NULL DEFAULT '',
     priority TEXT NOT NULL DEFAULT 'normal'
       CHECK (priority IN ('low', 'normal', 'high')),
+    due_date TEXT,
     sort_order INTEGER NOT NULL,
     created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -201,6 +202,12 @@ try {
   db.exec(
     `ALTER TABLE kanban_cards ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal'`,
   );
+} catch {
+  // already exists
+}
+
+try {
+  db.exec(`ALTER TABLE kanban_cards ADD COLUMN due_date TEXT`);
 } catch {
   // already exists
 }

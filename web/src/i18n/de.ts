@@ -313,6 +313,8 @@ export const de: Messages = {
   "kanban.priority.high": "Hoch",
   "kanban.priority.normal": "Normal",
   "kanban.priority.low": "Niedrig",
+  "kanban.dueDate": "Fällig",
+  "kanban.dueDate.clear": "Datum entfernen",
   "kanban.assignees": "Zugewiesen",
   "kanban.assigneesEmpty": "Noch niemand mit Zugriff zum Zuweisen.",
   "kanban.labels": "Labels",
@@ -330,9 +332,13 @@ export const de: Messages = {
   "kanban.sort.board": "Boardreihenfolge",
   "kanban.sort.priority": "Priorität",
   "kanban.sort.title": "Titel",
+  "kanban.sort.due": "Fälligkeitsdatum",
   "kanban.filter.all": "Alle",
   "kanban.filter.unassigned": "Nicht zugewiesen",
   "kanban.filter.noLabels": "Ohne Labels",
+  "kanban.filter.overdue": "Überfällig",
+  "kanban.filter.upcoming": "Anstehend",
+  "kanban.filter.noDue": "Ohne Fälligkeitsdatum",
 
   "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
   "kanbanEmbed.pickHelp":

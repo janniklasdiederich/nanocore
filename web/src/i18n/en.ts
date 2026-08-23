@@ -313,6 +313,8 @@ export const en = {
   "kanban.priority.high": "High",
   "kanban.priority.normal": "Normal",
   "kanban.priority.low": "Low",
+  "kanban.dueDate": "Due date",
+  "kanban.dueDate.clear": "Clear date",
   "kanban.assignees": "Assignees",
   "kanban.assigneesEmpty": "No one with access to assign yet.",
   "kanban.labels": "Labels",
@@ -329,9 +331,13 @@ export const en = {
   "kanban.sort.board": "Board order",
   "kanban.sort.priority": "Priority",
   "kanban.sort.title": "Title",
+  "kanban.sort.due": "Due date",
   "kanban.filter.all": "All",
   "kanban.filter.unassigned": "Unassigned",
   "kanban.filter.noLabels": "No labels",
+  "kanban.filter.overdue": "Overdue",
+  "kanban.filter.upcoming": "Upcoming",
+  "kanban.filter.noDue": "No due date",
 
   "kanbanEmbed.pickTitle": "Place from Kanban",
   "kanbanEmbed.pickHelp":

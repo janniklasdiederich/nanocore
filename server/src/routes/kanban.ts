@@ -23,6 +23,7 @@ import {
   deleteCard,
   deleteColumn,
   deleteLabel,
+  isDueDate,
   isKanbanPriority,
   loadKanbanState,
   mapKanbanBoard,
@@ -248,10 +249,16 @@ kanbanRoutes.post("/:id/cards", async (c) => {
   if (!card) return c.json({ error: "Column not found" }, 404);
   const extra: {
     priority?: (typeof card)["priority"];
+    dueDate?: string | null;
     assigneeIds?: string[];
     labelIds?: string[];
   } = {};
   if (isKanbanPriority(body?.priority)) extra.priority = body.priority;
+  if (body?.dueDate !== undefined) {
+    if (body.dueDate === null || body.dueDate === "") extra.dueDate = null;
+    else if (isDueDate(body.dueDate)) extra.dueDate = body.dueDate;
+    else return c.json({ error: "Invalid due date" }, 400);
+  }
   if (Array.isArray(body?.assigneeIds)) {
     extra.assigneeIds = body.assigneeIds.filter(
       (v: unknown): v is string => typeof v === "string",
@@ -285,6 +292,7 @@ kanbanRoutes.patch("/:id/cards/:cardId", async (c) => {
     title?: string;
     description?: string;
     priority?: "high" | "normal" | "low";
+    dueDate?: string | null;
     assigneeIds?: string[];
     labelIds?: string[];
   } = {};
@@ -304,6 +312,11 @@ kanbanRoutes.patch("/:id/cards/:cardId", async (c) => {
       return c.json({ error: "Invalid priority" }, 400);
     }
     fields.priority = body.priority;
+  }
+  if (body?.dueDate !== undefined) {
+    if (body.dueDate === null || body.dueDate === "") fields.dueDate = null;
+    else if (isDueDate(body.dueDate)) fields.dueDate = body.dueDate;
+    else return c.json({ error: "Invalid due date" }, 400);
   }
   if (body?.assigneeIds !== undefined) {
     if (!Array.isArray(body.assigneeIds)) {

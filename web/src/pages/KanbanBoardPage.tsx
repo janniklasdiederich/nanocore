@@ -17,16 +17,25 @@ import {
 } from "../api";
 import { AppShell } from "../components/AppShell";
 import { syncWsBase } from "../config";
-import { initials, labelTextColor } from "../kanbanDisplay";
-import { useT } from "../i18n";
+import {
+  dueStatus,
+  formatDueDate,
+  initials,
+  isDueDate,
+  labelTextColor,
+  localTodayIso,
+} from "../kanbanDisplay";
+import { useI18n, useT } from "../i18n";
 import { useDocumentTitle } from "../useDocumentTitle";
 import { KanbanCardEditor } from "./KanbanCardEditor";
 import { KanbanLabelsDialog } from "./KanbanLabelsDialog";
 
-type SortKey = "board" | "priority" | "title";
+type SortKey = "board" | "priority" | "title" | "due";
+type DueFilter = "" | "overdue" | "upcoming" | "none";
 type View = {
   sort: SortKey;
   priority: "" | KanbanPriority;
+  due: DueFilter;
   assignee: "" | "none" | string;
   label: "" | "none" | string;
 };
@@ -45,6 +54,7 @@ export function KanbanBoardPage() {
   const [view, setView] = useState<View>({
     sort: "board",
     priority: "",
+    due: "",
     assignee: "",
     label: "",
   });
@@ -215,6 +225,7 @@ export function KanbanBoardPage() {
                 <option value="board">{t("kanban.sort.board")}</option>
                 <option value="priority">{t("kanban.sort.priority")}</option>
                 <option value="title">{t("kanban.sort.title")}</option>
+                <option value="due">{t("kanban.sort.due")}</option>
               </select>
             </label>
             <label className="kb-filter">
@@ -232,6 +243,23 @@ export function KanbanBoardPage() {
                 <option value="high">{t("kanban.priority.high")}</option>
                 <option value="normal">{t("kanban.priority.normal")}</option>
                 <option value="low">{t("kanban.priority.low")}</option>
+              </select>
+            </label>
+            <label className="kb-filter">
+              <span>{t("kanban.dueDate")}</span>
+              <select
+                value={view.due}
+                onChange={(e) =>
+                  setView((v) => ({
+                    ...v,
+                    due: e.target.value as DueFilter,
+                  }))
+                }
+              >
+                <option value="">{t("kanban.filter.all")}</option>
+                <option value="overdue">{t("kanban.filter.overdue")}</option>
+                <option value="upcoming">{t("kanban.filter.upcoming")}</option>
+                <option value="none">{t("kanban.filter.noDue")}</option>
               </select>
             </label>
             <label className="kb-filter">
@@ -407,6 +435,7 @@ function normalizeKanbanState(raw: KanbanState): KanbanState {
       ...c,
       priority:
         c.priority === "high" || c.priority === "low" ? c.priority : "normal",
+      dueDate: isDueDate(c.dueDate) ? c.dueDate : null,
       assigneeIds: c.assigneeIds ?? [],
       labelIds: c.labelIds ?? [],
     })),
@@ -415,6 +444,16 @@ function normalizeKanbanState(raw: KanbanState): KanbanState {
 
 function matchesView(card: KanbanCard, view: View): boolean {
   if (view.priority && card.priority !== view.priority) return false;
+  if (view.due) {
+    const today = localTodayIso();
+    if (view.due === "none" && card.dueDate) return false;
+    if (view.due === "overdue" && (!card.dueDate || card.dueDate >= today)) {
+      return false;
+    }
+    if (view.due === "upcoming" && (!card.dueDate || card.dueDate < today)) {
+      return false;
+    }
+  }
   if (view.assignee === "none" && card.assigneeIds.length > 0) return false;
   if (
     view.assignee &&
@@ -446,6 +485,15 @@ function sortCards(cards: KanbanCard[], sort: SortKey): KanbanCard[] {
     copy.sort(
       (a, b) => a.title.localeCompare(b.title) || a.sortOrder - b.sortOrder,
     );
+  } else if (sort === "due") {
+    copy.sort((a, b) => {
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.localeCompare(b.dueDate) || a.sortOrder - b.sortOrder;
+      }
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return a.sortOrder - b.sortOrder;
+    });
   } else {
     copy.sort((a, b) => a.sortOrder - b.sortOrder);
   }
@@ -501,8 +549,10 @@ function KanbanCardFace({
   people: KanbanPerson[];
 }) {
   const t = useT();
+  const { locale } = useI18n();
   const cardLabels = labels.filter((l) => card.labelIds.includes(l.id));
   const assignees = people.filter((p) => card.assigneeIds.includes(p.id));
+  const due = isDueDate(card.dueDate) ? card.dueDate : null;
   return (
     <div className="kb-card">
       <div className="kb-card-top">
@@ -513,6 +563,11 @@ function KanbanCardFace({
               ? t("kanban.priority.low")
               : t("kanban.priority.normal")}
         </span>
+        {due ? (
+          <span className={`kb-due kb-due--${dueStatus(due)}`}>
+            {formatDueDate(due, locale)}
+          </span>
+        ) : null}
       </div>
       <div className="kb-card-title">{card.title}</div>
       {card.description ? (

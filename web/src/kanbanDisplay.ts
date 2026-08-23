@@ -19,6 +19,48 @@ export function initials(name: string): string {
   return (a + b).toUpperCase() || "?";
 }
 
+const DUE_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+export function isDueDate(value: unknown): value is string {
+  if (typeof value !== "string" || !DUE_DATE.test(value)) return false;
+  const y = Number(value.slice(0, 4));
+  const m = Number(value.slice(5, 7));
+  const d = Number(value.slice(8, 10));
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return (
+    dt.getUTCFullYear() === y &&
+    dt.getUTCMonth() === m - 1 &&
+    dt.getUTCDate() === d
+  );
+}
+
+export function localTodayIso(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export type DueStatus = "overdue" | "today" | "upcoming";
+
+export function dueStatus(dueDate: string, today = localTodayIso()): DueStatus {
+  if (dueDate < today) return "overdue";
+  if (dueDate === today) return "today";
+  return "upcoming";
+}
+
+export function formatDueDate(dueDate: string, locale: string): string {
+  const y = Number(dueDate.slice(0, 4));
+  const m = Number(dueDate.slice(5, 7));
+  const d = Number(dueDate.slice(8, 10));
+  return new Date(y, m - 1, d).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function labelTextColor(hex: string): "#111" | "#fff" {
   const raw = hex.replace("#", "");
   if (raw.length < 6) return "#fff";

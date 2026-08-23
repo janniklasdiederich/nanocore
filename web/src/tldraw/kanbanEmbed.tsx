@@ -9,8 +9,14 @@ import {
   type TLBaseShape,
 } from "tldraw";
 import { api, type KanbanCard } from "../api";
-import { initials, labelTextColor } from "../kanbanDisplay";
-import { useT } from "../i18n";
+import {
+  dueStatus,
+  formatDueDate,
+  initials,
+  isDueDate,
+  labelTextColor,
+} from "../kanbanDisplay";
+import { useI18n, useT } from "../i18n";
 import { KanbanCardEditDialog } from "./KanbanCardEditDialog";
 import {
   DRAG_THRESHOLD,
@@ -223,6 +229,7 @@ function EmbedCard({
   card: KanbanCard;
 }) {
   const t = useT();
+  const { locale } = useI18n();
   const live = useKanbanLive(boardId);
   const { addDialog } = useDialogs();
   const origin = useRef<{ x: number; y: number } | null>(null);
@@ -236,6 +243,7 @@ function EmbedCard({
       : [];
   const priority =
     card.priority === "high" || card.priority === "low" ? card.priority : "normal";
+  const due = isDueDate(card.dueDate) ? card.dueDate : null;
 
   function openEdit() {
     addDialog({
@@ -291,13 +299,20 @@ function EmbedCard({
         window.addEventListener("pointercancel", onCancel);
       }}
     >
-      <span className={`nc-kb-priority nc-kb-priority--${priority}`}>
-        {priority === "high"
-          ? t("kanban.priority.high")
-          : priority === "low"
-            ? t("kanban.priority.low")
-            : t("kanban.priority.normal")}
-      </span>
+      <div className="nc-kb-embed-meta">
+        <span className={`nc-kb-priority nc-kb-priority--${priority}`}>
+          {priority === "high"
+            ? t("kanban.priority.high")
+            : priority === "low"
+              ? t("kanban.priority.low")
+              : t("kanban.priority.normal")}
+        </span>
+        {due ? (
+          <span className={`nc-kb-due nc-kb-due--${dueStatus(due)}`}>
+            {formatDueDate(due, locale)}
+          </span>
+        ) : null}
+      </div>
       <div className="nc-kb-embed-card-title">{card.title}</div>
       {card.description ? (
         <div className="nc-kb-embed-card-desc">{card.description}</div>

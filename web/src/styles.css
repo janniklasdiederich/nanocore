@@ -1733,7 +1733,47 @@ a.btn-primary:hover {
 }
 
 .kb-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 6px;
+}
+
+.kb-due-row,
+.nc-kb-due-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-due-row input,
+.nc-kb-due-row .nc-kb-tl-input {
+  flex: 1;
+  min-width: 10rem;
+  width: auto;
+}
+
+.kb-due,
+.nc-kb-due {
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-muted);
+}
+
+.kb-due--today {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent-hover);
+}
+
+.kb-due--overdue {
+  background: color-mix(in srgb, var(--danger) 22%, transparent);
+  color: var(--danger);
 }
 
 .kb-priority {
@@ -2232,6 +2272,14 @@ a.btn-primary:hover {
   white-space: pre-wrap;
 }
 
+.nc-kb-embed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
 .nc-kb-priority {
   display: inline-flex;
   font-size: 10px;
@@ -2240,7 +2288,22 @@ a.btn-primary:hover {
   text-transform: uppercase;
   padding: 1px 6px;
   border-radius: 999px;
-  margin-bottom: 4px;
+}
+
+.nc-kb-due {
+  font-size: 10px;
+  background: var(--color-muted-1, rgba(128, 128, 128, 0.12));
+  color: var(--color-text-3, #666);
+}
+
+.nc-kb-due--today {
+  background: color-mix(in srgb, var(--color-selected, #2f80ed) 16%, transparent);
+  color: var(--color-selected, #2f80ed);
+}
+
+.nc-kb-due--overdue {
+  background: color-mix(in srgb, var(--color-danger, #c52828) 18%, transparent);
+  color: var(--color-danger, #c52828);
 }
 
 .nc-kb-priority--high {

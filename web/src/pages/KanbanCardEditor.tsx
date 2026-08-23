@@ -38,6 +38,7 @@ export function KanbanCardEditor({
   const [priority, setPriority] = useState<KanbanPriority>(
     card?.priority ?? "normal",
   );
+  const [dueDate, setDueDate] = useState(card?.dueDate ?? "");
   const [assigneeIds, setAssigneeIds] = useState<Set<string>>(
     () => new Set(card?.assigneeIds ?? []),
   );
@@ -76,6 +77,7 @@ export function KanbanCardEditor({
         title: title.trim(),
         description: description.trim(),
         priority,
+        dueDate: dueDate || null,
         assigneeIds: [...assigneeIds],
         labelIds: [...labelIds],
       });
@@ -148,6 +150,26 @@ export function KanbanCardEditor({
               </option>
             ))}
           </select>
+        </div>
+        <div className="field">
+          <label htmlFor="kb-due">{t("kanban.dueDate")}</label>
+          <div className="kb-due-row">
+            <input
+              id="kb-due"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+            {dueDate ? (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setDueDate("")}
+              >
+                {t("kanban.dueDate.clear")}
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className="field">
           <span className="kb-editor-legend">{t("kanban.assignees")}</span>
