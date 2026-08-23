@@ -17,8 +17,11 @@ Nanocore is an open-source, self-hosted Miro-style collaborative whiteboard. It 
 **Out of scope for now:**
 - Multi-tenant SaaS
 - Public self-registration / email verification
-- Multi-product beyond whiteboards + kanban
+- Extra products beyond whiteboards + kanban (docs, notes, time, …)
+- Plugin / marketplace architecture
 - Comments, voting, templates, SSO
+
+**Later (not built):** optional in-process product modules so an org can disable unused products. Plan: `.agent/MODULES.md`. Do not start until a third product is real.
 
 ## Key Users / Consumers
 

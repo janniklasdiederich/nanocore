@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-23 after: kanban board/card UI polish
+_Last updated: 2026-08-24 after: document optional product-module plan
 
 ## What's Been Built
 
@@ -28,7 +28,9 @@ _Last updated: 2026-08-23 after: kanban board/card UI polish
 
 ## Current Task / Last Completed
 
-Kanban board and cards got a visual pass: quieter columns, cards lead with labels + title, normal priority is hidden, high priority has a left accent, due dates read as Today/Tomorrow, assignees use stacked colored avatars, filters highlight when active and can be cleared. Same card hierarchy on whiteboard embeds.
+Documented the future optional-module approach in `.agent/MODULES.md` (not implemented). Nanocore stays one process / one SQLite / one image; products would be an enable-list with lazy UI. Do not extract kanban until a third product exists. Canvas embeds of kanban stay a composition: shape types never leave the tldraw schema.
+
+Previous: kanban board/card UI polish.
 
 Previous: optional card due dates (`YYYY-MM-DD`). Restart the API once so existing DBs get the `due_date` column.
 
@@ -51,4 +53,5 @@ Previous: org logo/favicon; access groups; resizable stickies.
 
 ## Decisions Pending
 
-None blocking. **tldraw remains 3.15** unless licensing/product needs change.
+- Optional product modules: approach agreed on paper (`.agent/MODULES.md`); **do not implement** until a third product is being built. Enablement mechanism (env vs admin UI) left to that time.
+- **tldraw remains 3.15** unless licensing/product needs change.
