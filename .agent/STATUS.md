@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-24 after: document optional product-module plan
+_Last updated: 2026-08-24 after: kanban board calendar view
 
 ## What's Been Built
 
@@ -24,11 +24,13 @@ _Last updated: 2026-08-24 after: document optional product-module plan
 - **Docker**: single container UI+API+WS; SESSION_SECRET auto; COOKIE_SECURE for HTTP
 - **Arrows**: stock tldraw only (rounded-elbow experiment reverted)
 - **Sidebar shell** on list/admin pages: Whiteboards / Kanban / Administration. Tldraw canvas stays full-bleed.
-- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), optional due date (YYYY-MM-DD), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Whiteboard embeds show the extra fields.
+- **Kanban** (`feature/kanban`): separate product using `react-kanban-kit`. Own tables + REST + live snapshot WS. Same access as whiteboards (people + groups). Cards: title, description, priority (high/normal/low), optional due date (YYYY-MM-DD), multiple assignees (board-access people), per-board colored labels. Filter/sort on the board page. Board / Calendar view switcher (`?view=calendar`) shows due dates on a month grid plus undated cards. Whiteboard embeds show the extra fields.
 
 ## Current Task / Last Completed
 
-Documented the future optional-module approach in `.agent/MODULES.md` (not implemented). Nanocore stays one process / one SQLite / one image; products would be an enable-list with lazy UI. Do not extract kanban until a third product exists. Canvas embeds of kanban stay a composition: shape types never leave the tldraw schema.
+Kanban boards have a Calendar layout (toolbar switcher, URL `?view=calendar`): month grid of card due dates, undated tray, same filters as the board, click opens the card editor. Gantt not started. No sidebar Calendar.
+
+Previous: documented optional-module plan in `.agent/MODULES.md` (not implemented).
 
 Previous: kanban board/card UI polish.
 

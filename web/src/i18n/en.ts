@@ -343,6 +343,13 @@ export const en = {
   "kanban.due.today": "Today",
   "kanban.due.tomorrow": "Tomorrow",
   "kanban.due.yesterday": "Yesterday",
+  "kanban.view": "View",
+  "kanban.view.board": "Board",
+  "kanban.view.calendar": "Calendar",
+  "kanban.calendar.today": "Today",
+  "kanban.calendar.prev": "Previous month",
+  "kanban.calendar.next": "Next month",
+  "kanban.calendar.undated": "No due date",
 
   "kanbanEmbed.pickTitle": "Place from Kanban",
   "kanbanEmbed.pickHelp":

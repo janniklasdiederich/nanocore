@@ -344,6 +344,13 @@ export const de: Messages = {
   "kanban.due.today": "Heute",
   "kanban.due.tomorrow": "Morgen",
   "kanban.due.yesterday": "Gestern",
+  "kanban.view": "Ansicht",
+  "kanban.view.board": "Board",
+  "kanban.view.calendar": "Kalender",
+  "kanban.calendar.today": "Heute",
+  "kanban.calendar.prev": "Vorheriger Monat",
+  "kanban.calendar.next": "Nächster Monat",
+  "kanban.calendar.undated": "Ohne Fälligkeitsdatum",
 
   "kanbanEmbed.pickTitle": "Aus Kanban einfügen",
   "kanbanEmbed.pickHelp":

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   Kanban,
   dropColumnHandler,
@@ -29,11 +29,13 @@ import {
 } from "../kanbanDisplay";
 import { useI18n, useT } from "../i18n";
 import { useDocumentTitle } from "../useDocumentTitle";
+import { KanbanCalendar } from "./KanbanCalendar";
 import { KanbanCardEditor } from "./KanbanCardEditor";
 import { KanbanLabelsDialog } from "./KanbanLabelsDialog";
 
 type SortKey = "board" | "priority" | "title" | "due";
 type DueFilter = "" | "overdue" | "upcoming" | "none";
+type Layout = "board" | "calendar";
 type View = {
   sort: SortKey;
   priority: "" | KanbanPriority;
@@ -44,7 +46,10 @@ type View = {
 
 export function KanbanBoardPage() {
   const { id } = useParams<{ id: string }>();
+  const [params, setParams] = useSearchParams();
   const t = useT();
+  const layout: Layout =
+    params.get("view") === "calendar" ? "calendar" : "board";
   const [state, setState] = useState<KanbanState | null>(null);
   const [dataSource, setDataSource] = useState<BoardData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -211,33 +216,65 @@ export function KanbanBoardPage() {
   }
 
   const filtersOn =
-    view.sort !== "board" ||
+    (layout === "board" && view.sort !== "board") ||
     view.priority !== "" ||
     view.due !== "" ||
     view.assignee !== "" ||
     view.label !== "";
-  const visibleCount = state.cards.filter((c) => matchesView(c, view)).length;
+  const visibleCards = state.cards.filter((c) => matchesView(c, view));
+  const visibleCount = visibleCards.length;
+
+  function setLayout(next: Layout) {
+    const p = new URLSearchParams(params);
+    if (next === "calendar") p.set("view", "calendar");
+    else p.delete("view");
+    setParams(p, { replace: true });
+  }
 
   return (
     <AppShell title={state.board.name} wide>
       <div className="kb-page">
         <div className="kb-toolbar">
-          <h1>{state.board.name}</h1>
-          <div className="kb-toolbar-tools">
-            <label className={"kb-filter" + (view.sort !== "board" ? " is-on" : "")}>
-              <span>{t("kanban.sort")}</span>
-              <select
-                value={view.sort}
-                onChange={(e) =>
-                  setView((v) => ({ ...v, sort: e.target.value as SortKey }))
-                }
+          <div className="kb-toolbar-lead">
+            <h1>{state.board.name}</h1>
+            <div className="kb-view-switch" role="tablist" aria-label={t("kanban.view")}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={layout === "board"}
+                className={layout === "board" ? "is-on" : ""}
+                onClick={() => setLayout("board")}
               >
-                <option value="board">{t("kanban.sort.board")}</option>
-                <option value="priority">{t("kanban.sort.priority")}</option>
-                <option value="title">{t("kanban.sort.title")}</option>
-                <option value="due">{t("kanban.sort.due")}</option>
-              </select>
-            </label>
+                {t("kanban.view.board")}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={layout === "calendar"}
+                className={layout === "calendar" ? "is-on" : ""}
+                onClick={() => setLayout("calendar")}
+              >
+                {t("kanban.view.calendar")}
+              </button>
+            </div>
+          </div>
+          <div className="kb-toolbar-tools">
+            {layout === "board" && (
+              <label className={"kb-filter" + (view.sort !== "board" ? " is-on" : "")}>
+                <span>{t("kanban.sort")}</span>
+                <select
+                  value={view.sort}
+                  onChange={(e) =>
+                    setView((v) => ({ ...v, sort: e.target.value as SortKey }))
+                  }
+                >
+                  <option value="board">{t("kanban.sort.board")}</option>
+                  <option value="priority">{t("kanban.sort.priority")}</option>
+                  <option value="title">{t("kanban.sort.title")}</option>
+                  <option value="due">{t("kanban.sort.due")}</option>
+                </select>
+              </label>
+            )}
             <label className={"kb-filter" + (view.priority ? " is-on" : "")}>
               <span>{t("kanban.priority")}</span>
               <select
@@ -335,6 +372,14 @@ export function KanbanBoardPage() {
         {filtersOn && visibleCount === 0 && (
           <div className="kb-filter-empty">{t("kanban.filter.empty")}</div>
         )}
+        {layout === "calendar" ? (
+          <KanbanCalendar
+            cards={visibleCards}
+            onOpenCard={(card) =>
+              setEditing({ columnId: card.columnId, card })
+            }
+          />
+        ) : (
         <div className="kb-board">
           <Kanban
             dataSource={dataSource}
@@ -424,6 +469,7 @@ export function KanbanBoardPage() {
             )}
           />
         </div>
+        )}
       </div>
       {editing && (
         <KanbanCardEditor
