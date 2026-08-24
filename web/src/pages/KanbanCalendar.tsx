@@ -6,7 +6,9 @@ import { useI18n, useT } from "../i18n";
 
 type Cursor = { y: number; m: number; d: number };
 type CalRange = "day" | "week" | "month";
-type Cell = { iso: string; inMonth: boolean; day: number };
+type Cell = { iso: string; inMonth: boolean; day: number; weekend: boolean };
+
+const MONTH_CHIP_CAP = 3;
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -60,34 +62,33 @@ function weekdayLabels(locale: string, weekStart: number): string[] {
   });
 }
 
+function makeCell(dt: Date, inMonth: boolean): Cell {
+  const day = dt.getDate();
+  const dow = dt.getDay();
+  return {
+    iso: toIso(dt.getFullYear(), dt.getMonth(), day),
+    inMonth,
+    day,
+    weekend: dow === 0 || dow === 6,
+  };
+}
+
 function monthCells(cursor: Cursor, weekStart: number): Cell[] {
   const { y, m } = cursor;
   const firstDow = new Date(y, m, 1).getDay();
   const lead = (firstDow - weekStart + 7) % 7;
   const daysInMonth = new Date(y, m + 1, 0).getDate();
-  const prevDays = new Date(y, m, 0).getDate();
   const cells: Cell[] = [];
 
   for (let i = lead; i > 0; i--) {
-    const d = prevDays - i + 1;
-    const dt = new Date(y, m - 1, d);
-    cells.push({
-      iso: toIso(dt.getFullYear(), dt.getMonth(), d),
-      inMonth: false,
-      day: d,
-    });
+    cells.push(makeCell(new Date(y, m, 1 - i), false));
   }
   for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ iso: toIso(y, m, d), inMonth: true, day: d });
+    cells.push(makeCell(new Date(y, m, d), true));
   }
   let next = 1;
   while (cells.length < 42) {
-    const dt = new Date(y, m + 1, next);
-    cells.push({
-      iso: toIso(dt.getFullYear(), dt.getMonth(), next),
-      inMonth: false,
-      day: next,
-    });
+    cells.push(makeCell(new Date(y, m + 1, next), false));
     next += 1;
   }
   return cells;
@@ -98,12 +99,12 @@ function weekCells(cursor: Cursor, weekStart: number): Cell[] {
   const lead = (dow - weekStart + 7) % 7;
   const start = new Date(cursor.y, cursor.m, cursor.d - lead);
   return Array.from({ length: 7 }, (_, i) => {
-    const dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-    return {
-      iso: toIso(dt.getFullYear(), dt.getMonth(), dt.getDate()),
-      inMonth: dt.getMonth() === cursor.m,
-      day: dt.getDate(),
-    };
+    const dt = new Date(
+      start.getFullYear(),
+      start.getMonth(),
+      start.getDate() + i,
+    );
+    return makeCell(dt, dt.getMonth() === cursor.m);
   });
 }
 
@@ -196,13 +197,7 @@ export function KanbanCalendar({
 
   const cells =
     range === "day"
-      ? [
-          {
-            iso: cursorIso(cursor),
-            inMonth: true,
-            day: cursor.d,
-          },
-        ]
+      ? [makeCell(new Date(cursor.y, cursor.m, cursor.d), true)]
       : range === "week"
         ? week
         : month;
@@ -260,23 +255,27 @@ export function KanbanCalendar({
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="kb-icon-btn"
-          title={t("kanban.calendar.prev")}
-          onClick={() => step(-1)}
-        >
-          ‹
-        </button>
-        <h2 className="kb-cal-month">{rangeLabel(range, cursor, week, locale)}</h2>
-        <button
-          type="button"
-          className="kb-icon-btn"
-          title={t("kanban.calendar.next")}
-          onClick={() => step(1)}
-        >
-          ›
-        </button>
+        <div className="kb-cal-nav-title">
+          <button
+            type="button"
+            className="kb-icon-btn"
+            title={t("kanban.calendar.prev")}
+            onClick={() => step(-1)}
+          >
+            ‹
+          </button>
+          <h2 className="kb-cal-month">
+            {rangeLabel(range, cursor, week, locale)}
+          </h2>
+          <button
+            type="button"
+            className="kb-icon-btn"
+            title={t("kanban.calendar.next")}
+            onClick={() => step(1)}
+          >
+            ›
+          </button>
+        </div>
         <button
           type="button"
           className="btn btn-secondary btn-sm"
@@ -286,86 +285,115 @@ export function KanbanCalendar({
           {t("kanban.calendar.today")}
         </button>
       </div>
-      {range !== "day" && (
-        <div className="kb-cal-weekdays">
-          {heads.map((name, i) => (
-            <div key={i} className="kb-cal-wd">
-              {name}
-            </div>
-          ))}
-        </div>
-      )}
-      <div
-        className={
-          "kb-cal-days" +
-          (range === "week" ? " kb-cal-days--week" : "") +
-          (range === "day" ? " kb-cal-days--day" : "")
-        }
-      >
-        {cells.map((cell) => {
-          const dayCards = byDay.get(cell.iso) ?? [];
-          const isToday = cell.iso === today;
-          return (
-            <div
-              key={cell.iso}
-              className={
-                "kb-cal-day" +
-                (cell.inMonth ? "" : " is-out") +
-                (isToday ? " is-today" : "")
-              }
-            >
-              {range === "day" ? (
-                <span className="kb-cal-day-num">
-                  {new Date(cursor.y, cursor.m, cursor.d).toLocaleDateString(
-                    locale,
-                    { weekday: "long" },
-                  )}
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  className="kb-cal-day-num"
-                  title={t("kanban.calendar.openDay")}
-                  onClick={() => goToDay(cell.iso)}
-                >
-                  {cell.day}
-                </button>
-              )}
-              <div className="kb-cal-day-cards">
-                {dayCards.length === 0 && range === "day" ? (
-                  <p className="kb-cal-empty">{t("kanban.calendar.emptyDay")}</p>
-                ) : (
-                  dayCards.map((card) => (
-                    <CalChip
-                      key={card.id}
-                      card={card}
-                      detail={range === "day"}
-                      onOpen={() => onOpenCard(card)}
-                    />
-                  ))
-                )}
+      <div className={"kb-cal-sheet kb-cal-sheet--" + range}>
+        {range !== "day" && (
+          <div className="kb-cal-weekdays">
+            {heads.map((name, i) => (
+              <div key={i} className="kb-cal-wd">
+                {name}
               </div>
-            </div>
-          );
-        })}
-      </div>
-      {undated.length > 0 && (
-        <div className="kb-cal-undated">
-          <div className="kb-cal-undated-head">
-            <span>{t("kanban.calendar.undated")}</span>
-            <span className="kb-col-count">{undated.length}</span>
-          </div>
-          <div className="kb-cal-undated-list">
-            {undated.map((card) => (
-              <CalChip
-                key={card.id}
-                card={card}
-                onOpen={() => onOpenCard(card)}
-              />
             ))}
           </div>
+        )}
+        <div
+          className={
+            "kb-cal-days" +
+            (range === "week" ? " kb-cal-days--week" : "") +
+            (range === "day" ? " kb-cal-days--day" : "")
+          }
+        >
+          {cells.map((cell) => {
+            const dayCards = byDay.get(cell.iso) ?? [];
+            const isToday = cell.iso === today;
+            const cap = range === "month" ? MONTH_CHIP_CAP : Infinity;
+            const extra =
+              dayCards.length > cap ? dayCards.length - cap : 0;
+            const shown = extra ? dayCards.slice(0, cap) : dayCards;
+            return (
+              <div
+                key={cell.iso}
+                className={
+                  "kb-cal-day" +
+                  (cell.inMonth ? "" : " is-out") +
+                  (isToday ? " is-today" : "") +
+                  (cell.weekend ? " is-weekend" : "")
+                }
+                onClick={
+                  range === "day" ? undefined : () => goToDay(cell.iso)
+                }
+              >
+                {range === "day" ? (
+                  <span className="kb-cal-day-num">
+                    {new Date(cursor.y, cursor.m, cursor.d).toLocaleDateString(
+                      locale,
+                      { weekday: "long" },
+                    )}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="kb-cal-day-num"
+                    title={t("kanban.calendar.openDay")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToDay(cell.iso);
+                    }}
+                  >
+                    {cell.day}
+                  </button>
+                )}
+                <div className="kb-cal-day-cards">
+                  {dayCards.length === 0 && range === "day" ? (
+                    <p className="kb-cal-empty">
+                      {t("kanban.calendar.emptyDay")}
+                    </p>
+                  ) : (
+                    <>
+                      {shown.map((card) => (
+                        <CalChip
+                          key={card.id}
+                          card={card}
+                          detail={range === "day"}
+                          onOpen={() => onOpenCard(card)}
+                        />
+                      ))}
+                      {extra > 0 ? (
+                        <button
+                          type="button"
+                          className="kb-cal-more"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            goToDay(cell.iso);
+                          }}
+                        >
+                          {t("kanban.calendar.more", { count: extra })}
+                        </button>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+        {undated.length > 0 && (
+          <div className="kb-cal-undated">
+            <div className="kb-cal-undated-head">
+              <span>{t("kanban.calendar.undated")}</span>
+              <span className="kb-col-count">{undated.length}</span>
+            </div>
+            <div className="kb-cal-undated-list">
+              {undated.map((card) => (
+                <CalChip
+                  key={card.id}
+                  card={card}
+                  onOpen={() => onOpenCard(card)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -391,7 +419,10 @@ function CalChip({
         (overdue ? " kb-cal-chip--overdue" : "")
       }
       title={card.title}
-      onClick={onOpen}
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
     >
       <span className="kb-cal-chip-title">{card.title}</span>
       {detail && card.description ? (

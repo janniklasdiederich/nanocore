@@ -356,6 +356,7 @@ export const en = {
   "kanban.calendar.range.month": "Month",
   "kanban.calendar.openDay": "Open day",
   "kanban.calendar.emptyDay": "No cards due this day.",
+  "kanban.calendar.more": "+{count} more",
   "kanban.comments": "Comments",
   "kanban.comment.placeholder": "Write a comment…",
   "kanban.comment.post": "Comment",

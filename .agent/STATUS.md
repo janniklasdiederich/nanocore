@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-24 after: comments beside card editor
+_Last updated: 2026-08-24 after: calendar grid restyle
 
 ## What's Been Built
 
@@ -28,7 +28,9 @@ _Last updated: 2026-08-24 after: comments beside card editor
 
 ## Current Task / Last Completed
 
-Card editor puts comments in a right-hand column (fields left, thread right). Stacks on narrow widths. Restart API once if comments table is missing.
+Calendar is a real month grid (shared lines, today as a date circle, events as slim pills). Click a day to open Day. Dense days show “+N more”. Undated cards sit in a strip under the sheet.
+
+Previous: comments in a side column of the card editor.
 
 Previous: calendar Day / Week / Month.
 
