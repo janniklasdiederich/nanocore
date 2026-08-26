@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-24 after: calendar grid restyle
+_Last updated: 2026-08-24 after: kanban recurring tasks
 
 ## What's Been Built
 
@@ -28,9 +28,9 @@ _Last updated: 2026-08-24 after: calendar grid restyle
 
 ## Current Task / Last Completed
 
-Calendar is a real month grid (shared lines, today as a date circle, events as slim pills). Click a day to open Day. Dense days show “+N more”. Undated cards sit in a strip under the sheet.
+Recurring kanban cards: one card per standing task, comments as the log. Three system columns (Recurring Open / In Progress / Done). Next cycle always returns the card to Open. Calendar shows it on every matching day. Repeat is set in the card editor. Restart the API so columns get `role` and cards get `recurrence`.
 
-Previous: comments in a side column of the card editor.
+Previous: calendar grid restyle.
 
 Previous: calendar Day / Week / Month.
 

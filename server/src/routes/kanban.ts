@@ -36,6 +36,7 @@ import {
   updateLabel,
 } from "../kanbanState";
 import { kickUsersFromBoard } from "../wsConnections";
+import { parseRecurrence } from "../kanbanRecurrence";
 
 export const kanbanRoutes = new Hono<{ Variables: Variables }>();
 
@@ -252,6 +253,7 @@ kanbanRoutes.post("/:id/cards", async (c) => {
   const extra: {
     priority?: (typeof card)["priority"];
     dueDate?: string | null;
+    recurrence?: ReturnType<typeof parseRecurrence>;
     assigneeIds?: string[];
     labelIds?: string[];
   } = {};
@@ -270,6 +272,14 @@ kanbanRoutes.post("/:id/cards", async (c) => {
     extra.labelIds = body.labelIds.filter(
       (v: unknown): v is string => typeof v === "string",
     );
+  }
+  if (body?.recurrence !== undefined) {
+    if (body.recurrence === null) extra.recurrence = null;
+    else {
+      const rec = parseRecurrence(body.recurrence);
+      if (!rec) return c.json({ error: "Invalid recurrence" }, 400);
+      extra.recurrence = rec;
+    }
   }
   if (Object.keys(extra).length) {
     updateCard(id, card.id, extra);
@@ -295,6 +305,7 @@ kanbanRoutes.patch("/:id/cards/:cardId", async (c) => {
     description?: string;
     priority?: "high" | "normal" | "low";
     dueDate?: string | null;
+    recurrence?: ReturnType<typeof parseRecurrence>;
     assigneeIds?: string[];
     labelIds?: string[];
   } = {};
@@ -335,6 +346,14 @@ kanbanRoutes.patch("/:id/cards/:cardId", async (c) => {
     fields.labelIds = body.labelIds.filter(
       (v: unknown): v is string => typeof v === "string",
     );
+  }
+  if (body?.recurrence !== undefined) {
+    if (body.recurrence === null) fields.recurrence = null;
+    else {
+      const rec = parseRecurrence(body.recurrence);
+      if (!rec) return c.json({ error: "Invalid recurrence" }, 400);
+      fields.recurrence = rec;
+    }
   }
   if (!updateCard(id, cardId, fields)) {
     return c.json({ error: "Card not found" }, 404);

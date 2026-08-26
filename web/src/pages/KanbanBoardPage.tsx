@@ -27,6 +27,11 @@ import {
   labelTextColor,
   localTodayIso,
 } from "../kanbanDisplay";
+import {
+  DEFAULT_RECURRING_TITLES,
+  isRecurringRole,
+  parseRecurrence,
+} from "../kanbanRecurrence";
 import { useI18n, useT } from "../i18n";
 import { useDocumentTitle } from "../useDocumentTitle";
 import { KanbanCalendar } from "./KanbanCalendar";
@@ -114,6 +119,23 @@ export function KanbanBoardPage() {
     };
   }, [id, t]);
 
+  useEffect(() => {
+    if (!id) return;
+    let last = localTodayIso();
+    const tick = () => {
+      const day = localTodayIso();
+      if (day === last) return;
+      last = day;
+      void api.getKanban(id).then((s) => setState(normalizeKanbanState(s)));
+    };
+    const timer = window.setInterval(tick, 60_000);
+    window.addEventListener("focus", tick);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", tick);
+    };
+  }, [id]);
+
   const cardsById = useMemo(() => {
     const map = new Map<string, KanbanCard>();
     for (const card of state?.cards ?? []) map.set(card.id, card);
@@ -142,6 +164,11 @@ export function KanbanBoardPage() {
               card={card}
               labels={state?.labels ?? []}
               people={state?.people ?? []}
+              repeating={Boolean(card.recurrence)}
+              cycleClosed={
+                state?.columns.find((c) => c.id === card.columnId)?.role ===
+                "recurring_done"
+              }
             />
           );
         },
@@ -160,6 +187,10 @@ export function KanbanBoardPage() {
       position: number;
     }) => {
       if (!id || !dataSource) return;
+      const card = cardsById.get(move.cardId);
+      const dest = state?.columns.find((c) => c.id === move.toColumnId);
+      if (!card || !dest) return;
+      if (Boolean(card.recurrence) !== isRecurringRole(dest.role)) return;
       setDataSource(dropHandler(move, dataSource));
       void api
         .moveKanbanCard(id, move.cardId, {
@@ -170,17 +201,19 @@ export function KanbanBoardPage() {
           /* WS snapshot will correct */
         });
     },
-    [id, dataSource],
+    [id, dataSource, cardsById, state],
   );
 
   const onColumnMove = useCallback(
     (move: { columnId: string; fromIndex: number; toIndex: number }) => {
       if (!id || !dataSource) return;
+      const col = state?.columns.find((c) => c.id === move.columnId);
+      if (isRecurringRole(col?.role)) return;
       const next = dropColumnHandler(move, dataSource);
       setDataSource(next);
       void api.reorderKanbanColumns(id, next.root.children).catch(() => {});
     },
-    [id, dataSource],
+    [id, dataSource, state],
   );
 
   if (!id) {
@@ -390,6 +423,13 @@ export function KanbanBoardPage() {
             allowListFooter={() => true}
             cardsGap={8}
             rootClassName="kb-rkk"
+            columnClassName={(column) =>
+              isRecurringRole(
+                state.columns.find((c) => c.id === column.id)?.role,
+              )
+                ? "kb-col--recurring"
+                : ""
+            }
             onCardMove={onCardMove}
             onColumnMove={onColumnMove}
             onCardClick={(_e, card) => {
@@ -397,9 +437,14 @@ export function KanbanBoardPage() {
               if (!existing) return;
               setEditing({ columnId: existing.columnId, card: existing });
             }}
-            renderColumnHeader={(column) => (
+            renderColumnHeader={(column) => {
+              const meta = state.columns.find((c) => c.id === column.id);
+              const recurring = isRecurringRole(meta?.role);
+              return (
               <div className="kb-col-head">
-                <strong className="kb-col-title">{column.title}</strong>
+                <strong className="kb-col-title">
+                  {displayColumnTitle(meta ?? null, column.title, t)}
+                </strong>
                 <span className="kb-col-count">{column.totalChildrenCount}</span>
                 <div className="kb-col-actions">
                   <button
@@ -419,6 +464,7 @@ export function KanbanBoardPage() {
                   >
                     <IconPencil />
                   </button>
+                  {!recurring && (
                   <button
                     type="button"
                     className="kb-icon-btn kb-icon-btn--danger"
@@ -438,9 +484,11 @@ export function KanbanBoardPage() {
                   >
                     <IconClose />
                   </button>
+                  )}
                 </div>
               </div>
-            )}
+              );
+            }}
             renderListFooter={(column) => (
               <button
                 type="button"
@@ -474,6 +522,10 @@ export function KanbanBoardPage() {
       {editing && (
         <KanbanCardEditor
           boardId={id}
+          columnRole={
+            state.columns.find((c) => c.id === editing.columnId)?.role ??
+            "normal"
+          }
           card={
             editing.card
               ? (cardsById.get(editing.card.id) ?? editing.card)
@@ -522,11 +574,16 @@ function normalizeKanbanState(raw: KanbanState): KanbanState {
     ...raw,
     labels: raw.labels ?? [],
     people: raw.people ?? [],
+    columns: (raw.columns ?? []).map((c) => ({
+      ...c,
+      role: isRecurringRole(c.role) ? c.role : "normal",
+    })),
     cards: (raw.cards ?? []).map((c) => ({
       ...c,
       priority:
         c.priority === "high" || c.priority === "low" ? c.priority : "normal",
       dueDate: isDueDate(c.dueDate) ? c.dueDate : null,
+      recurrence: parseRecurrence(c.recurrence),
       assigneeIds: c.assigneeIds ?? [],
       labelIds: c.labelIds ?? [],
       comments: c.comments ?? [],
@@ -592,8 +649,39 @@ function sortCards(cards: KanbanCard[], sort: SortKey): KanbanCard[] {
   return copy;
 }
 
+function displayColumnTitle(
+  col: { role: string; title: string } | null,
+  fallback: string,
+  t: ReturnType<typeof useT>,
+): string {
+  if (!col) return fallback;
+  const def = DEFAULT_RECURRING_TITLES[col.role];
+  if (col.role === "recurring_open" && col.title === def) {
+    return t("kanban.colRecurringOpen");
+  }
+  if (col.role === "recurring_progress" && col.title === def) {
+    return t("kanban.colRecurringProgress");
+  }
+  if (col.role === "recurring_done" && col.title === def) {
+    return t("kanban.colRecurringDone");
+  }
+  return col.title || fallback;
+}
+
+function orderedColumns(state: KanbanState) {
+  const normal = state.columns
+    .filter((c) => c.role === "normal")
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const recurring = (
+    ["recurring_open", "recurring_progress", "recurring_done"] as const
+  )
+    .map((role) => state.columns.find((c) => c.role === role))
+    .filter((c): c is NonNullable<typeof c> => Boolean(c));
+  return [...normal, ...recurring];
+}
+
 function toKitData(state: KanbanState, view: View): BoardData {
-  const columns = [...state.columns].sort((a, b) => a.sortOrder - b.sortOrder);
+  const columns = orderedColumns(state);
   const rootChildren = columns.map((c) => c.id);
   const data: BoardData = {
     root: {
@@ -635,10 +723,14 @@ function KanbanCardFace({
   card,
   labels,
   people,
+  repeating,
+  cycleClosed,
 }: {
   card: KanbanCard;
   labels: KanbanLabel[];
   people: KanbanPerson[];
+  repeating?: boolean;
+  cycleClosed?: boolean;
 }) {
   const t = useT();
   const { locale } = useI18n();
@@ -647,7 +739,10 @@ function KanbanCardFace({
   const due = isDueDate(card.dueDate) ? card.dueDate : null;
   const showPriority = card.priority === "high" || card.priority === "low";
   const commentCount = card.comments?.length ?? 0;
-  const showFoot = Boolean(due) || assignees.length > 0 || commentCount > 0;
+  const showFoot =
+    Boolean(due) || assignees.length > 0 || commentCount > 0 || Boolean(repeating);
+  const dueKind =
+    due && !cycleClosed ? dueStatus(due) : due ? "upcoming" : null;
   return (
     <div
       className={
@@ -674,15 +769,22 @@ function KanbanCardFace({
           ) : null}
         </div>
       )}
-      <div className="kb-card-title">{card.title}</div>
+      <div className="kb-card-title">
+        {repeating ? (
+          <span className="kb-repeat-mark" title={t("kanban.repeat")}>
+            ↻
+          </span>
+        ) : null}
+        {card.title}
+      </div>
       {card.description ? (
         <div className="kb-card-desc">{card.description}</div>
       ) : null}
       {showFoot ? (
         <div className="kb-card-foot">
-          {due ? (
+          {due && dueKind ? (
             <span
-              className={`kb-due kb-due--${dueStatus(due)}`}
+              className={`kb-due kb-due--${dueKind}`}
               title={formatDueDate(due, locale)}
             >
               {dueChipText(due, locale, t)}

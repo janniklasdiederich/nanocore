@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { KanbanCard } from "../api";
 import { dueStatus, isDueDate, localTodayIso } from "../kanbanDisplay";
+import { parseRecurrence, recurrenceMatchesDate } from "../kanbanRecurrence";
 import { useI18n, useT } from "../i18n";
 
 type Cursor = { y: number; m: number; d: number };
@@ -172,17 +173,33 @@ export function KanbanCalendar({
     [locale, weekStart],
   );
 
+  const cells =
+    range === "day"
+      ? [makeCell(new Date(cursor.y, cursor.m, cursor.d), true)]
+      : range === "week"
+        ? week
+        : month;
+
   const { byDay, undated } = useMemo(() => {
     const byDay = new Map<string, KanbanCard[]>();
     const undated: KanbanCard[] = [];
+    const visible = cells.map((c) => c.iso);
+    function add(iso: string, card: KanbanCard) {
+      const list = byDay.get(iso) ?? [];
+      if (list.some((x) => x.id === card.id)) return;
+      list.push(card);
+      byDay.set(iso, list);
+    }
     for (const card of cards) {
-      if (!isDueDate(card.dueDate)) {
-        undated.push(card);
+      const rec = parseRecurrence(card.recurrence);
+      if (rec) {
+        for (const iso of visible) {
+          if (recurrenceMatchesDate(rec, iso)) add(iso, card);
+        }
         continue;
       }
-      const list = byDay.get(card.dueDate) ?? [];
-      list.push(card);
-      byDay.set(card.dueDate, list);
+      if (isDueDate(card.dueDate)) add(card.dueDate, card);
+      else undated.push(card);
     }
     for (const list of byDay.values()) {
       list.sort(
@@ -193,14 +210,7 @@ export function KanbanCalendar({
       (a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title),
     );
     return { byDay, undated };
-  }, [cards]);
-
-  const cells =
-    range === "day"
-      ? [makeCell(new Date(cursor.y, cursor.m, cursor.d), true)]
-      : range === "week"
-        ? week
-        : month;
+  }, [cards, cells]);
 
   const showingToday =
     range === "day"

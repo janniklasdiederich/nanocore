@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
   ApiError,
+  type ColumnRole,
   type KanbanCard,
   type KanbanCardFields,
   type KanbanLabel,
@@ -15,7 +16,13 @@ import {
   labelTextColor,
 } from "../kanbanDisplay";
 import { useT } from "../i18n";
+import {
+  buildRecurrence,
+  isRecurringRole,
+  type RecurrenceFreq,
+} from "../kanbanRecurrence";
 import { KanbanCommentThread } from "./KanbanComments";
+import { KanbanRepeatFields } from "./KanbanRepeatFields";
 
 export function KanbanCardEditor({
   boardId,
@@ -26,11 +33,13 @@ export function KanbanCardEditor({
   onSave,
   onDelete,
   onCreateLabel,
+  columnRole,
 }: {
   boardId: string;
   card?: KanbanCard;
   people: KanbanPerson[];
   labels: KanbanLabel[];
+  columnRole?: ColumnRole;
   onClose: () => void;
   onSave: (fields: KanbanCardFields & { title: string; description: string }) => Promise<void>;
   onDelete?: () => Promise<void>;
@@ -43,6 +52,16 @@ export function KanbanCardEditor({
     card?.priority ?? "normal",
   );
   const [dueDate, setDueDate] = useState(card?.dueDate ?? "");
+  const initialRec = card?.recurrence;
+  const [freq, setFreq] = useState<RecurrenceFreq | "">(
+    initialRec?.freq ?? (isRecurringRole(columnRole) ? "weekly" : ""),
+  );
+  const [weekdays, setWeekdays] = useState<number[]>(
+    initialRec?.weekdays?.length
+      ? initialRec.weekdays
+      : [new Date().getDay()],
+  );
+  const [until, setUntil] = useState(initialRec?.until ?? "");
   const [assigneeIds, setAssigneeIds] = useState<Set<string>>(
     () => new Set(card?.assigneeIds ?? []),
   );
@@ -82,6 +101,7 @@ export function KanbanCardEditor({
         description: description.trim(),
         priority,
         dueDate: dueDate || null,
+        recurrence: buildRecurrence(freq, weekdays, dueDate, until),
         assigneeIds: [...assigneeIds],
         labelIds: [...labelIds],
       });
@@ -184,6 +204,15 @@ export function KanbanCardEditor({
             </div>
           </div>
         </div>
+        <KanbanRepeatFields
+          freq={freq}
+          weekdays={weekdays}
+          until={until}
+          onFreq={setFreq}
+          onWeekdays={setWeekdays}
+          onUntil={setUntil}
+          variant="page"
+        />
         <div className="field">
           <span className="kb-editor-legend">{t("kanban.assignees")}</span>
           {people.length === 0 ? (

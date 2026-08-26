@@ -125,6 +125,8 @@ db.exec(`
     id TEXT PRIMARY KEY,
     board_id TEXT NOT NULL REFERENCES kanban_boards(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'normal'
+      CHECK (role IN ('normal', 'recurring_open', 'recurring_progress', 'recurring_done')),
     sort_order INTEGER NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -138,6 +140,7 @@ db.exec(`
     priority TEXT NOT NULL DEFAULT 'normal'
       CHECK (priority IN ('low', 'normal', 'high')),
     due_date TEXT,
+    recurrence TEXT,
     sort_order INTEGER NOT NULL,
     created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -218,6 +221,20 @@ try {
 
 try {
   db.exec(`ALTER TABLE kanban_cards ADD COLUMN due_date TEXT`);
+} catch {
+  // already exists
+}
+
+try {
+  db.exec(
+    `ALTER TABLE kanban_columns ADD COLUMN role TEXT NOT NULL DEFAULT 'normal'`,
+  );
+} catch {
+  // already exists
+}
+
+try {
+  db.exec(`ALTER TABLE kanban_cards ADD COLUMN recurrence TEXT`);
 } catch {
   // already exists
 }

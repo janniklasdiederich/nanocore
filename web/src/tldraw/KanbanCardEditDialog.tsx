@@ -23,7 +23,9 @@ import {
   labelTextColor,
 } from "../kanbanDisplay";
 import { useT } from "../i18n";
+import { buildRecurrence, type RecurrenceFreq } from "../kanbanRecurrence";
 import { KanbanCommentThread } from "../pages/KanbanComments";
+import { KanbanRepeatFields } from "../pages/KanbanRepeatFields";
 import { useKanbanLive } from "./kanbanLive";
 
 export function KanbanCardEditDialog({
@@ -45,6 +47,15 @@ export function KanbanCardEditDialog({
     card.priority === "high" || card.priority === "low" ? card.priority : "normal",
   );
   const [dueDate, setDueDate] = useState(card.dueDate ?? "");
+  const [freq, setFreq] = useState<RecurrenceFreq | "">(
+    card.recurrence?.freq ?? "",
+  );
+  const [weekdays, setWeekdays] = useState<number[]>(
+    card.recurrence?.weekdays?.length
+      ? card.recurrence.weekdays
+      : [new Date().getDay()],
+  );
+  const [until, setUntil] = useState(card.recurrence?.until ?? "");
   const [assigneeIds, setAssigneeIds] = useState<Set<string>>(
     () => new Set(card.assigneeIds ?? []),
   );
@@ -76,6 +87,7 @@ export function KanbanCardEditDialog({
         description: description.trim(),
         priority,
         dueDate: dueDate || null,
+        recurrence: buildRecurrence(freq, weekdays, dueDate, until),
         assigneeIds: [...assigneeIds],
         labelIds: [...labelIds],
       });
@@ -190,6 +202,15 @@ export function KanbanCardEditDialog({
               ) : null}
             </div>
           </label>
+          <KanbanRepeatFields
+            freq={freq}
+            weekdays={weekdays}
+            until={until}
+            onFreq={setFreq}
+            onWeekdays={setWeekdays}
+            onUntil={setUntil}
+            variant="canvas"
+          />
           <div className="nc-kb-tl-field">
             <span className="nc-kb-tl-label">{t("kanban.assignees")}</span>
             <div className="nc-kb-pick-chips">

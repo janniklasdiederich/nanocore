@@ -1,4 +1,7 @@
 import { apiUrl } from "./config";
+import type { ColumnRole, KanbanRecurrence } from "./kanbanRecurrence";
+
+export type { ColumnRole, KanbanRecurrence } from "./kanbanRecurrence";
 
 export type User = {
   id: string;
@@ -38,6 +41,7 @@ export type KanbanColumn = {
   id: string;
   boardId: string;
   title: string;
+  role: ColumnRole;
   sortOrder: number;
 };
 
@@ -74,6 +78,7 @@ export type KanbanCard = {
   description: string;
   priority: KanbanPriority;
   dueDate: string | null;
+  recurrence: KanbanRecurrence | null;
   assigneeIds: string[];
   labelIds: string[];
   comments: KanbanComment[];
@@ -96,6 +101,7 @@ export type KanbanCardFields = {
   description?: string;
   priority?: KanbanPriority;
   dueDate?: string | null;
+  recurrence?: KanbanRecurrence | null;
   assigneeIds?: string[];
   labelIds?: string[];
 };
@@ -443,6 +449,7 @@ export const api = {
       description?: string;
       priority?: KanbanPriority;
       dueDate?: string | null;
+      recurrence?: KanbanRecurrence | null;
       assigneeIds?: string[];
       labelIds?: string[];
     },

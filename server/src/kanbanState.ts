@@ -5,6 +5,16 @@ import {
   type KanbanPerson,
 } from "./kanbanAccess";
 import { emitKanban } from "./kanbanRooms";
+import {
+  defaultWeeklyRecurrence,
+  isRecurringRole,
+  lastOccurrenceOnOrBefore,
+  parseRecurrence,
+  todayIso,
+  RECURRING_COLUMN_DEFAULTS,
+  type ColumnRole,
+  type KanbanRecurrence,
+} from "./kanbanRecurrence";
 
 export const KANBAN_PRIORITIES = ["high", "normal", "low"] as const;
 export type KanbanPriority = (typeof KANBAN_PRIORITIES)[number];
@@ -35,6 +45,7 @@ export type KanbanColumn = {
   id: string;
   boardId: string;
   title: string;
+  role: ColumnRole;
   sortOrder: number;
 };
 
@@ -46,6 +57,7 @@ export type KanbanCard = {
   description: string;
   priority: KanbanPriority;
   dueDate: string | null;
+  recurrence: KanbanRecurrence | null;
   assigneeIds: string[];
   labelIds: string[];
   comments: KanbanComment[];
@@ -100,12 +112,17 @@ function mapColumn(row: {
   id: string;
   board_id: string;
   title: string;
+  role?: string;
   sort_order: number;
 }): KanbanColumn {
+  const role: ColumnRole = isRecurringRole(row.role)
+    ? (row.role as ColumnRole)
+    : "normal";
   return {
     id: row.id,
     boardId: row.board_id,
     title: row.title,
+    role,
     sortOrder: row.sort_order,
   };
 }
@@ -135,6 +152,7 @@ function mapCard(
     description: string;
     priority?: string;
     due_date?: string | null;
+    recurrence?: string | null;
     sort_order: number;
     created_by: string | null;
     created_at: string;
@@ -152,6 +170,7 @@ function mapCard(
     description: row.description,
     priority: isKanbanPriority(row.priority) ? row.priority : "normal",
     dueDate: isDueDate(row.due_date) ? row.due_date : null,
+    recurrence: parseRecurrence(row.recurrence),
     assigneeIds,
     labelIds,
     comments,
@@ -171,6 +190,7 @@ function loadCard(cardId: string): KanbanCard {
     description: string;
     priority?: string;
     due_date?: string | null;
+    recurrence?: string | null;
     sort_order: number;
     created_by: string | null;
     created_at: string;
@@ -273,24 +293,109 @@ export function touchKanban(boardId: string): void {
   ).run(boardId);
 }
 
+function columnRows(boardId: string) {
+  return db
+    .query(`SELECT * FROM kanban_columns WHERE board_id = ? ORDER BY sort_order ASC`)
+    .all(boardId) as {
+    id: string;
+    board_id: string;
+    title: string;
+    role?: string;
+    sort_order: number;
+  }[];
+}
+
+function ensureRecurringColumns(boardId: string): boolean {
+  const existing = columnRows(boardId);
+  const have = new Set(existing.map((c) => c.role ?? "normal"));
+  const missing = RECURRING_COLUMN_DEFAULTS.filter((d) => !have.has(d.role));
+  if (missing.length === 0) return false;
+  const max = existing.reduce((m, c) => Math.max(m, c.sort_order), -1000);
+  const insert = db.query(
+    `INSERT INTO kanban_columns (id, board_id, title, role, sort_order) VALUES (?, ?, ?, ?, ?)`,
+  );
+  missing.forEach((col, i) => {
+    insert.run(
+      crypto.randomUUID(),
+      boardId,
+      col.title,
+      col.role,
+      max + (i + 1) * 1000,
+    );
+  });
+  return true;
+}
+
+function recurringOpenId(boardId: string): string | null {
+  const row = db
+    .query(
+      `SELECT id FROM kanban_columns WHERE board_id = ? AND role = 'recurring_open'`,
+    )
+    .get(boardId) as { id: string } | null;
+  return row?.id ?? null;
+}
+
+function firstNormalColumnId(boardId: string): string | null {
+  const row = db
+    .query(
+      `SELECT id FROM kanban_columns WHERE board_id = ? AND (role = 'normal' OR role IS NULL) ORDER BY sort_order ASC`,
+    )
+    .get(boardId) as { id: string } | null;
+  return row?.id ?? null;
+}
+
+function moveCardToColumn(cardId: string, columnId: string): void {
+  const max = db
+    .query(
+      `SELECT COALESCE(MAX(sort_order), -1000) AS m FROM kanban_cards WHERE column_id = ?`,
+    )
+    .get(columnId) as { m: number };
+  db.query(
+    `UPDATE kanban_cards SET column_id = ?, sort_order = ?, updated_at = datetime('now') WHERE id = ?`,
+  ).run(columnId, max.m + 1000, cardId);
+}
+
+function advanceRecurringCycles(boardId: string): boolean {
+  const today = todayIso();
+  const openId = recurringOpenId(boardId);
+  if (!openId) return false;
+  const rows = db
+    .query(
+      `SELECT id, column_id, due_date, recurrence FROM kanban_cards WHERE board_id = ? AND recurrence IS NOT NULL`,
+    )
+    .all(boardId) as {
+    id: string;
+    column_id: string;
+    due_date: string | null;
+    recurrence: string | null;
+  }[];
+  let changed = false;
+  for (const row of rows) {
+    const rec = parseRecurrence(row.recurrence);
+    if (!rec) continue;
+    const current = lastOccurrenceOnOrBefore(today, rec);
+    if (!current) continue;
+    const due = isDueDate(row.due_date) ? row.due_date : null;
+    if (due && due >= current) continue;
+    db.query(
+      `UPDATE kanban_cards SET due_date = ?, updated_at = datetime('now') WHERE id = ?`,
+    ).run(current, row.id);
+    if (row.column_id !== openId) moveCardToColumn(row.id, openId);
+    changed = true;
+  }
+  return changed;
+}
+
 export function loadKanbanState(boardId: string): KanbanState | null {
   const row = db
     .query("SELECT * FROM kanban_boards WHERE id = ?")
     .get(boardId) as KanbanBoardRow | null;
   if (!row) return null;
 
-  const columns = (
-    db
-      .query(
-        `SELECT * FROM kanban_columns WHERE board_id = ? ORDER BY sort_order ASC`,
-      )
-      .all(boardId) as {
-      id: string;
-      board_id: string;
-      title: string;
-      sort_order: number;
-    }[]
-  ).map(mapColumn);
+  const seeded = ensureRecurringColumns(boardId);
+  const rolled = advanceRecurringCycles(boardId);
+
+  const columns = columnRows(boardId).map(mapColumn);
 
   const cardRows = db
     .query(
@@ -304,6 +409,7 @@ export function loadKanbanState(boardId: string): KanbanState | null {
     description: string;
     priority?: string;
     due_date?: string | null;
+    recurrence?: string | null;
     sort_order: number;
     created_by: string | null;
     created_at: string;
@@ -389,13 +495,18 @@ export function loadKanbanState(boardId: string): KanbanState | null {
     }[]
   ).map(mapLabel);
 
-  return {
+  const state: KanbanState = {
     board: mapKanbanBoard(row),
     columns,
     cards,
     labels,
     people: listKanbanPeople(boardId),
   };
+  if (seeded || rolled) {
+    touchKanban(boardId);
+    emitKanban(boardId, { type: "state", ...state });
+  }
+  return state;
 }
 
 export function notifyKanban(boardId: string): void {
@@ -420,7 +531,7 @@ export function createKanbanBoard(
       `INSERT INTO kanban_boards (id, name, created_by) VALUES (?, ?, ?)`,
     ).run(id, name, createdBy);
     const insertCol = db.query(
-      `INSERT INTO kanban_columns (id, board_id, title, sort_order) VALUES (?, ?, ?, ?)`,
+      `INSERT INTO kanban_columns (id, board_id, title, role, sort_order) VALUES (?, ?, ?, 'normal', ?)`,
     );
     titles.forEach((title, i) => {
       insertCol.run(crypto.randomUUID(), id, title, i * 1000);
@@ -441,7 +552,7 @@ export function addColumn(boardId: string, title: string): KanbanColumn {
     .get(boardId) as { m: number };
   const id = crypto.randomUUID();
   db.query(
-    `INSERT INTO kanban_columns (id, board_id, title, sort_order) VALUES (?, ?, ?, ?)`,
+    `INSERT INTO kanban_columns (id, board_id, title, role, sort_order) VALUES (?, ?, ?, 'normal', ?)`,
   ).run(id, boardId, title, max.m + 1000);
   notifyKanban(boardId);
   return mapColumn(
@@ -449,6 +560,7 @@ export function addColumn(boardId: string, title: string): KanbanColumn {
       id: string;
       board_id: string;
       title: string;
+      role?: string;
       sort_order: number;
     },
   );
@@ -470,22 +582,26 @@ export function renameColumn(
 }
 
 export function reorderColumns(boardId: string, columnIds: string[]): boolean {
-  const existing = (
-    db
-      .query(`SELECT id FROM kanban_columns WHERE board_id = ?`)
-      .all(boardId) as { id: string }[]
-  ).map((r) => r.id);
+  const cols = columnRows(boardId).map(mapColumn);
+  const normal = cols.filter((c) => c.role === "normal");
+  const recurring = RECURRING_COLUMN_DEFAULTS.map((d) =>
+    cols.find((c) => c.role === d.role),
+  ).filter((c): c is KanbanColumn => Boolean(c));
+  const givenNormal = columnIds.filter((id) =>
+    normal.some((c) => c.id === id),
+  );
   if (
-    existing.length !== columnIds.length ||
-    existing.some((id) => !columnIds.includes(id))
+    givenNormal.length !== normal.length ||
+    givenNormal.some((id) => !normal.some((c) => c.id === id))
   ) {
     return false;
   }
+  const ordered = [...givenNormal, ...recurring.map((c) => c.id)];
   const apply = db.transaction(() => {
     const upd = db.query(
       `UPDATE kanban_columns SET sort_order = ? WHERE id = ? AND board_id = ?`,
     );
-    columnIds.forEach((id, i) => upd.run(i * 1000, id, boardId));
+    ordered.forEach((id, i) => upd.run(i * 1000, id, boardId));
   });
   apply();
   notifyKanban(boardId);
@@ -493,6 +609,10 @@ export function reorderColumns(boardId: string, columnIds: string[]): boolean {
 }
 
 export function deleteColumn(boardId: string, columnId: string): boolean {
+  const col = db
+    .query(`SELECT role FROM kanban_columns WHERE id = ? AND board_id = ?`)
+    .get(columnId, boardId) as { role?: string } | null;
+  if (!col || isRecurringRole(col.role)) return false;
   const result = db
     .query(`DELETE FROM kanban_columns WHERE id = ? AND board_id = ?`)
     .run(columnId, boardId);
@@ -509,8 +629,8 @@ export function addCard(
   createdBy: string,
 ): KanbanCard | null {
   const col = db
-    .query(`SELECT id FROM kanban_columns WHERE id = ? AND board_id = ?`)
-    .get(columnId, boardId);
+    .query(`SELECT id, role FROM kanban_columns WHERE id = ? AND board_id = ?`)
+    .get(columnId, boardId) as { id: string; role?: string } | null;
   if (!col) return null;
   const max = db
     .query(
@@ -522,6 +642,13 @@ export function addCard(
     `INSERT INTO kanban_cards (id, board_id, column_id, title, description, sort_order, created_by)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
   ).run(id, boardId, columnId, title, description, max.m + 1000, createdBy);
+  if (isRecurringRole(col.role)) {
+    const rec = defaultWeeklyRecurrence();
+    const due = lastOccurrenceOnOrBefore(todayIso(), rec);
+    db.query(
+      `UPDATE kanban_cards SET recurrence = ?, due_date = ? WHERE id = ?`,
+    ).run(JSON.stringify(rec), due, id);
+  }
   notifyKanban(boardId);
   return loadCard(id);
 }
@@ -534,13 +661,14 @@ export function updateCard(
     description?: string;
     priority?: KanbanPriority;
     dueDate?: string | null;
+    recurrence?: KanbanRecurrence | null;
     assigneeIds?: string[];
     labelIds?: string[];
   },
 ): boolean {
   const row = db
-    .query(`SELECT id FROM kanban_cards WHERE id = ? AND board_id = ?`)
-    .get(cardId, boardId);
+    .query(`SELECT id, column_id FROM kanban_cards WHERE id = ? AND board_id = ?`)
+    .get(cardId, boardId) as { id: string; column_id: string } | null;
   if (!row) return false;
   if (fields.title !== undefined) {
     db.query(
@@ -573,6 +701,33 @@ export function updateCard(
     db.query(
       `UPDATE kanban_cards SET updated_at = datetime('now') WHERE id = ?`,
     ).run(cardId);
+  }
+  if (fields.recurrence !== undefined) {
+    if (fields.recurrence) {
+      const due =
+        lastOccurrenceOnOrBefore(todayIso(), fields.recurrence) ?? todayIso();
+      db.query(
+        `UPDATE kanban_cards SET recurrence = ?, due_date = ?, updated_at = datetime('now') WHERE id = ?`,
+      ).run(JSON.stringify(fields.recurrence), due, cardId);
+      const col = db
+        .query(`SELECT role FROM kanban_columns WHERE id = ?`)
+        .get(row.column_id) as { role?: string } | null;
+      if (!isRecurringRole(col?.role)) {
+        const openId = recurringOpenId(boardId);
+        if (openId) moveCardToColumn(cardId, openId);
+      }
+    } else {
+      db.query(
+        `UPDATE kanban_cards SET recurrence = NULL, updated_at = datetime('now') WHERE id = ?`,
+      ).run(cardId);
+      const col = db
+        .query(`SELECT role FROM kanban_columns WHERE id = ?`)
+        .get(row.column_id) as { role?: string } | null;
+      if (isRecurringRole(col?.role)) {
+        const normalId = firstNormalColumnId(boardId);
+        if (normalId) moveCardToColumn(cardId, normalId);
+      }
+    }
   }
   notifyKanban(boardId);
   return true;
@@ -708,13 +863,21 @@ export function moveCard(
   toIndex: number,
 ): boolean {
   const card = db
-    .query(`SELECT id, column_id FROM kanban_cards WHERE id = ? AND board_id = ?`)
-    .get(cardId, boardId) as { id: string; column_id: string } | null;
+    .query(
+      `SELECT id, column_id, recurrence FROM kanban_cards WHERE id = ? AND board_id = ?`,
+    )
+    .get(cardId, boardId) as {
+    id: string;
+    column_id: string;
+    recurrence?: string | null;
+  } | null;
   if (!card) return false;
   const col = db
-    .query(`SELECT id FROM kanban_columns WHERE id = ? AND board_id = ?`)
-    .get(toColumnId, boardId);
+    .query(`SELECT id, role FROM kanban_columns WHERE id = ? AND board_id = ?`)
+    .get(toColumnId, boardId) as { id: string; role?: string } | null;
   if (!col) return false;
+  const repeating = Boolean(parseRecurrence(card.recurrence));
+  if (repeating !== isRecurringRole(col.role)) return false;
 
   const siblings = (
     db
