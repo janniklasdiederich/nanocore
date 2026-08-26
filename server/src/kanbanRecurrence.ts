@@ -126,6 +126,49 @@ export function parseRecurrence(value: unknown): KanbanRecurrence | null {
   return { freq, weekdays, day, month, until };
 }
 
+export function nextOccurrenceOnOrAfter(
+  from: string,
+  rec: KanbanRecurrence,
+): string | null {
+  if (rec.until && from > rec.until) return null;
+  const t = parts(from);
+  if (rec.freq === "daily") return from;
+  if (rec.freq === "weekly") {
+    for (let i = 0; i < 7; i++) {
+      const x = new Date(t.y, t.m, t.d + i);
+      if (rec.weekdays.includes(x.getDay())) {
+        const iso = toIso(x.getFullYear(), x.getMonth(), x.getDate());
+        if (rec.until && iso > rec.until) return null;
+        return iso;
+      }
+    }
+    return null;
+  }
+  if (rec.freq === "monthly") {
+    const day = rec.day ?? t.d;
+    const thisMonth = clampMonthDay(t.y, t.m, day);
+    if (thisMonth >= from) {
+      if (rec.until && thisMonth > rec.until) return null;
+      return thisMonth;
+    }
+    const ny = t.m === 11 ? t.y + 1 : t.y;
+    const nm = t.m === 11 ? 0 : t.m + 1;
+    const next = clampMonthDay(ny, nm, day);
+    if (rec.until && next > rec.until) return null;
+    return next;
+  }
+  const month0 = (rec.month ?? t.m + 1) - 1;
+  const day = rec.day ?? t.d;
+  const thisYear = clampMonthDay(t.y, month0, day);
+  if (thisYear >= from) {
+    if (rec.until && thisYear > rec.until) return null;
+    return thisYear;
+  }
+  const next = clampMonthDay(t.y + 1, month0, day);
+  if (rec.until && next > rec.until) return null;
+  return next;
+}
+
 export function lastOccurrenceOnOrBefore(
   today: string,
   rec: KanbanRecurrence,

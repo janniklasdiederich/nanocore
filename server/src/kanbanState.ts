@@ -8,7 +8,7 @@ import { emitKanban } from "./kanbanRooms";
 import {
   defaultWeeklyRecurrence,
   isRecurringRole,
-  lastOccurrenceOnOrBefore,
+  nextOccurrenceOnOrAfter,
   parseRecurrence,
   todayIso,
   RECURRING_COLUMN_DEFAULTS,
@@ -373,13 +373,13 @@ function advanceRecurringCycles(boardId: string): boolean {
   for (const row of rows) {
     const rec = parseRecurrence(row.recurrence);
     if (!rec) continue;
-    const current = lastOccurrenceOnOrBefore(today, rec);
-    if (!current) continue;
     const due = isDueDate(row.due_date) ? row.due_date : null;
-    if (due && due >= current) continue;
+    if (due && due >= today) continue;
+    const next = nextOccurrenceOnOrAfter(today, rec);
+    if (!next) continue;
     db.query(
       `UPDATE kanban_cards SET due_date = ?, updated_at = datetime('now') WHERE id = ?`,
-    ).run(current, row.id);
+    ).run(next, row.id);
     if (row.column_id !== openId) moveCardToColumn(row.id, openId);
     changed = true;
   }
@@ -644,7 +644,7 @@ export function addCard(
   ).run(id, boardId, columnId, title, description, max.m + 1000, createdBy);
   if (isRecurringRole(col.role)) {
     const rec = defaultWeeklyRecurrence();
-    const due = lastOccurrenceOnOrBefore(todayIso(), rec);
+    const due = nextOccurrenceOnOrAfter(todayIso(), rec);
     db.query(
       `UPDATE kanban_cards SET recurrence = ?, due_date = ? WHERE id = ?`,
     ).run(JSON.stringify(rec), due, id);
@@ -705,7 +705,7 @@ export function updateCard(
   if (fields.recurrence !== undefined) {
     if (fields.recurrence) {
       const due =
-        lastOccurrenceOnOrBefore(todayIso(), fields.recurrence) ?? todayIso();
+        nextOccurrenceOnOrAfter(todayIso(), fields.recurrence) ?? todayIso();
       db.query(
         `UPDATE kanban_cards SET recurrence = ?, due_date = ?, updated_at = datetime('now') WHERE id = ?`,
       ).run(JSON.stringify(fields.recurrence), due, cardId);
