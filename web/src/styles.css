@@ -321,6 +321,20 @@ a.btn-primary:hover {
   flex-direction: column;
 }
 
+/* Document editor: pin chrome; only the prose pane scrolls. */
+.app-shell--wide:has(.doc-page) {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app-shell--wide:has(.doc-page) .app-shell-main,
+.app-shell--wide:has(.doc-page) .content {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 .sidebar {
   width: 220px;
   flex-shrink: 0;
@@ -3190,11 +3204,14 @@ span.kb-cal-day-num {
 .doc-page {
   flex: 1;
   min-height: 0;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .doc-toolbar {
+  flex-shrink: 0;
   padding: 14px 22px 10px;
   display: flex;
   flex-wrap: wrap;
@@ -3255,16 +3272,19 @@ span.kb-cal-day-num {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .doc-format {
+  flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   padding: 8px 22px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+  background: var(--bg-elevated);
+  z-index: 2;
 }
 
 .doc-format-sep {
@@ -3302,6 +3322,7 @@ span.kb-cal-day-num {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 28px 22px 64px;
 }
 

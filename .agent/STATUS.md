@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-09-02 after: document editor chrome + clickable links_
+_Last updated: 2026-09-02 after: pin document format toolbar_
 
 ## What's Been Built
 
@@ -29,7 +29,9 @@ _Last updated: 2026-09-02 after: document editor chrome + clickable links_
 
 ## Current Task / Last Completed
 
-Document editor: dropped the “Live” badge (sync still reconnects in the background). Links open in a new tab on click instead of placing the caret in the URL text.
+Document editor chrome stays put: the title + format bar are pinned; only the document body scrolls (Google Docs-style). A floating selection menu was skipped — headings, lists, and images need the bar even with no selection.
+
+Previous: dropped the “Live” badge; links open in a new tab on click.
 
 Previous: Documents shipped as the third product, **without** extracting the module platform. Access unit is a **Space** (not “workspace” — that clashes with the org). Restart the API once so existing DBs get `doc_spaces`, `doc_space_members`, `doc_space_groups`, and `documents`.
 
