@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-09-02 after: Documents with Spaces access_
+_Last updated: 2026-09-02 after: document editor chrome + clickable links_
 
 ## What's Been Built
 
@@ -29,7 +29,9 @@ _Last updated: 2026-09-02 after: Documents with Spaces access_
 
 ## Current Task / Last Completed
 
-Documents shipped as the third product, **without** extracting the module platform. Access unit is a **Space** (not “workspace” — that clashes with the org). Restart the API once so existing DBs get `doc_spaces`, `doc_space_members`, `doc_space_groups`, and `documents`.
+Document editor: dropped the “Live” badge (sync still reconnects in the background). Links open in a new tab on click instead of placing the caret in the URL text.
+
+Previous: Documents shipped as the third product, **without** extracting the module platform. Access unit is a **Space** (not “workspace” — that clashes with the org). Restart the API once so existing DBs get `doc_spaces`, `doc_space_members`, `doc_space_groups`, and `documents`.
 
 Previous: duplicate whiteboard page copies that page’s background color.
 

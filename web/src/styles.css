@@ -3246,18 +3246,6 @@ span.kb-cal-day-num {
   gap: 10px;
 }
 
-.doc-status {
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.doc-status.is-live {
-  color: var(--success);
-}
-
 .doc-error {
   margin: 10px 22px 0;
 }
@@ -3363,6 +3351,7 @@ span.kb-cal-day-num {
 
 .doc-prose a {
   text-decoration: underline;
+  cursor: pointer;
 }
 
 .doc-prose p.is-editor-empty:first-child::before {

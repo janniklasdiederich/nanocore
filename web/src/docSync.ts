@@ -16,8 +16,8 @@ export function connectDocSync(opts: {
   docId: string;
   ydoc: Y.Doc;
   awareness: awarenessProtocol.Awareness;
-  onStatus: (status: DocSyncStatus) => void;
-  onSynced: () => void;
+  onStatus?: (status: DocSyncStatus) => void;
+  onSynced?: () => void;
 }): () => void {
   const { docId, ydoc, awareness, onStatus, onSynced } = opts;
   let closed = false;
@@ -82,7 +82,7 @@ export function connectDocSync(opts: {
         }
         if (syncType === syncProtocol.messageYjsSyncStep2 && !synced) {
           synced = true;
-          onSynced();
+          onSynced?.();
         }
         break;
       }
@@ -115,7 +115,7 @@ export function connectDocSync(opts: {
 
   async function connect() {
     if (closed) return;
-    onStatus("connecting");
+    onStatus?.("connecting");
     try {
       const { token } = await api.getDocSyncToken(docId);
       if (closed) return;
@@ -128,7 +128,7 @@ export function connectDocSync(opts: {
       socket.addEventListener("open", () => {
         if (closed || ws !== socket) return;
         attempt = 0;
-        onStatus("connected");
+        onStatus?.("connected");
         const step1 = encoding.createEncoder();
         encoding.writeVarUint(step1, messageSync);
         syncProtocol.writeSyncStep1(step1, ydoc);
@@ -160,7 +160,7 @@ export function connectDocSync(opts: {
       socket.addEventListener("close", (event) => {
         if (ws === socket) ws = null;
         if (closed) return;
-        onStatus("disconnected");
+        onStatus?.("disconnected");
         if (event.code === 4403 || event.code === 1008) return;
         scheduleReconnect();
       });
@@ -170,7 +170,7 @@ export function connectDocSync(opts: {
       });
     } catch (err) {
       if (closed) return;
-      onStatus("disconnected");
+      onStatus?.("disconnected");
       if (
         err instanceof ApiError &&
         (err.status === 401 || err.status === 403 || err.status === 404)

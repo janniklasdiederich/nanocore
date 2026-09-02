@@ -20,7 +20,7 @@ import { api, ApiError, type DocMeta } from "../api";
 import { useAuth } from "../auth";
 import { AppShell } from "../components/AppShell";
 import { apiUrl } from "../config";
-import { connectDocSync, type DocSyncStatus } from "../docSync";
+import { connectDocSync } from "../docSync";
 import { useT } from "../i18n";
 import { avatarColor } from "../kanbanDisplay";
 import { useDocumentTitle } from "../useDocumentTitle";
@@ -104,7 +104,6 @@ function LiveDoc({
   const navigate = useNavigate();
   const { user } = useAuth();
   const [title, setTitle] = useState(initialTitle);
-  const [status, setStatus] = useState<DocSyncStatus>("connecting");
   const [error, setError] = useState<string | null>(null);
   const [collab, setCollab] = useState<{
     ydoc: Y.Doc;
@@ -122,8 +121,6 @@ function LiveDoc({
       docId,
       ydoc,
       awareness,
-      onStatus: setStatus,
-      onSynced: () => {},
     });
     return () => {
       stop();
@@ -164,13 +161,6 @@ function LiveDoc({
     }
   }
 
-  const statusLabel =
-    status === "connected"
-      ? t("docs.live")
-      : status === "connecting"
-        ? t("docs.connecting")
-        : t("docs.offline");
-
   return (
     <AppShell title={title} wide>
       <div className="doc-page">
@@ -191,13 +181,6 @@ function LiveDoc({
             />
           </div>
           <div className="doc-toolbar-tools">
-            <span
-              className={
-                "doc-status" + (status === "connected" ? " is-live" : "")
-              }
-            >
-              {statusLabel}
-            </span>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -243,9 +226,13 @@ function DocTiptap({
       StarterKit.configure({ history: false }),
       Placeholder.configure({ placeholder: t("docs.placeholder") }),
       Link.configure({
-        openOnClick: false,
+        openOnClick: true,
         autolink: true,
         defaultProtocol: "https",
+        HTMLAttributes: {
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
       }),
       Image.configure({ inline: false, allowBase64: false }),
       Collaboration.configure({ document: ydoc }),
