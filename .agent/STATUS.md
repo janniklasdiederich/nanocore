@@ -1,6 +1,6 @@
 # Project Status
 
-_Last updated: 2026-08-24 after: kanban recurring tasks
+_Last updated: 2026-08-24 after: always snapping default on
 
 ## What's Been Built
 
@@ -28,7 +28,9 @@ _Last updated: 2026-08-24 after: kanban recurring tasks
 
 ## Current Task / Last Completed
 
-Recurring kanban cards: one card per standing task, comments as the log. Three system columns (Recurring Open / In Progress / Done). Next cycle always returns the card to Open. Calendar shows it on every matching day. Repeat is set in the card editor. Restart the API so columns get `role` and cards get `recurrence`.
+Whiteboard Preferences → Always snapping now defaults on (seeded once per browser so it can still be turned off).
+
+Previous: recurring kanban cards. Restart the API so columns get `role` and cards get `recurrence`.
 
 Previous: calendar grid restyle.
 
