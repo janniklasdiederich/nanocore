@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
@@ -18,6 +18,7 @@ export function AppShell({
 }) {
   const { user, org, clearSession } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const t = useT();
   useDocumentTitle(title);
   const isAdmin = user?.role === "admin";
@@ -41,6 +42,17 @@ export function AppShell({
           </NavLink>
           <NavLink to="/kanban" className={navClass}>
             {t("nav.kanban")}
+          </NavLink>
+          <NavLink
+            to="/spaces"
+            className={({ isActive }) =>
+              navClass({
+                isActive:
+                  isActive || location.pathname.startsWith("/docs"),
+              })
+            }
+          >
+            {t("nav.documents")}
           </NavLink>
           {isAdmin && (
             <NavLink to="/admin" className={navClass}>

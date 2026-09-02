@@ -21,6 +21,24 @@ export type Board = {
   updatedAt: string;
 };
 
+export type DocSpace = {
+  id: string;
+  name: string;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  documentCount: number;
+};
+
+export type DocMeta = {
+  id: string;
+  spaceId: string;
+  title: string;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type BoardAccessUser = {
   id: string;
   email: string;
@@ -518,6 +536,66 @@ export const api = {
       `/api/kanban/${id}/cards/${cardId}/comments/${commentId}`,
       { method: "DELETE" },
     ),
+
+  listSpaces: () => request<{ spaces: DocSpace[] }>("/api/spaces"),
+
+  createSpace: (name?: string) =>
+    request<{ space: DocSpace }>("/api/spaces", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+
+  getSpace: (id: string) =>
+    request<{ space: DocSpace; documents: DocMeta[] }>(`/api/spaces/${id}`),
+
+  renameSpace: (id: string, name: string) =>
+    request<{ space: DocSpace }>(`/api/spaces/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
+
+  deleteSpace: (id: string) =>
+    request<{ ok: boolean }>(`/api/spaces/${id}`, { method: "DELETE" }),
+
+  getSpaceMembers: (id: string) =>
+    request<{ users: BoardAccessUser[]; groups: BoardAccessGroup[] }>(
+      `/api/spaces/${id}/members`,
+    ),
+
+  setSpaceMembers: (id: string, userIds: string[], groupIds?: string[]) =>
+    request<{ users: BoardAccessUser[]; groups: BoardAccessGroup[] }>(
+      `/api/spaces/${id}/members`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ userIds, groupIds }),
+      },
+    ),
+
+  createDocument: (spaceId: string, title?: string) =>
+    request<{ document: DocMeta }>(`/api/spaces/${spaceId}/docs`, {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+
+  getDocument: (id: string) =>
+    request<{ document: DocMeta; space: { id: string; name: string } }>(
+      `/api/docs/${id}`,
+    ),
+
+  getDocSyncToken: (id: string) =>
+    request<{ token: string; expiresInSec: number }>(
+      `/api/docs/${id}/sync-token`,
+      { method: "POST" },
+    ),
+
+  renameDocument: (id: string, title: string) =>
+    request<{ document: DocMeta }>(`/api/docs/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ title }),
+    }),
+
+  deleteDocument: (id: string) =>
+    request<{ ok: boolean }>(`/api/docs/${id}`, { method: "DELETE" }),
 
   searchGifs: (q: string, offset = 0) =>
     request<{

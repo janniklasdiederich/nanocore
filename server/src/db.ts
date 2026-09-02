@@ -184,6 +184,44 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_kanban_labels_board ON kanban_labels(board_id, sort_order);
   CREATE INDEX IF NOT EXISTS idx_kanban_card_assignees_user ON kanban_card_assignees(user_id);
   CREATE INDEX IF NOT EXISTS idx_kanban_comments_card ON kanban_card_comments(card_id, created_at);
+
+  CREATE TABLE IF NOT EXISTS doc_spaces (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS doc_space_members (
+    space_id TEXT NOT NULL REFERENCES doc_spaces(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    granted_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    granted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (space_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS doc_space_groups (
+    space_id TEXT NOT NULL REFERENCES doc_spaces(id) ON DELETE CASCADE,
+    group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    granted_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    granted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (space_id, group_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    space_id TEXT NOT NULL REFERENCES doc_spaces(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    yjs_state BLOB,
+    created_by TEXT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_doc_space_members_user ON doc_space_members(user_id);
+  CREATE INDEX IF NOT EXISTS idx_doc_space_groups_group ON doc_space_groups(group_id);
+  CREATE INDEX IF NOT EXISTS idx_documents_space ON documents(space_id, updated_at);
 `);
 
 export type UserRole = "admin" | "member";

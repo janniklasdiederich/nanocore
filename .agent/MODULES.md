@@ -1,6 +1,6 @@
 # Optional product modules (plan)
 
-_Status: **not implemented**. Written 2026-08-24 after discussing how to add features (kanban, docs, time, notes) without every install paying for all of them. Do not start this until a **third** product is actually being built — two products is not a platform._
+_Status: **not implemented**. Written 2026-08-24 after discussing how to add features (kanban, docs, time, notes) without every install paying for all of them. Documents shipped 2026-09-02 as the third product **without** extracting this platform (same pattern as kanban: own tables, own routes, copied access helper). Do not start the extraction until we are turning products on/off for real._
 
 Nanocore stays **one app**: one Bun process, one SQLite file, one Docker image, one repo. Products are enableable packages *inside* that app, not plugins, not microservices, not extra containers.
 
@@ -61,9 +61,7 @@ A flag that only hides the nav but still statically imports `BoardPage` is a fak
 
 ## Shared access
 
-Do **not** copy `boardAccess.ts` / `kanbanAccess.ts` a third time.
-
-Extract one helper: admins always; members via `*_members` union `*_groups`. Each module supplies table names / resource id. Kanban and whiteboards already match this rule.
+We **did** copy a third time (`docAccess.ts` for Spaces). Extract one helper when this platform is actually built: admins always; members via `*_members` union `*_groups`. Each module supplies table names / resource id. Whiteboards, kanban, and document spaces already match this rule.
 
 ## Cross-module: kanban on whiteboards
 

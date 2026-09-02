@@ -11,17 +11,19 @@ Nanocore is an open-source, self-hosted Miro-style collaborative whiteboard. It 
 - First-run setup: organization display name + admin account
 - Admin-created users (email + temporary password; force change on first login)
 - Boards list + collaborative canvas with tldraw defaults (shapes, notes, text, images, live cursors)
-- Kanban boards (separate from tldraw) on `feature/kanban`
+- Kanban boards (separate from tldraw)
+- Documents: live collaborative rich text, grouped into **Spaces** (access is per space)
 - Optional Docker / docker-compose
 
 **Out of scope for now:**
 - Multi-tenant SaaS
 - Public self-registration / email verification
-- Extra products beyond whiteboards + kanban (docs, notes, time, …)
+- Suggestion mode / comments-on-selection / Word export for documents
+- Extra products beyond whiteboards + kanban + documents (notes, time, …)
 - Plugin / marketplace architecture
-- Comments, voting, templates, SSO
+- Voting, templates, SSO
 
-**Later (not built):** optional in-process product modules so an org can disable unused products. Plan: `.agent/MODULES.md`. Do not start until a third product is real.
+**Later (not built):** optional in-process product modules so an org can disable unused products. Plan: `.agent/MODULES.md`. Documents shipped like kanban; the platform extraction is still not started.
 
 ## Key Users / Consumers
 

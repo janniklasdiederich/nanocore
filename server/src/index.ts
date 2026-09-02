@@ -14,7 +14,14 @@ import { isSetupComplete } from "./db";
 // rooms imports apply the custom-color validation patch before TLSocketRoom runs
 import { userCanAccessBoard } from "./boardAccess";
 import { userCanAccessKanban } from "./kanbanAccess";
+import { userCanAccessDocument } from "./docAccess";
 import { joinKanbanRoom, closeAllKanbanRooms } from "./kanbanRooms";
+import {
+  closeAllDocRooms,
+  handleDocMessage,
+  joinDocRoom,
+  leaveDocRoom,
+} from "./docRooms";
 import { loadKanbanState } from "./kanbanState";
 import { makeOrLoadRoom, getActiveRoom, closeAllRooms } from "./rooms";
 import { trackWs, untrackWs } from "./wsConnections";
@@ -26,6 +33,7 @@ import { groupRoutes } from "./routes/groups";
 import { orgRoutes } from "./routes/org";
 import { boardRoutes } from "./routes/boards";
 import { kanbanRoutes } from "./routes/kanban";
+import { spaceRoutes, docRoutes } from "./routes/docs";
 import { assetRoutes } from "./routes/assets";
 import { gifRoutes } from "./routes/gifs";
 import {
@@ -34,7 +42,7 @@ import {
 } from "./routes/invites";
 
 type WsData = {
-  kind: "tldraw" | "kanban";
+  kind: "tldraw" | "kanban" | "doc";
   sessionId: string;
   boardId: string;
   userId: string;
@@ -83,6 +91,8 @@ app.route("/api/groups", groupRoutes);
 app.route("/api/org", orgRoutes);
 app.route("/api/boards", boardRoutes);
 app.route("/api/kanban", kanbanRoutes);
+app.route("/api/spaces", spaceRoutes);
+app.route("/api/docs", docRoutes);
 app.route("/api/assets", assetRoutes);
 app.route("/api/gifs", gifRoutes);
 app.route("/api/invites", inviteAdminRoutes);
@@ -189,17 +199,23 @@ const server = Bun.serve<WsData>({
   async fetch(req, srv) {
     const url = new URL(req.url);
 
-    // WebSocket upgrade: tldraw `/api/sync/:id` or kanban `/api/kanban-sync/:id`
+    // WebSocket upgrade: tldraw `/api/sync/:id`, kanban `/api/kanban-sync/:id`,
+    // documents `/api/doc-sync/:id`
     const isTldrawSync = url.pathname.startsWith("/api/sync/");
     const isKanbanSync = url.pathname.startsWith("/api/kanban-sync/");
-    if (isTldrawSync || isKanbanSync) {
+    const isDocSync = url.pathname.startsWith("/api/doc-sync/");
+    if (isTldrawSync || isKanbanSync || isDocSync) {
       const isUpgrade =
         req.headers.get("upgrade")?.toLowerCase() === "websocket";
       if (!isUpgrade) {
         return new Response("Expected WebSocket upgrade", { status: 426 });
       }
 
-      const prefix = isKanbanSync ? "/api/kanban-sync/" : "/api/sync/";
+      const prefix = isDocSync
+        ? "/api/doc-sync/"
+        : isKanbanSync
+          ? "/api/kanban-sync/"
+          : "/api/sync/";
       const boardId = decodeURIComponent(
         url.pathname.slice(prefix.length).split("/")[0] ?? "",
       );
@@ -234,29 +250,40 @@ const server = Bun.serve<WsData>({
         userId = user.id;
       }
 
-      const table = isKanbanSync ? "kanban_boards" : "boards";
+      const table = isDocSync
+        ? "documents"
+        : isKanbanSync
+          ? "kanban_boards"
+          : "boards";
       const board = (
         await import("./db")
       ).db
         .query(`SELECT id FROM ${table} WHERE id = ?`)
         .get(boardId);
       if (!board) {
-        return new Response("Board not found", { status: 404 });
+        return new Response("Not found", { status: 404 });
       }
 
       if (!userId) {
         return new Response("Forbidden", { status: 403 });
       }
-      const allowed = isKanbanSync
-        ? userCanAccessKanban(userId, boardId)
-        : userCanAccessBoard(userId, boardId);
+      const allowed = isDocSync
+        ? userCanAccessDocument(userId, boardId)
+        : isKanbanSync
+          ? userCanAccessKanban(userId, boardId)
+          : userCanAccessBoard(userId, boardId);
       if (!allowed) {
         return new Response("Forbidden", { status: 403 });
       }
 
+      const kind: WsData["kind"] = isDocSync
+        ? "doc"
+        : isKanbanSync
+          ? "kanban"
+          : "tldraw";
       const ok = srv.upgrade(req, {
         data: {
-          kind: isKanbanSync ? "kanban" : "tldraw",
+          kind,
           sessionId,
           boardId,
           userId,
@@ -277,7 +304,9 @@ const server = Bun.serve<WsData>({
         const trackId =
           ws.data.kind === "kanban"
             ? `kanban:${ws.data.boardId}`
-            : ws.data.boardId;
+            : ws.data.kind === "doc"
+              ? `doc:${ws.data.boardId}`
+              : ws.data.boardId;
         trackWs({
           boardId: trackId,
           userId: ws.data.userId,
@@ -290,6 +319,29 @@ const server = Bun.serve<WsData>({
             }
           },
         });
+
+        if (ws.data.kind === "doc") {
+          const ok = joinDocRoom(ws.data.boardId, ws.data.sessionId, {
+            send: (data) => {
+              try {
+                ws.send(data);
+              } catch {
+                // ignore
+              }
+            },
+            close: (code, reason) => {
+              try {
+                ws.close(code, reason);
+              } catch {
+                // ignore
+              }
+            },
+          });
+          if (!ok) {
+            ws.close(1008, "Document not found");
+          }
+          return;
+        }
 
         if (ws.data.kind === "kanban") {
           const leave = joinKanbanRoom(ws.data.boardId, {
@@ -346,6 +398,10 @@ const server = Bun.serve<WsData>({
     },
     message(ws, message) {
       if (ws.data.kind === "kanban") return;
+      if (ws.data.kind === "doc") {
+        handleDocMessage(ws.data.boardId, ws.data.sessionId, message);
+        return;
+      }
       try {
         const room = makeOrLoadRoom(ws.data.boardId);
         const data =
@@ -366,8 +422,14 @@ const server = Bun.serve<WsData>({
       const trackId =
         ws.data.kind === "kanban"
           ? `kanban:${ws.data.boardId}`
-          : ws.data.boardId;
+          : ws.data.kind === "doc"
+            ? `doc:${ws.data.boardId}`
+            : ws.data.boardId;
       untrackWs(trackId, ws.data.sessionId);
+      if (ws.data.kind === "doc") {
+        leaveDocRoom(ws.data.boardId, ws.data.sessionId);
+        return;
+      }
       if (ws.data.kind === "kanban") {
         kanbanLeaves.get(ws.data.sessionId)?.();
         kanbanLeaves.delete(ws.data.sessionId);
@@ -411,6 +473,7 @@ function shutdown() {
   clearInterval(purgeTimer);
   closeAllRooms();
   closeAllKanbanRooms();
+  closeAllDocRooms();
   server.stop();
   process.exit(0);
 }

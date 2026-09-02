@@ -9,6 +9,9 @@ import { UsersPage } from "./pages/UsersPage";
 import { InvitePage } from "./pages/InvitePage";
 import { KanbanListPage } from "./pages/KanbanListPage";
 import { KanbanBoardPage } from "./pages/KanbanBoardPage";
+import { SpacesPage } from "./pages/SpacesPage";
+import { SpacePage } from "./pages/SpacePage";
+import { DocEditorPage } from "./pages/DocEditorPage";
 import { useOrgFavicon } from "./components/BrandMark";
 
 function Guard({
@@ -122,6 +125,30 @@ export function App() {
         element={
           <Guard>
             <KanbanBoardPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/spaces"
+        element={
+          <Guard>
+            <SpacesPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/spaces/:id"
+        element={
+          <Guard>
+            <SpacePage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/docs/:id"
+        element={
+          <Guard>
+            <DocEditorPage />
           </Guard>
         }
       />

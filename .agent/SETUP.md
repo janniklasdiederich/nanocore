@@ -68,5 +68,6 @@ sh docker/backup.sh
 ## Common Issues
 
 - **PowerShell `curl`**: use `curl.exe` or Bun fetch — `curl` is aliased to Invoke-WebRequest
-- **WS auth**: session cookie must be present; use same-origin (Vite proxy) or same host in prod
+- **WS auth**: session cookie must be present; use same-origin (Vite proxy) or same host in prod. Dev WebSockets (tldraw, kanban, documents) hit the API origin (`ws://localhost:3001`), not the Vite HTTP proxy.
+- **New SQLite tables**: restart `dev:server` after pulling schema changes (`CREATE TABLE IF NOT EXISTS` / `ALTER` run at boot). Documents need `doc_spaces` / `documents`.
 - **Reset install**: delete `DATA_DIR` (e.g. `./data`) to re-run setup
