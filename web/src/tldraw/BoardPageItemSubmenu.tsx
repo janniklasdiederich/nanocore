@@ -22,6 +22,10 @@ import {
   type TLPageId,
 } from "tldraw";
 import { PageColorDialog } from "./PageColorDialog";
+import {
+  getPageBackgroundColor,
+  setPageBackgroundColor,
+} from "./pageBackground";
 
 /**
  * Page ⋮ menu with stock actions plus “Change color” for per-page background.
@@ -39,9 +43,12 @@ export const BoardPageItemSubmenu = track(function BoardPageItemSubmenu({
   const { addDialog } = useDialogs();
 
   const onDuplicate = useCallback(() => {
+    const sourceId = item.id as TLPageId;
+    const color = getPageBackgroundColor(editor, sourceId);
     editor.markHistoryStoppingPoint("creating page");
     const newId = PageRecordType.createId();
-    editor.duplicatePage(item.id as TLPageId, newId);
+    editor.duplicatePage(sourceId, newId);
+    setPageBackgroundColor(editor, newId, color);
     trackEvent("duplicate-page", { source: "page-menu" });
   }, [editor, item, trackEvent]);
 
