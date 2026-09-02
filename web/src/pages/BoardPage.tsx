@@ -200,8 +200,8 @@ function BoardCanvas({
         name: userInfo.name,
         color: userInfo.color,
         locale: tldrawLocale,
+        isSnapMode: true,
       });
-      seedAlwaysSnappingOn(editor);
       syncCustomColorsFromDocument(editor);
       const stopPalette = listenCustomColorPalette(editor);
       const stopMarkdown = registerMarkdownOnEditEnd(editor);
@@ -266,19 +266,6 @@ function BoardCanvas({
       />
     </div>
   );
-}
-
-const SNAP_DEFAULT_KEY = "nanocore_always_snap_default_v1";
-
-/** Product default is Always snapping on. Seed once so users can still turn it off. */
-function seedAlwaysSnappingOn(editor: Editor) {
-  try {
-    if (localStorage.getItem(SNAP_DEFAULT_KEY) === "1") return;
-    localStorage.setItem(SNAP_DEFAULT_KEY, "1");
-  } catch {
-    // still apply this session
-  }
-  editor.user.updateUserPreferences({ isSnapMode: true });
 }
 
 function colorFromId(id: string): string {

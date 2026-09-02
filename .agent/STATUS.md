@@ -28,7 +28,7 @@ _Last updated: 2026-08-24 after: always snapping default on
 
 ## Current Task / Last Completed
 
-Whiteboard Preferences → Always snapping now defaults on (seeded once per browser so it can still be turned off).
+Whiteboard Preferences → Always snapping is on whenever a board mounts (`isSnapMode: true`). The menu toggle still works for the session.
 
 Previous: recurring kanban cards. Restart the API so columns get `role` and cards get `recurrence`.
 
