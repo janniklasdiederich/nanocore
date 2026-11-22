@@ -29,9 +29,11 @@ export function ChangePasswordPage() {
       setSession(res.user, org);
       navigate("/", { replace: true });
     } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : t("password.failed"),
-      );
+      if (err instanceof ApiError && err.code === "TEMPORARY_PASSWORD_REUSED") {
+        setError(t("password.temporaryReused"));
+      } else {
+        setError(err instanceof ApiError ? err.message : t("password.failed"));
+      }
     } finally {
       setBusy(false);
     }

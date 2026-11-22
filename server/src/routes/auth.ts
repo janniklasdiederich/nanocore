@@ -63,7 +63,13 @@ authRoutes.post("/login", async (c) => {
     return c.json({ error: "Invalid email or password" }, 401);
   }
 
-  const token = createSession(user.id);
+  // A temporary password can be replaced while verification is running.
+  const token = db.transaction(() => {
+    const current = db.query("SELECT 1 FROM users WHERE id = ? AND password_hash = ?")
+      .get(user.id, user.password_hash);
+    return current ? createSession(user.id) : null;
+  })();
+  if (!token) return c.json({ error: "Invalid email or password" }, 401);
   setSessionCookie(c, token);
 
   const org = getOrg();
@@ -100,14 +106,26 @@ authRoutes.post("/change-password", requireAuth, async (c) => {
     return c.json({ error: "Current password is incorrect" }, 400);
   }
 
-  const passwordHash = await hashPassword(newPassword);
-  db.query(
-    `UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?`,
-  ).run(passwordHash, userRow.id);
+  if (userRow.must_change_password && newPassword === currentPassword) {
+    return c.json({
+      error: "Choose a password different from your temporary password",
+      code: "TEMPORARY_PASSWORD_REUSED",
+    }, 400);
+  }
 
-  // Invalidate all sessions (including this one), then mint a fresh session
-  destroyAllSessionsForUser(userRow.id);
-  const token = createSession(userRow.id);
+  const passwordHash = await hashPassword(newPassword);
+  const token = db.transaction(() => {
+    const result = db.query(
+      `UPDATE users SET password_hash = ?, must_change_password = 0
+       WHERE id = ? AND password_hash = ?`,
+    ).run(passwordHash, userRow.id, userRow.password_hash);
+    if (!result.changes) return null;
+    destroyAllSessionsForUser(userRow.id);
+    return createSession(userRow.id);
+  })();
+  if (!token) {
+    return c.json({ error: "Your password has changed. Sign in again." }, 409);
+  }
   setSessionCookie(c, token);
 
   const updated = db

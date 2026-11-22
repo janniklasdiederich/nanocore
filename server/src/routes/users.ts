@@ -1,9 +1,13 @@
 import { Hono } from "hono";
+import { getCookie } from "hono/cookie";
 import {
+  destroyAllSessionsForUser,
+  getUserFromToken,
   hashPassword,
   requireAdmin,
   requireAuth,
   requirePasswordOk,
+  SESSION_COOKIE,
   type Variables,
 } from "../auth";
 import { db, publicUser, type UserRow } from "../db";
@@ -72,6 +76,45 @@ userRoutes.post("/", requireAdmin, async (c) => {
 
   const user = db.query("SELECT * FROM users WHERE id = ?").get(id) as UserRow;
   return c.json({ user: publicUser(user) }, 201);
+});
+
+userRoutes.put("/:id/temporary-password", requireAdmin, async (c) => {
+  const blocked = requirePasswordOk(c);
+  if (blocked) return blocked;
+
+  const body = await c.req.json().catch(() => null);
+  if (typeof body?.password !== "string" || body.password.length < 8) {
+    return c.json({ error: "Temporary password must be at least 8 characters" }, 400);
+  }
+
+  const id = c.req.param("id");
+  if (!id) return c.json({ error: "User id required" }, 400);
+  const target = db
+    .query("SELECT password_hash, must_change_password FROM users WHERE id = ?")
+    .get(id) as Pick<UserRow, "password_hash" | "must_change_password"> | null;
+  if (!target) return c.json({ error: "User not found" }, 404);
+  if (!target.must_change_password) {
+    return c.json({ error: "This user has already chosen a personal password" }, 409);
+  }
+
+  const passwordHash = await hashPassword(body.password);
+  const actor = getUserFromToken(getCookie(c, SESSION_COOKIE));
+  if (!actor || actor.role !== "admin" || actor.must_change_password) {
+    return c.json({ error: "An active administrator session is required" }, 403);
+  }
+  const replaced = db.transaction(() => {
+    const result = db.query(
+      `UPDATE users SET password_hash = ?
+       WHERE id = ? AND must_change_password = 1 AND password_hash = ?`,
+    ).run(passwordHash, id, target.password_hash);
+    if (!result.changes) return false;
+    destroyAllSessionsForUser(id);
+    return true;
+  })();
+  if (!replaced) {
+    return c.json({ error: "The account changed. Refresh the user list and try again." }, 409);
+  }
+  return c.json({ ok: true });
 });
 
 userRoutes.patch("/:id/role", requireAdmin, async (c) => {

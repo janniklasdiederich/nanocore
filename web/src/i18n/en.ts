@@ -61,6 +61,7 @@ export const en = {
   "password.confirm": "Confirm new password",
   "password.save": "Save password",
   "password.mismatch": "New passwords do not match",
+  "password.temporaryReused": "Choose a password different from your temporary password.",
   "password.failed": "Could not change password",
 
   // Shell
@@ -206,6 +207,11 @@ export const en = {
   "users.displayName": "Display name",
   "users.email": "Email",
   "users.tempPassword": "Temporary password",
+  "users.replaceTempPassword": "Replace temporary password",
+  "users.replaceTempHelp": "Set a new temporary password for {email}. They’ll use it to sign in and choose their own password.",
+  "users.tempPasswordSaved": "Temporary password replaced for {email}.",
+  "users.tempPasswordStale": "The account for {email} changed. Check its current status before trying again.",
+  "users.tempPasswordFailed": "Could not replace the temporary password.",
   "users.createFailed": "Could not create user",
   "users.makeAdmin": "Make admin",
   "users.makeMember": "Make member",

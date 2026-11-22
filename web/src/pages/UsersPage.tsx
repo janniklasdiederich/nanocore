@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   api,
   ApiError,
@@ -25,6 +25,8 @@ export function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<AdminTab>("people");
   const [showCreate, setShowCreate] = useState(false);
+  const [passwordFor, setPasswordFor] = useState<User | null>(null);
+  const [passwordNotice, setPasswordNotice] = useState("");
   const [membersFor, setMembersFor] = useState<AccessGroup | null>(null);
   const [freshInvite, setFreshInvite] = useState<Invite | null>(null);
   const [copied, setCopied] = useState(false);
@@ -509,6 +511,7 @@ export function UsersPage() {
       {tab === "people" && (
       <section className="admin-section">
         <h2 className="admin-section__title">{t("admin.tabPeople")}</h2>
+        {passwordNotice && <p role="status">{passwordNotice}</p>}
         <table className="table">
           <thead>
             <tr>
@@ -544,6 +547,18 @@ export function UsersPage() {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {user.mustChangePassword && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setPasswordNotice("");
+                          setPasswordFor(user);
+                        }}
+                      >
+                        {t("users.replaceTempPassword")}
+                      </button>
+                    )}
                     {user.role === "member" ? (
                       <button
                         type="button"
@@ -580,6 +595,21 @@ export function UsersPage() {
 
       )}
 
+      {passwordFor && (
+        <TemporaryPasswordDialog
+          user={passwordFor}
+          onClose={() => setPasswordFor(null)}
+          onSaved={() => {
+            setPasswordNotice(t("users.tempPasswordSaved", { email: passwordFor.email }));
+            setPasswordFor(null);
+          }}
+          onStale={() => {
+            setPasswordNotice(t("users.tempPasswordStale", { email: passwordFor.email }));
+            setPasswordFor(null);
+            void load();
+          }}
+        />
+      )}
       {showCreate && (
         <CreateUserModal
           onClose={() => setShowCreate(false)}
@@ -603,6 +633,82 @@ export function UsersPage() {
         />
       )}
     </AppShell>
+  );
+}
+
+function TemporaryPasswordDialog({ user, onClose, onSaved, onStale }: {
+  user: User;
+  onClose: () => void;
+  onSaved: () => void;
+  onStale: () => void;
+}) {
+  const t = useT();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const dialog = dialogRef.current!;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const password = new FormData(event.currentTarget).get("password");
+    if (busy || typeof password !== "string") return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.replaceTemporaryPassword(user.id, password);
+      onSaved();
+    } catch (err) {
+      if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
+        onStale();
+        return;
+      }
+      setError(err instanceof ApiError ? err.message : t("users.tempPasswordFailed"));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="modal"
+      aria-labelledby="replace-temp-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        if (!busy) onClose();
+      }}
+    >
+      <form onSubmit={submit}>
+        <h2 id="replace-temp-title">{t("users.replaceTempPassword")}</h2>
+        <p>{t("users.replaceTempHelp", { email: user.email })}</p>
+        {error && <div className="error-banner" role="alert">{error}</div>}
+        <div className="field">
+          <label htmlFor="replacement-password">{t("users.tempPassword")}</label>
+          <input
+            id="replacement-password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            autoFocus
+            required
+            minLength={8}
+            disabled={busy}
+          />
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn btn-secondary btn-sm" disabled={busy} onClick={onClose}>
+            {t("common.cancel")}
+          </button>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
+            {busy ? t("common.saving") : t("common.save")}
+          </button>
+        </div>
+      </form>
+    </dialog>
   );
 }
 

@@ -645,6 +645,10 @@ a.btn-primary:hover {
   font-size: 1.2rem;
 }
 
+dialog.modal::backdrop {
+  background: rgba(4, 6, 10, 0.65);
+}
+
 .modal p {
   margin: 0 0 16px;
   color: var(--text-muted);

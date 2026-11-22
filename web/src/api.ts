@@ -240,6 +240,12 @@ export const api = {
   deleteUser: (id: string) =>
     request<{ ok: boolean }>(`/api/users/${id}`, { method: "DELETE" }),
 
+  replaceTemporaryPassword: (id: string, password: string) =>
+    request<{ ok: boolean }>(`/api/users/${encodeURIComponent(id)}/temporary-password`, {
+      method: "PUT",
+      body: JSON.stringify({ password }),
+    }),
+
   setUserRole: (id: string, role: "admin" | "member") =>
     request<{ user: User }>(`/api/users/${id}/role`, {
       method: "PATCH",
