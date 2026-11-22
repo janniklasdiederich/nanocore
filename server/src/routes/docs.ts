@@ -208,7 +208,7 @@ docRoutes.post("/:id/sync-token", (c) => {
     return c.json({ error: "Document not found" }, 404);
   }
   return c.json({
-    token: createSyncToken(user.id, id),
+    token: createSyncToken(c.get("userRow").auth_session_id, id),
     expiresInSec: 120,
   });
 });

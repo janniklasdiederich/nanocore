@@ -10,10 +10,11 @@ const SESSION_DAYS = 30;
 const SYNC_TOKEN_TTL_MS = 2 * 60 * 1000;
 
 export type AuthUser = ReturnType<typeof publicUser>;
+type SessionUser = UserRow & { auth_session_id: string };
 
 export type Variables = {
   user: AuthUser;
-  userRow: UserRow;
+  userRow: SessionUser;
 };
 
 function hashToken(token: string): string {
@@ -65,16 +66,16 @@ export function purgeExpiredSessions(): number {
   return Number(result.changes ?? 0);
 }
 
-export function getUserFromToken(token: string | undefined): UserRow | null {
+export function getUserFromToken(token: string | undefined): SessionUser | null {
   if (!token) return null;
 
   const row = db
     .query(
-      `SELECT u.* FROM sessions s
+      `SELECT u.*, s.id AS auth_session_id FROM sessions s
        JOIN users u ON u.id = s.user_id
        WHERE s.token_hash = ? AND s.expires_at > datetime('now')`,
     )
-    .get(hashToken(token)) as UserRow | null;
+    .get(hashToken(token)) as SessionUser | null;
 
   return row;
 }
@@ -124,30 +125,38 @@ export function requirePasswordOk(c: Context) {
   return null;
 }
 
-/** Signed token for WebSocket connect (board-scoped, short TTL). */
-export function createSyncToken(userId: string, boardId: string): string {
+/** Short-lived room ticket tied to the HTTP session that issued it. */
+export function createSyncToken(authSessionId: string, boardId: string): string {
   const exp = Date.now() + SYNC_TOKEN_TTL_MS;
-  const body = `${userId}.${boardId}.${exp}`;
+  const body = `${authSessionId}.${boardId}.${exp}`;
   const sig = createHmac("sha256", env.sessionSecret)
     .update(body)
     .digest("base64url");
   return `${body}.${sig}`;
 }
 
+export function getSyncUserId(authSessionId: string): string | null {
+  const row = db.query(
+    `SELECT s.user_id FROM sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.id = ? AND s.expires_at > ? AND u.must_change_password = 0`,
+  ).get(authSessionId, new Date().toISOString()) as { user_id: string } | null;
+  return row?.user_id ?? null;
+}
+
 export function verifySyncToken(
   token: string,
   boardId: string,
-): { userId: string } | null {
+): { userId: string; authSessionId: string } | null {
   const parts = token.split(".");
   if (parts.length !== 4) return null;
-  const [userId, tokenBoardId, expStr, sig] = parts;
-  if (!userId || !tokenBoardId || !expStr || !sig) return null;
+  const [authSessionId, tokenBoardId, expStr, sig] = parts;
+  if (!authSessionId || !tokenBoardId || !expStr || !sig) return null;
   if (tokenBoardId !== boardId) return null;
 
   const exp = Number(expStr);
   if (!Number.isFinite(exp) || Date.now() > exp) return null;
 
-  const body = `${userId}.${tokenBoardId}.${expStr}`;
+  const body = `${authSessionId}.${tokenBoardId}.${expStr}`;
   const expected = createHmac("sha256", env.sessionSecret)
     .update(body)
     .digest("base64url");
@@ -160,12 +169,8 @@ export function verifySyncToken(
     return null;
   }
 
-  const user = db
-    .query("SELECT id, must_change_password FROM users WHERE id = ?")
-    .get(userId) as { id: string; must_change_password: number } | null;
-  if (!user || user.must_change_password) return null;
-
-  return { userId: user.id };
+  const userId = getSyncUserId(authSessionId);
+  return userId ? { userId, authSessionId } : null;
 }
 
 /** Permanent (secret-bound) signature so asset URLs work in <img> without cookies. */

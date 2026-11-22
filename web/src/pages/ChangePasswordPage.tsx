@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
@@ -15,6 +15,7 @@ export function ChangePasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,7 +28,14 @@ export function ChangePasswordPage() {
     try {
       const res = await api.changePassword(currentPassword, newPassword);
       setSession(res.user, org);
-      navigate("/", { replace: true });
+      if (user?.mustChangePassword) {
+        navigate("/", { replace: true });
+      } else {
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirm("");
+        setSaved(true);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.code === "TEMPORARY_PASSWORD_REUSED") {
         setError(t("password.temporaryReused"));
@@ -45,6 +53,17 @@ export function ChangePasswordPage() {
     navigate("/login", { replace: true });
   }
 
+  if (saved) {
+    return (
+      <div className="center-screen">
+        <section className="auth-card">
+          <h1 role="status">{t("password.changed")}</h1>
+          <Link to="/" replace className="btn btn-primary">{t("common.done")}</Link>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="center-screen">
       <form className="auth-card" onSubmit={onSubmit}>
@@ -55,7 +74,7 @@ export function ChangePasswordPage() {
           <BrandMark />
           {org?.name || t("app.name")}
         </div>
-        <h1>{t("password.title")}</h1>
+        <h1>{t(user?.mustChangePassword ? "password.title" : "password.change")}</h1>
         <p className="subtitle">
           {user?.mustChangePassword
             ? t("password.subtitleTemp")
@@ -104,9 +123,10 @@ export function ChangePasswordPage() {
           type="button"
           className="btn btn-secondary"
           style={{ width: "100%", marginTop: 10 }}
-          onClick={() => void logout()}
+          disabled={busy}
+          onClick={() => user?.mustChangePassword ? void logout() : navigate("/", { replace: true })}
         >
-          {t("common.signOut")}
+          {t(user?.mustChangePassword ? "common.signOut" : "common.cancel")}
         </button>
       </form>
     </div>

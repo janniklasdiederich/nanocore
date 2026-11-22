@@ -53,6 +53,8 @@ export const en = {
 
   // Change password
   "password.title": "Choose a new password",
+  "password.change": "Change password",
+  "password.changed": "Your password has been changed.",
   "password.subtitleTemp":
     "Your admin set a temporary password. Pick a new one to continue.",
   "password.subtitleUpdate": "Update your password.",
@@ -208,6 +210,9 @@ export const en = {
   "users.email": "Email",
   "users.tempPassword": "Temporary password",
   "users.replaceTempPassword": "Replace temporary password",
+  "users.resetPassword": "Reset password",
+  "users.resetPasswordHelp": "Resetting the password signs {email} out. Give them the temporary password below so they can sign in and choose a new one.",
+  "users.passwordReset": "Password reset for {email}. They can now sign in with the temporary password.",
   "users.replaceTempHelp": "Set a new temporary password for {email}. They’ll use it to sign in and choose their own password.",
   "users.tempPasswordSaved": "Temporary password replaced for {email}.",
   "users.tempPasswordStale": "The account for {email} changed. Check its current status before trying again.",

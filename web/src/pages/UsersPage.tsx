@@ -547,7 +547,7 @@ export function UsersPage() {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                    {user.mustChangePassword && (
+                    {user.id !== me?.id && (
                       <button
                         type="button"
                         className="btn btn-secondary btn-sm"
@@ -556,7 +556,7 @@ export function UsersPage() {
                           setPasswordFor(user);
                         }}
                       >
-                        {t("users.replaceTempPassword")}
+                        {t(user.mustChangePassword ? "users.replaceTempPassword" : "users.resetPassword")}
                       </button>
                     )}
                     {user.role === "member" ? (
@@ -600,7 +600,10 @@ export function UsersPage() {
           user={passwordFor}
           onClose={() => setPasswordFor(null)}
           onSaved={() => {
-            setPasswordNotice(t("users.tempPasswordSaved", { email: passwordFor.email }));
+            setUsers((prev) => prev.map((u) =>
+              u.id === passwordFor.id ? { ...u, mustChangePassword: true } : u,
+            ));
+            setPasswordNotice(t(passwordFor.mustChangePassword ? "users.tempPasswordSaved" : "users.passwordReset", { email: passwordFor.email }));
             setPasswordFor(null);
           }}
           onStale={() => {
@@ -660,7 +663,7 @@ function TemporaryPasswordDialog({ user, onClose, onSaved, onStale }: {
     setBusy(true);
     setError("");
     try {
-      await api.replaceTemporaryPassword(user.id, password);
+      await api.setTemporaryPassword(user.id, password, user.mustChangePassword ? "replace" : "reset");
       onSaved();
     } catch (err) {
       if (err instanceof ApiError && (err.status === 404 || err.status === 409)) {
@@ -683,8 +686,10 @@ function TemporaryPasswordDialog({ user, onClose, onSaved, onStale }: {
       }}
     >
       <form onSubmit={submit}>
-        <h2 id="replace-temp-title">{t("users.replaceTempPassword")}</h2>
-        <p>{t("users.replaceTempHelp", { email: user.email })}</p>
+        <h2 id="replace-temp-title">
+          {t(user.mustChangePassword ? "users.replaceTempPassword" : "users.resetPassword")}
+        </h2>
+        <p>{t(user.mustChangePassword ? "users.replaceTempHelp" : "users.resetPasswordHelp", { email: user.email })}</p>
         {error && <div className="error-banner" role="alert">{error}</div>}
         <div className="field">
           <label htmlFor="replacement-password">{t("users.tempPassword")}</label>
@@ -704,7 +709,7 @@ function TemporaryPasswordDialog({ user, onClose, onSaved, onStale }: {
             {t("common.cancel")}
           </button>
           <button type="submit" className="btn btn-primary btn-sm" disabled={busy}>
-            {busy ? t("common.saving") : t("common.save")}
+            {busy ? t("common.saving") : t(user.mustChangePassword ? "common.save" : "users.resetPassword")}
           </button>
         </div>
       </form>

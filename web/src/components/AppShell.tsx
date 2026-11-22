@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useAuth } from "../auth";
 import { useT } from "../i18n";
@@ -66,6 +66,9 @@ export function AppShell({
             {user?.displayName}
             {isAdmin ? ` · ${t("common.admin")}` : ""}
           </div>
+          <Link to="/change-password" className="btn btn-secondary btn-sm">
+            {t("password.change")}
+          </Link>
           <button
             type="button"
             className="btn btn-secondary btn-sm"

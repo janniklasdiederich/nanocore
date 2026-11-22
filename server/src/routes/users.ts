@@ -11,6 +11,7 @@ import {
   type Variables,
 } from "../auth";
 import { db, publicUser, type UserRow } from "../db";
+import { closeUserSockets } from "../wsConnections";
 
 export const userRoutes = new Hono<{ Variables: Variables }>();
 
@@ -89,12 +90,19 @@ userRoutes.put("/:id/temporary-password", requireAdmin, async (c) => {
 
   const id = c.req.param("id");
   if (!id) return c.json({ error: "User id required" }, 400);
+  if (id === c.get("user").id) {
+    return c.json({ error: "Use Change password for your own account" }, 400);
+  }
+  const mode = body.mode === undefined ? "replace" : body.mode;
+  if (mode !== "replace" && mode !== "reset") {
+    return c.json({ error: "Invalid password reset mode" }, 400);
+  }
   const target = db
     .query("SELECT password_hash, must_change_password FROM users WHERE id = ?")
     .get(id) as Pick<UserRow, "password_hash" | "must_change_password"> | null;
   if (!target) return c.json({ error: "User not found" }, 404);
-  if (!target.must_change_password) {
-    return c.json({ error: "This user has already chosen a personal password" }, 409);
+  if (Boolean(target.must_change_password) !== (mode === "replace")) {
+    return c.json({ error: "The account changed. Refresh the user list and try again." }, 409);
   }
 
   const passwordHash = await hashPassword(body.password);
@@ -104,9 +112,9 @@ userRoutes.put("/:id/temporary-password", requireAdmin, async (c) => {
   }
   const replaced = db.transaction(() => {
     const result = db.query(
-      `UPDATE users SET password_hash = ?
-       WHERE id = ? AND must_change_password = 1 AND password_hash = ?`,
-    ).run(passwordHash, id, target.password_hash);
+      `UPDATE users SET password_hash = ?, must_change_password = 1
+       WHERE id = ? AND must_change_password = ? AND password_hash = ?`,
+    ).run(passwordHash, id, target.must_change_password, target.password_hash);
     if (!result.changes) return false;
     destroyAllSessionsForUser(id);
     return true;
@@ -114,6 +122,7 @@ userRoutes.put("/:id/temporary-password", requireAdmin, async (c) => {
   if (!replaced) {
     return c.json({ error: "The account changed. Refresh the user list and try again." }, 409);
   }
+  closeUserSockets(id);
   return c.json({ ok: true });
 });
 

@@ -50,6 +50,8 @@ export const de: Messages = {
   "login.failed": "Anmeldung fehlgeschlagen",
 
   "password.title": "Neues Passwort wählen",
+  "password.change": "Passwort ändern",
+  "password.changed": "Dein Passwort wurde geändert.",
   "password.subtitleTemp":
     "Dein Admin hat ein temporäres Passwort gesetzt. Wähle ein neues, um fortzufahren.",
   "password.subtitleUpdate": "Aktualisiere dein Passwort.",
@@ -206,6 +208,9 @@ export const de: Messages = {
   "users.email": "E-Mail",
   "users.tempPassword": "Temporäres Passwort",
   "users.replaceTempPassword": "Temporäres Passwort ersetzen",
+  "users.resetPassword": "Passwort zurücksetzen",
+  "users.resetPasswordHelp": "Wenn du das Passwort zurücksetzt, wird {email} abgemeldet. Gib der Person das temporäre Passwort, damit sie sich anmelden und ein neues Passwort wählen kann.",
+  "users.passwordReset": "Das Passwort für {email} wurde zurückgesetzt. Die Anmeldung ist jetzt mit dem temporären Passwort möglich.",
   "users.replaceTempHelp": "Lege ein neues temporäres Passwort für {email} fest. Damit kann sich die Person anmelden und ein eigenes Passwort wählen.",
   "users.tempPasswordSaved": "Das temporäre Passwort für {email} wurde ersetzt.",
   "users.tempPasswordStale": "Das Konto für {email} hat sich geändert. Prüfe den aktuellen Status, bevor du es erneut versuchst.",

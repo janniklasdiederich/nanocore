@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
+  getSyncUserId,
   getUserFromToken,
   purgeExpiredSessions,
   SESSION_COOKIE,
@@ -10,7 +11,7 @@ import {
   type Variables,
 } from "./auth";
 import { env } from "./env";
-import { isSetupComplete } from "./db";
+import { db, isSetupComplete } from "./db";
 // rooms imports apply the custom-color validation patch before TLSocketRoom runs
 import { userCanAccessBoard } from "./boardAccess";
 import { userCanAccessKanban } from "./kanbanAccess";
@@ -24,7 +25,7 @@ import {
 } from "./docRooms";
 import { loadKanbanState } from "./kanbanState";
 import { makeOrLoadRoom, getActiveRoom, closeAllRooms } from "./rooms";
-import { trackWs, untrackWs } from "./wsConnections";
+import { trackWs } from "./wsConnections";
 import { safePathUnderRoot } from "./safePath";
 import { setupRoutes } from "./routes/setup";
 import { authRoutes } from "./routes/auth";
@@ -46,9 +47,10 @@ type WsData = {
   sessionId: string;
   boardId: string;
   userId: string;
+  authSessionId: string;
+  untrack?: () => void;
+  leaveKanban?: () => void;
 };
-
-const kanbanLeaves = new Map<string, () => void>();
 
 const app = new Hono<{ Variables: Variables }>();
 
@@ -227,7 +229,8 @@ const server = Bun.serve<WsData>({
         return new Response("Missing boardId or sessionId", { status: 400 });
       }
 
-      let userId: string | null = null;
+      let userId: string;
+      let authSessionId: string;
 
       if (syncToken) {
         const verified = verifySyncToken(syncToken, boardId);
@@ -236,6 +239,7 @@ const server = Bun.serve<WsData>({
           return new Response("Unauthorized", { status: 401 });
         }
         userId = verified.userId;
+        authSessionId = verified.authSessionId;
       } else {
         const cookies = parseCookies(req.headers.get("cookie"));
         const cookieToken = cookies[SESSION_COOKIE];
@@ -248,6 +252,7 @@ const server = Bun.serve<WsData>({
           return new Response("Password change required", { status: 403 });
         }
         userId = user.id;
+        authSessionId = user.auth_session_id;
       }
 
       const table = isDocSync
@@ -255,18 +260,13 @@ const server = Bun.serve<WsData>({
         : isKanbanSync
           ? "kanban_boards"
           : "boards";
-      const board = (
-        await import("./db")
-      ).db
+      const board = db
         .query(`SELECT id FROM ${table} WHERE id = ?`)
         .get(boardId);
       if (!board) {
         return new Response("Not found", { status: 404 });
       }
 
-      if (!userId) {
-        return new Response("Forbidden", { status: 403 });
-      }
       const allowed = isDocSync
         ? userCanAccessDocument(userId, boardId)
         : isKanbanSync
@@ -287,6 +287,7 @@ const server = Bun.serve<WsData>({
           sessionId,
           boardId,
           userId,
+          authSessionId,
         },
       });
       if (!ok) {
@@ -301,16 +302,19 @@ const server = Bun.serve<WsData>({
   websocket: {
     open(ws) {
       try {
+        if (getSyncUserId(ws.data.authSessionId) !== ws.data.userId) {
+          ws.close(4403, "Access revoked");
+          return;
+        }
         const trackId =
           ws.data.kind === "kanban"
             ? `kanban:${ws.data.boardId}`
             : ws.data.kind === "doc"
               ? `doc:${ws.data.boardId}`
               : ws.data.boardId;
-        trackWs({
+        ws.data.untrack = trackWs({
           boardId: trackId,
           userId: ws.data.userId,
-          sessionId: ws.data.sessionId,
           close: () => {
             try {
               ws.close(4403, "Access revoked");
@@ -344,7 +348,7 @@ const server = Bun.serve<WsData>({
         }
 
         if (ws.data.kind === "kanban") {
-          const leave = joinKanbanRoom(ws.data.boardId, {
+          ws.data.leaveKanban = joinKanbanRoom(ws.data.boardId, {
             send: (data) => {
               try {
                 ws.send(data);
@@ -360,7 +364,6 @@ const server = Bun.serve<WsData>({
               }
             },
           });
-          kanbanLeaves.set(ws.data.sessionId, leave);
           const state = loadKanbanState(ws.data.boardId);
           if (state) {
             ws.send(JSON.stringify({ type: "state", ...state }));
@@ -419,20 +422,14 @@ const server = Bun.serve<WsData>({
       }
     },
     close(ws) {
-      const trackId =
-        ws.data.kind === "kanban"
-          ? `kanban:${ws.data.boardId}`
-          : ws.data.kind === "doc"
-            ? `doc:${ws.data.boardId}`
-            : ws.data.boardId;
-      untrackWs(trackId, ws.data.sessionId);
+      if (!ws.data.untrack) return;
+      ws.data.untrack();
       if (ws.data.kind === "doc") {
         leaveDocRoom(ws.data.boardId, ws.data.sessionId);
         return;
       }
       if (ws.data.kind === "kanban") {
-        kanbanLeaves.get(ws.data.sessionId)?.();
-        kanbanLeaves.delete(ws.data.sessionId);
+        ws.data.leaveKanban?.();
         return;
       }
       const room = getActiveRoom(ws.data.boardId);

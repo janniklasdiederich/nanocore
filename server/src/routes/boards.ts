@@ -124,7 +124,7 @@ boardRoutes.post("/:id/sync-token", (c) => {
     return c.json({ error: "Board not found" }, 404);
   }
 
-  const token = createSyncToken(user.id, row.id);
+  const token = createSyncToken(c.get("userRow").auth_session_id, row.id);
   return c.json({ token, expiresInSec: 120 });
 });
 

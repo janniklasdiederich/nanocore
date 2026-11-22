@@ -16,6 +16,7 @@ import {
 } from "../auth";
 import { db, getOrg, publicOrg, publicUser, type UserRow } from "../db";
 import { clientIp, rateLimit } from "../rateLimit";
+import { closeUserSockets } from "../wsConnections";
 
 export const authRoutes = new Hono<{ Variables: Variables }>();
 
@@ -126,6 +127,7 @@ authRoutes.post("/change-password", requireAuth, async (c) => {
   if (!token) {
     return c.json({ error: "Your password has changed. Sign in again." }, 409);
   }
+  closeUserSockets(userRow.id);
   setSessionCookie(c, token);
 
   const updated = db

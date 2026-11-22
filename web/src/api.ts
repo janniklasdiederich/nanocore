@@ -240,10 +240,10 @@ export const api = {
   deleteUser: (id: string) =>
     request<{ ok: boolean }>(`/api/users/${id}`, { method: "DELETE" }),
 
-  replaceTemporaryPassword: (id: string, password: string) =>
+  setTemporaryPassword: (id: string, password: string, mode: "replace" | "reset") =>
     request<{ ok: boolean }>(`/api/users/${encodeURIComponent(id)}/temporary-password`, {
       method: "PUT",
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, mode }),
     }),
 
   setUserRole: (id: string, role: "admin" | "member") =>
